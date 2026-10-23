@@ -10,7 +10,8 @@ mascotas, inventario, ventas, compras, caja y reportes.
 
 ## Ejecución local
 
-En Windows, abre `ejecutar.cmd` desde la carpeta del proyecto.
+En Windows, abre `ejecutar.cmd` desde la carpeta del proyecto. El script inicia
+Petmor y abre automáticamente `http://localhost:5000` en el navegador.
 
 También puedes ejecutar manualmente:
 

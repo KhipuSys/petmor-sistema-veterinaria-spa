@@ -21,11 +21,14 @@ if errorlevel 1 (
 )
 
 echo Iniciando Petmor...
-dotnet run --project Petmor.Web.csproj
+start "" /B dotnet run --project Petmor.Web.csproj --urls http://localhost:5000
 
-if errorlevel 1 (
-    echo La aplicacion termino con un error.
-    pause
-)
+echo Esperando a que Petmor este disponible...
+timeout /t 5 /nobreak >nul
+start "" "http://localhost:5000"
+
+echo Petmor esta disponible en http://localhost:5000
+echo La aplicacion se esta ejecutando en segundo plano.
+pause
 
 endlocal
