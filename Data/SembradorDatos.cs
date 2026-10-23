@@ -23,23 +23,28 @@ public static class SembradorDatos
             var rolAnterior = await roles.FindByNameAsync(anterior);
             if (rolAnterior != null) Comprobar(await roles.DeleteAsync(rolAnterior));
         }
-        var adminAnterior = await users.FindByNameAsync("admin@petmor.local");
-        if (adminAnterior != null)
+        var admin = await users.FindByNameAsync("admin@petmor.pe")
+            ?? await users.FindByNameAsync("admin@amayasoft.com")
+            ?? await users.FindByNameAsync("admin@petmor.local");
+
+        if (admin == null)
         {
-            adminAnterior.UserName = "admin@petmor.pe";
-            adminAnterior.NormalizedUserName = "ADMIN@PETMOR.PE";
-            adminAnterior.Email = "admin@petmor.pe";
-            adminAnterior.NormalizedEmail = "ADMIN@PETMOR.PE";
-            adminAnterior.EmailConfirmed = true;
-            Comprobar(await users.UpdateAsync(adminAnterior));
+            admin = new IdentityUser { UserName = "admin@petmor.pe", Email = "admin@petmor.pe", EmailConfirmed = true };
+            Comprobar(await users.CreateAsync(admin, "Admin123*"));
+        }
+        else
+        {
+            admin.UserName = "admin@petmor.pe";
+            admin.NormalizedUserName = "ADMIN@PETMOR.PE";
+            admin.Email = "admin@petmor.pe";
+            admin.NormalizedEmail = "ADMIN@PETMOR.PE";
+            admin.EmailConfirmed = true;
+            Comprobar(await users.UpdateAsync(admin));
+            Comprobar(await users.ResetPasswordAsync(admin, await users.GeneratePasswordResetTokenAsync(admin), "Admin123*"));
         }
 
-        if (!await db.Users.AnyAsync())
-        {
-            var admin = new IdentityUser { UserName = "admin@petmor.pe", Email = "admin@petmor.pe", EmailConfirmed = true };
-            Comprobar(await users.CreateAsync(admin, "Admin123*"));
+        if (!await users.IsInRoleAsync(admin, "Administrador"))
             Comprobar(await users.AddToRoleAsync(admin, "Administrador"));
-        }
         var config = await db.Configuraciones.FirstOrDefaultAsync();
         if (config == null)
         {
