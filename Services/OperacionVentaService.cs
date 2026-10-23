@@ -1,12 +1,12 @@
 using Microsoft.EntityFrameworkCore;
-using MiniMarket.Web.Data;
-using MiniMarket.Web.Models;
+using Petmor.Web.Data;
+using Petmor.Web.Models;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
-using VentaRequest = MiniMarket.Web.Controllers.VentaRequest;
+using VentaRequest = Petmor.Web.Controllers.VentaRequest;
 
-namespace MiniMarket.Web.Services;
+namespace Petmor.Web.Services;
 
 public class OperacionVentaService(ApplicationDbContext db)
 {

@@ -1,10 +1,10 @@
-@model IEnumerable<MiniMarket.Web.Models.Producto>
+@model IEnumerable<Petmor.Web.Models.Producto>
 
 @{
     ViewData["Title"] = "Productos";
     var productos = Model.ToList();
     var activos = productos.Count(p => p.Estado);
-    var hoy = MiniMarket.Web.Infrastructure.HoraPeru.Hoy;
+    var hoy = Petmor.Web.Infrastructure.HoraPeru.Hoy;
     var limiteVencimiento = hoy.AddDays(30);
     var proximos = productos.Count(p => p.ConCaducidad && p.FechaVencimiento >= hoy && p.FechaVencimiento < limiteVencimiento.AddDays(1));
     var vencidos = productos.Count(p => p.Vencido);

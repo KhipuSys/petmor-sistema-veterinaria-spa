@@ -1,10 +1,10 @@
 using Microsoft.EntityFrameworkCore;
-using MiniMarket.Web.Data;
-using MiniMarket.Web.Infrastructure;
-using MiniMarket.Web.Models;
-using MiniMarket.Web.Models.ViewModels;
+using Petmor.Web.Data;
+using Petmor.Web.Infrastructure;
+using Petmor.Web.Models;
+using Petmor.Web.Models.ViewModels;
 
-namespace MiniMarket.Web.Services;
+namespace Petmor.Web.Services;
 
 public class AtencionService(ApplicationDbContext db)
 {

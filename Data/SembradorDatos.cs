@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using MiniMarket.Web.Models;
+using Petmor.Web.Models;
 
-namespace MiniMarket.Web.Data;
+namespace Petmor.Web.Data;
 
 public static class SembradorDatos
 {
@@ -24,7 +24,6 @@ public static class SembradorDatos
             if (rolAnterior != null) Comprobar(await roles.DeleteAsync(rolAnterior));
         }
         var admin = await users.FindByNameAsync("admin@petmor.pe")
-            ?? await users.FindByNameAsync("admin@amayasoft.com")
             ?? await users.FindByNameAsync("admin@petmor.local");
 
         if (admin == null)
@@ -54,7 +53,6 @@ public static class SembradorDatos
         }
         else
         {
-            if (config.NombreEmpresa == "AmayaSoft") config.NombreEmpresa = "Petmor";
             if (config.MonedaSimbolo == "S/") config.MonedaSimbolo = "S/.";
         }
         foreach (var nombre in new[] { "Medicamentos", "Alimentos para mascotas", "Accesorios", "Insumos veterinarios", "Insumos de spa", "Servicios veterinarios", "Servicios de spa" })

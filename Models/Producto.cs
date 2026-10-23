@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace MiniMarket.Web.Models
+namespace Petmor.Web.Models
 {
     public class Producto : IValidatableObject
     {

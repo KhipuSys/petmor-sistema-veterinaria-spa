@@ -4,14 +4,14 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using MiniMarket.Web.Data;
-using MiniMarket.Web.Models;
+using Petmor.Web.Data;
+using Petmor.Web.Models;
 using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace MiniMarket.Web.Controllers
+namespace Petmor.Web.Controllers
 {
     [Authorize(Roles = "Administrador")]
     public class ProductosController : Controller
@@ -63,10 +63,10 @@ namespace MiniMarket.Web.Controllers
         {
             ViewBag.Lecturas = lecturas ?? new List<string>();
             ModelState.Remove("Stock");
-            try { await MiniMarket.Web.Services.CodigosLecturas.PrepararAlta(_context, producto, lecturas); }
+            try { await Petmor.Web.Services.CodigosLecturas.PrepararAlta(_context, producto, lecturas); }
             catch (InvalidOperationException ex) { producto.Stock = 0; ModelState.AddModelError("", ex.Message); }
             string extension = null;
-            try { extension = await MiniMarket.Web.Services.ImagenSubida.Extension(imagenArchivo); }
+            try { extension = await Petmor.Web.Services.ImagenSubida.Extension(imagenArchivo); }
             catch (InvalidOperationException ex) { ModelState.AddModelError("", ex.Message); }
             producto.EsServicio = false;
             NormalizarCodigoBarras(producto);
@@ -145,7 +145,7 @@ namespace MiniMarket.Web.Controllers
             ViewBag.TipoAjuste = tipoAjuste;
             ViewBag.MotivoAjuste = motivo;
             string extension = null;
-            try { extension = await MiniMarket.Web.Services.ImagenSubida.Extension(imagenArchivo); }
+            try { extension = await Petmor.Web.Services.ImagenSubida.Extension(imagenArchivo); }
             catch (InvalidOperationException ex) { ModelState.AddModelError("", ex.Message); }
             if (id != producto.Id) return NotFound();
             NormalizarCodigoBarras(producto);
@@ -157,7 +157,7 @@ namespace MiniMarket.Web.Controllers
             if (configuracionActual == null) return NotFound();
             if (configuracionActual.EsServicio) return RedirectToAction("Servicio", "Petmor", new { id });
             var imagenAnterior = configuracionActual.ImagenUrl;
-            if (((!producto.Estado && configuracionActual.Estado) || (producto.UsoInterno && !configuracionActual.UsoInterno)) && await MiniMarket.Web.Services.DependenciasOperacion.ProductoPendiente(_context, id))
+            if (((!producto.Estado && configuracionActual.Estado) || (producto.UsoInterno && !configuracionActual.UsoInterno)) && await Petmor.Web.Services.DependenciasOperacion.ProductoPendiente(_context, id))
                 ModelState.AddModelError("Estado", "El producto tiene cuentas pendientes de cobro. Cóbrelas o cancele sus reservas antes de desactivarlo o marcarlo para uso interno.");
             if (producto.CategoriaId != configuracionActual.CategoriaId && !await _context.Categorias.AnyAsync(c => c.Id == producto.CategoriaId && c.Estado))
                 ModelState.AddModelError("CategoriaId", "Seleccione una categoría activa.");
@@ -167,7 +167,7 @@ namespace MiniMarket.Web.Controllers
             List<string> lecturasNormalizadas = [];
             try
             {
-                await MiniMarket.Web.Services.CodigosLecturas.Asociar(_context, configuracionActual,
+                await Petmor.Web.Services.CodigosLecturas.Asociar(_context, configuracionActual,
                     string.IsNullOrEmpty(producto.CodigoBarras) ? [] : new[] { producto.CodigoBarras });
                 if (hayAjusteStock)
                 {
@@ -177,7 +177,7 @@ namespace MiniMarket.Web.Controllers
                         throw new InvalidOperationException("Para modificar stock desde editar, seleccione Entrada o Salida, motivo obligatorio e identificador de operación.");
                     if (!MotivoValidoParaMovimiento(tipoAjuste, motivoNormalizado))
                         throw new InvalidOperationException("Seleccione un motivo válido para el movimiento elegido.");
-                    if (lecturas?.Count > 0) lecturasNormalizadas = MiniMarket.Web.Services.CodigosLecturas.Normalizar(lecturas);
+                    if (lecturas?.Count > 0) lecturasNormalizadas = Petmor.Web.Services.CodigosLecturas.Normalizar(lecturas);
                     if (lecturasNormalizadas.Count == 0)
                         throw new InvalidOperationException("Escanee las unidades para modificar stock.");
                     cantidad = lecturasNormalizadas.Count;
@@ -194,7 +194,7 @@ namespace MiniMarket.Web.Controllers
                     {
                         if (lecturasNormalizadas.Count > 0)
                         {
-                            var resueltos = await MiniMarket.Web.Services.CodigosLecturas.ResolverIds(_context, lecturasNormalizadas);
+                            var resueltos = await Petmor.Web.Services.CodigosLecturas.ResolverIds(_context, lecturasNormalizadas);
                             if (tipoAjuste == "SALIDA")
                             {
                                 if (lecturasNormalizadas.Any(c => !resueltos.TryGetValue(c, out var productoId) || productoId != id))
@@ -211,8 +211,8 @@ namespace MiniMarket.Web.Controllers
                                 if (string.IsNullOrWhiteSpace(configuracionActual.CodigoBarras)) configuracionActual.CodigoBarras = lecturasNormalizadas.First();
                                 var codigosDisponibles = configuracionActual.Codigos.Select(c => c.Codigo).Concat(string.IsNullOrWhiteSpace(configuracionActual.CodigoBarras) ? [] : new[] { configuracionActual.CodigoBarras })
                                     .Distinct(StringComparer.OrdinalIgnoreCase).Count();
-                                if (codigosDisponibles > MiniMarket.Web.Services.CodigosLecturas.MaxCodigos)
-                                    throw new InvalidOperationException($"Máximo {MiniMarket.Web.Services.CodigosLecturas.MaxCodigos} códigos por producto.");
+                                if (codigosDisponibles > Petmor.Web.Services.CodigosLecturas.MaxCodigos)
+                                    throw new InvalidOperationException($"Máximo {Petmor.Web.Services.CodigosLecturas.MaxCodigos} códigos por producto.");
                                 if (configuracionActual.Stock + cantidad > codigosDisponibles)
                                     throw new InvalidOperationException("No hay códigos libres suficientes para este ingreso. Escanee códigos nuevos o corrija las asociaciones.");
                             }
@@ -266,7 +266,7 @@ namespace MiniMarket.Web.Controllers
                     await _context.SaveChangesAsync();
                     await tx.CommitAsync();
                     if (eliminarImagen || imagenArchivo != null)
-                        MiniMarket.Web.Services.ImagenSubida.BorrarAnterior(_webHostEnvironment.WebRootPath, imagenAnterior, "imagenes/productos", HttpContext.RequestServices.GetRequiredService<ILogger<ProductosController>>());
+                        Petmor.Web.Services.ImagenSubida.BorrarAnterior(_webHostEnvironment.WebRootPath, imagenAnterior, "imagenes/productos", HttpContext.RequestServices.GetRequiredService<ILogger<ProductosController>>());
                 }
                 catch (DbUpdateException ex) when (EsDuplicadoIndice(ex))
                 {
@@ -302,7 +302,7 @@ namespace MiniMarket.Web.Controllers
             var producto = await _context.Productos.FindAsync(id);
             if (producto == null) return NotFound();
 
-            if (producto.Estado && await MiniMarket.Web.Services.DependenciasOperacion.ProductoPendiente(_context, producto.Id))
+            if (producto.Estado && await Petmor.Web.Services.DependenciasOperacion.ProductoPendiente(_context, producto.Id))
             { TempData["Error"] = "El producto tiene cuentas pendientes de cobro."; return RedirectToAction(nameof(Index)); }
             producto.Estado = !producto.Estado;
             await _context.SaveChangesAsync();
@@ -353,7 +353,7 @@ namespace MiniMarket.Web.Controllers
         private void NormalizarCodigoBarras(Producto producto)
         {
             if (string.IsNullOrEmpty(producto.CodigoBarras)) { producto.CodigoBarras = null; return; }
-            try { producto.CodigoBarras = MiniMarket.Web.Services.CodigosLecturas.Canonicalizar(producto.CodigoBarras); }
+            try { producto.CodigoBarras = Petmor.Web.Services.CodigosLecturas.Canonicalizar(producto.CodigoBarras); }
             catch (InvalidOperationException ex) { ModelState.AddModelError("CodigoBarras", ex.Message); }
         }
 

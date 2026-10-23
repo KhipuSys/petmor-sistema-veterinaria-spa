@@ -1,6 +1,6 @@
-using MiniMarket.Web.Models;
+using Petmor.Web.Models;
 
-namespace MiniMarket.Web.Infrastructure;
+namespace Petmor.Web.Infrastructure;
 
 public static class EstadoAtencionDisplay
 {

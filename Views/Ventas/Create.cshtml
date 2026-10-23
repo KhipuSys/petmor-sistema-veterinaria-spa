@@ -1,4 +1,4 @@
-@model MiniMarket.Web.Models.Venta
+@model Petmor.Web.Models.Venta
 
 @{
     ViewData["Title"] = "Punto de Venta";
@@ -104,7 +104,7 @@
         let _total = 0;
         let avisoPendienteMostrado = false;
         const claveAnterior = 'ventaPendiente:' + @Html.Raw(Json.Serialize(User.Identity.Name));
-        const sedeOperacion = @(Context.RequestServices.GetRequiredService<MiniMarket.Web.Services.SedeActual>().Id);
+        const sedeOperacion = @(Context.RequestServices.GetRequiredService<Petmor.Web.Services.SedeActual>().Id);
         const claveOperacion = claveAnterior + ':sede:' + sedeOperacion;
         if (sedeOperacion === 1 && sessionStorage.getItem(claveAnterior) && !sessionStorage.getItem(claveOperacion)) {
             sessionStorage.setItem(claveOperacion, sessionStorage.getItem(claveAnterior));

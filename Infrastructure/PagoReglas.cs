@@ -1,4 +1,4 @@
-namespace MiniMarket.Web.Infrastructure;
+namespace Petmor.Web.Infrastructure;
 
 public static class PagoReglas
 {

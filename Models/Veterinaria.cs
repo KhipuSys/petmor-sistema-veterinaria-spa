@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace MiniMarket.Web.Models;
+namespace Petmor.Web.Models;
 
 public enum AreaAtencion { Veterinaria = 1, Spa = 2 }
 public enum EstadoAtencion { Programada = 1, Confirmada = 2, EnEspera = 3, EnAtencion = 4, Lista = 5, Entregada = 6, Cancelada = 7 }

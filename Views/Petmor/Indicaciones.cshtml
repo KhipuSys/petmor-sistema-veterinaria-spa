@@ -1,8 +1,8 @@
-@model MiniMarket.Web.Models.Atencion
+@model Petmor.Web.Models.Atencion
 @{ ViewData["Title"] = "Indicaciones al propietario"; }
 <style>@@media print { .sidebar,.navbar-top,footer,.no-print { display:none!important; } .main-content { width:100%!important; } }</style>
 <div class="card p-5"><h2>Petmor · Veterinaria &amp; Spa</h2><p>Indicaciones de atención #@Model.Id · @Model.Inicio.ToString("dd/MM/yyyy")</p><hr/>
 <p><strong>Mascota:</strong> @Model.Mascota.Nombre · @Model.Mascota.Especie · @Model.Peso kg</p><p><strong>Propietario:</strong> @Model.Mascota.Cliente.Nombre</p><p><strong>Responsable:</strong> @ViewBag.Responsable</p>
-@if(Model.Area == MiniMarket.Web.Models.AreaAtencion.Veterinaria) { <h5>Tratamiento / receta</h5><p style="white-space:pre-wrap">@Model.Tratamiento</p> }
+@if(Model.Area == Petmor.Web.Models.AreaAtencion.Veterinaria) { <h5>Tratamiento / receta</h5><p style="white-space:pre-wrap">@Model.Tratamiento</p> }
 <h5>Indicaciones</h5><p style="white-space:pre-wrap">@Model.Indicaciones</p><p><strong>Próximo control:</strong> @Model.ProximoControl?.ToString("dd/MM/yyyy")</p>
 <div class="no-print mt-4"><button class="btn btn-primary" onclick="window.print()">Imprimir</button> <a class="btn btn-light" asp-action="Agenda" asp-route-activas="true">Volver</a></div></div>

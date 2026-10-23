@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Http;
 
-namespace MiniMarket.Web.Models
+namespace Petmor.Web.Models
 {
     public class ConfiguracionViewModel
     {

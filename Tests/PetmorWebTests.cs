@@ -3,9 +3,9 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore;
-using MiniMarket.Web.Data;
-using MiniMarket.Web.Models;
-using MiniMarket.Web.Infrastructure;
+using Petmor.Web.Data;
+using Petmor.Web.Models;
+using Petmor.Web.Infrastructure;
 
 static class PetmorWebTests
 {
@@ -17,7 +17,7 @@ static class PetmorWebTests
         using var reserva = new TcpListener(IPAddress.Loopback, 0);
         reserva.Start(); int port = ((IPEndPoint)reserva.LocalEndpoint).Port; reserva.Stop();
         var configuracion = System.Reflection.CustomAttributeExtensions.GetCustomAttribute<System.Reflection.AssemblyConfigurationAttribute>(typeof(ApplicationDbContext).Assembly)?.Configuration ?? "Debug";
-        var inicio = new ProcessStartInfo("dotnet", $"bin/{configuracion}/net9.0/MiniMarket.Web.dll") {
+        var inicio = new ProcessStartInfo("dotnet", $"bin/{configuracion}/net9.0/Petmor.Web.dll") {
             WorkingDirectory = Directory.GetCurrentDirectory(), UseShellExecute = false, RedirectStandardOutput = true, RedirectStandardError = true };
         inicio.Environment["ASPNETCORE_URLS"] = $"http://127.0.0.1:{port}";
         inicio.Environment["ASPNETCORE_ENVIRONMENT"] = "Development";

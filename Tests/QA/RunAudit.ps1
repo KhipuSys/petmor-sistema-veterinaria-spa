@@ -1,6 +1,6 @@
 $ErrorActionPreference = 'Stop'
 $root = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
-$database = 'MiniMarket_QA_' + [Guid]::NewGuid().ToString('N')
+$database = 'Petmor_QA_' + [Guid]::NewGuid().ToString('N')
 $server = $null
 $exitCode = 1
 $saved = @{}
@@ -23,7 +23,7 @@ try {
         $saved[$key] = [Environment]::GetEnvironmentVariable($key, 'Process')
         [Environment]::SetEnvironmentVariable($key, $settings[$key], 'Process')
     }
-    $server = Start-Process dotnet -WorkingDirectory $root -ArgumentList 'run --project MiniMarket.Web.csproj --no-build -c Release --no-launch-profile --urls http://127.0.0.1:5201' -PassThru
+    $server = Start-Process dotnet -WorkingDirectory $root -ArgumentList 'run --project Petmor.Web.csproj --no-build -c Release --no-launch-profile --urls http://127.0.0.1:5201' -PassThru
     foreach ($key in $saved.Keys) { [Environment]::SetEnvironmentVariable($key, $saved[$key], 'Process') }
     $ready = $false
     for ($i=0; $i -lt 60; $i++) {
@@ -39,7 +39,7 @@ try {
     foreach ($key in $saved.Keys) { [Environment]::SetEnvironmentVariable($key, $saved[$key], 'Process') }
     if ($server) { & taskkill /PID $server.Id /T /F }
     # Solo se elimina el nombre aleatorio creado por esta ejecucion.
-    if ($database -match '^MiniMarket_QA_[a-f0-9]{32}$') {
+    if ($database -match '^Petmor_QA_[a-f0-9]{32}$') {
         $connection = New-Object System.Data.SqlClient.SqlConnection 'Server=localhost\SQLEXPRESS;Database=master;Integrated Security=True;TrustServerCertificate=True'
         try {
             $connection.Open()

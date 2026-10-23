@@ -1,12 +1,12 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using MiniMarket.Web.Models.ViewModels;
+using Petmor.Web.Models.ViewModels;
 using System.Collections.Generic;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
-using MiniMarket.Web.Data;
+using Petmor.Web.Data;
 
-namespace MiniMarket.Web.Controllers
+namespace Petmor.Web.Controllers
 {
     [Authorize(Roles = "Administrador,Recepcionista")]
     public class EtiquetasController(ApplicationDbContext db) : Controller

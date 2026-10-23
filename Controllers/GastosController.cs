@@ -2,12 +2,12 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using MiniMarket.Web.Data;
-using MiniMarket.Web.Models;
+using Petmor.Web.Data;
+using Petmor.Web.Models;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace MiniMarket.Web.Controllers
+namespace Petmor.Web.Controllers
 {
     [Authorize]
     public class GastosController : Controller

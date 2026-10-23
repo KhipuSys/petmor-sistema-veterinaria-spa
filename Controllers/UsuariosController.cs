@@ -3,11 +3,11 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using MiniMarket.Web.Data;
-using MiniMarket.Web.Models;
-using MiniMarket.Web.Services;
+using Petmor.Web.Data;
+using Petmor.Web.Models;
+using Petmor.Web.Services;
 
-namespace MiniMarket.Web.Controllers;
+namespace Petmor.Web.Controllers;
 
 [Authorize(Roles = "Administrador")]
 public class UsuariosController(UserManager<IdentityUser> users, RoleManager<IdentityRole> roles,

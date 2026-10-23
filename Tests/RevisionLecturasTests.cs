@@ -4,10 +4,10 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
-using MiniMarket.Web.Controllers;
-using MiniMarket.Web.Data;
-using MiniMarket.Web.Models;
-using MiniMarket.Web.Services;
+using Petmor.Web.Controllers;
+using Petmor.Web.Data;
+using Petmor.Web.Models;
+using Petmor.Web.Services;
 
 public static class RevisionLecturasTests
 {
@@ -17,7 +17,7 @@ public static class RevisionLecturasTests
         public readonly TaskCompletionSource Continuar = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public override async ValueTask<int> NonQueryExecutedAsync(DbCommand command, CommandExecutedEventData data, int result, CancellationToken cancellationToken = default)
         {
-            if (command.CommandText.Contains("MiniMarket.OperacionesCaja") && Adquirido.TrySetResult())
+            if (command.CommandText.Contains("Petmor.OperacionesCaja") && Adquirido.TrySetResult())
                 await Continuar.Task.WaitAsync(TimeSpan.FromSeconds(15));
             return result;
         }

@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-using MiniMarket.Web.Services;
+using Petmor.Web.Services;
 
-namespace MiniMarket.Web.Data;
+namespace Petmor.Web.Data;
 
 // El catálogo es global; las existencias y los movimientos siguen perteneciendo a una sede.
 public static class ActualizacionCodigos

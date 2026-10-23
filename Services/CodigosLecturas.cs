@@ -1,8 +1,8 @@
 using Microsoft.EntityFrameworkCore;
-using MiniMarket.Web.Data;
-using MiniMarket.Web.Models;
+using Petmor.Web.Data;
+using Petmor.Web.Models;
 
-namespace MiniMarket.Web.Services;
+namespace Petmor.Web.Services;
 
 public static class CodigosLecturas
 {

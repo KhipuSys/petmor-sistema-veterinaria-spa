@@ -4,14 +4,14 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
-using MiniMarket.Web.Controllers;
-using MiniMarket.Web.Data;
-using MiniMarket.Web.Models;
-using MiniMarket.Web.Services;
-using MiniMarket.Web.Infrastructure;
+using Petmor.Web.Controllers;
+using Petmor.Web.Data;
+using Petmor.Web.Models;
+using Petmor.Web.Services;
+using Petmor.Web.Infrastructure;
 using System.Net;
 using System.Security.Claims;
-using VentaRequest = MiniMarket.Web.Controllers.VentaRequest;
+using VentaRequest = Petmor.Web.Controllers.VentaRequest;
 
 if (args.Contains("--codigos")) { await CodigosTests.Run(); return; }
 if (args.Contains("--revision-lecturas")) { await RevisionLecturasTests.Run(); return; }
@@ -23,7 +23,7 @@ if (args.Contains("--veterinaria")) { await VeterinariaTests.Run(); return; }
 if (args.Contains("--web")) { await PetmorWebTests.Run(); return; }
 if (args.Contains("--auditoria")) { await AuditoriaTests.Run(); return; }
 
-var database = "MiniMarket_Test_" + Guid.NewGuid().ToString("N");
+var database = "Petmor_Test_" + Guid.NewGuid().ToString("N");
 var options = new DbContextOptionsBuilder<ApplicationDbContext>()
     .UseSqlServer($"Server=localhost\\SQLEXPRESS;Database={database};Trusted_Connection=True;TrustServerCertificate=True").Options;
 ApplicationDbContext Db() => new(options);
@@ -86,7 +86,7 @@ try {
         await db.Productos.Where(p => p.Id == productoId).ExecuteUpdateAsync(s => s.SetProperty(p => p.Costo, 8));
         var report = new ReportesController(db);
         var view = (ViewResult)await report.Ventas(null,null);
-        var model = (IEnumerable<MiniMarket.Web.Models.ViewModels.ReporteVentasViewModel>)view.Model;
+        var model = (IEnumerable<Petmor.Web.Models.ViewModels.ReporteVentasViewModel>)view.Model;
         Assert(model.Single(v => v.VentaId == saved.Venta.Id).CostoTotal == 4, "Costo histórico cambió");
     }
     Console.WriteLine("PASS: precio del servidor y costo histórico estable al cambiar producto");
@@ -185,10 +185,10 @@ try {
         await db.Entry(legacy).ReloadAsync(); Assert(legacy.Fecha==new DateTime(2026,9,17,18,29,0),"La fecha se convirtió dos veces");
         var report=new ReportesController(db);
         var view=(ViewResult)await report.Ventas(new DateTime(2026,9,17),new DateTime(2026,9,17));
-        var list=(IEnumerable<MiniMarket.Web.Models.ViewModels.ReporteVentasViewModel>)view.Model;
+        var list=(IEnumerable<Petmor.Web.Models.ViewModels.ReporteVentasViewModel>)view.Model;
         Assert(list.Any(v=>v.VentaId==legacy.Id),"El filtro diario de Perú excluyó una venta convertida");
         view=(ViewResult)await report.Ventas(new DateTime(2026,9,18),new DateTime(2026,9,18));
-        list=(IEnumerable<MiniMarket.Web.Models.ViewModels.ReporteVentasViewModel>)view.Model;
+        list=(IEnumerable<Petmor.Web.Models.ViewModels.ReporteVentasViewModel>)view.Model;
         Assert(!list.Any(v=>v.VentaId==legacy.Id),"El filtro del día siguiente incluyó la venta anterior");
     }
     Console.WriteLine("PASS: hora Perú, medianoche, conversión histórica con respaldo, idempotencia y filtros diarios");

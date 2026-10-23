@@ -1,8 +1,8 @@
 using Microsoft.EntityFrameworkCore;
-using MiniMarket.Web.Data;
-using MiniMarket.Web.Models;
-using MiniMarket.Web.Services;
-using MiniMarket.Web.Controllers;
+using Petmor.Web.Data;
+using Petmor.Web.Models;
+using Petmor.Web.Services;
+using Petmor.Web.Controllers;
 using Microsoft.AspNetCore.Identity;
 
 public static class CodigosTests
@@ -10,7 +10,7 @@ public static class CodigosTests
     public static async Task Run()
     {
         var options = new DbContextOptionsBuilder<ApplicationDbContext>().UseSqlServer(
-            $"Server=localhost\\SQLEXPRESS;Database=MiniMarket_Codigos_{Guid.NewGuid():N};Trusted_Connection=True;TrustServerCertificate=True").Options;
+            $"Server=localhost\\SQLEXPRESS;Database=Petmor_Codigos_{Guid.NewGuid():N};Trusted_Connection=True;TrustServerCertificate=True").Options;
         await using var db = new ApplicationDbContext(options);
         void Assert(bool ok, string message) { if (!ok) throw new Exception(message); }
         async Task Reject(Func<Task> action) { try { await action(); } catch (InvalidOperationException) { return; } throw new Exception("Se aceptó un código inválido"); }

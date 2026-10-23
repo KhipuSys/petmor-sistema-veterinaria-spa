@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-using MiniMarket.Web.Data;
+using Petmor.Web.Data;
 
-namespace MiniMarket.Web.Services;
+namespace Petmor.Web.Services;
 
 public class EmisionVentaService(ApplicationDbContext db, FactilizaService factiliza, ILogger<EmisionVentaService> logger)
 {
@@ -12,10 +12,10 @@ public class EmisionVentaService(ApplicationDbContext db, FactilizaService facti
         {
             var claim = await db.Ventas.Where(v => v.Id == ventaId && v.Estado == "Activa" && v.EstadoEmision == "Pendiente")
                 .ExecuteUpdateAsync(s => s.SetProperty(v => v.EstadoEmision, "Resultado pendiente de conciliar")
-                    .SetProperty(v => v.FechaIntentoEmision, MiniMarket.Web.Infrastructure.HoraPeru.Ahora));
+                    .SetProperty(v => v.FechaIntentoEmision, Petmor.Web.Infrastructure.HoraPeru.Ahora));
             if (claim != 1) return;
             var venta = await db.Ventas.AsNoTracking().Include(v => v.Cliente).SingleAsync(v => v.Id == ventaId);
-            var historico = string.IsNullOrWhiteSpace(venta.TicketHistoricoJson) ? null : System.Text.Json.JsonSerializer.Deserialize<MiniMarket.Web.Models.TicketHistorico>(venta.TicketHistoricoJson);
+            var historico = string.IsNullOrWhiteSpace(venta.TicketHistoricoJson) ? null : System.Text.Json.JsonSerializer.Deserialize<Petmor.Web.Models.TicketHistorico>(venta.TicketHistoricoJson);
             var tasa = historico?.Empresa?.IgvPorcentaje ?? (await db.Configuraciones.FirstOrDefaultAsync())?.IgvPorcentaje ?? 18;
             var igv = historico?.Igv ?? decimal.Round(venta.Total - venta.Total / (1 + tasa / 100m), 2);
             var resultado = await factiliza.EmitirBoletaDetalladaAsync(historico?.Documento ?? venta.Cliente?.Documento ?? "00000000", historico?.Cliente ?? venta.Cliente?.Nombre ?? "Clientes Varios", venta.Total, igv);

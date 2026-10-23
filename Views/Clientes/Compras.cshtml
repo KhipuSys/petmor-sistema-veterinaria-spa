@@ -1,7 +1,7 @@
-@model IEnumerable<MiniMarket.Web.Models.Venta>
+@model IEnumerable<Petmor.Web.Models.Venta>
 
 @{
-    var cliente = ViewBag.Cliente as MiniMarket.Web.Models.Cliente;
+    var cliente = ViewBag.Cliente as Petmor.Web.Models.Cliente;
     var compras = Model.ToList();
     var comprasActivas = compras.Where(v => v.Estado == "Activa").ToList();
     ViewData["Title"] = $"Historial de Compras - {cliente?.Nombre}";

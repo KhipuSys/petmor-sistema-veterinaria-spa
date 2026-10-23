@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using MiniMarket.Web.Data;
+using Petmor.Web.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -27,16 +27,16 @@ builder.Services.Configure<SecurityStampValidatorOptions>(options => options.Val
 
 // 3. Servicios Web
 builder.Services.AddControllersWithViews(options => {
-    options.MaxModelBindingCollectionSize = MiniMarket.Web.Services.CodigosLecturas.MaxLecturas;
+    options.MaxModelBindingCollectionSize = Petmor.Web.Services.CodigosLecturas.MaxLecturas;
     options.Filters.Add(new Microsoft.AspNetCore.Mvc.AutoValidateAntiforgeryTokenAttribute());
-    options.Filters.Add(new MiniMarket.Web.Infrastructure.FiltroFechas());
+    options.Filters.Add(new Petmor.Web.Infrastructure.FiltroFechas());
 });
 builder.Services.AddRazorPages(); // ¡IMPORTANTE PARA EL LOGIN!
-builder.Services.AddScoped<MiniMarket.Web.Services.SedeActual>();
-builder.Services.AddSingleton<Microsoft.AspNetCore.Antiforgery.IAntiforgeryAdditionalDataProvider, MiniMarket.Web.Infrastructure.SedeAntiforgeryData>();
-builder.Services.AddHttpClient<MiniMarket.Web.Services.FactilizaService>();
-builder.Services.AddScoped<MiniMarket.Web.Services.AtencionService>();
-builder.Services.AddScoped<MiniMarket.Web.Services.EmisionVentaService>();
+builder.Services.AddScoped<Petmor.Web.Services.SedeActual>();
+builder.Services.AddSingleton<Microsoft.AspNetCore.Antiforgery.IAntiforgeryAdditionalDataProvider, Petmor.Web.Infrastructure.SedeAntiforgeryData>();
+builder.Services.AddHttpClient<Petmor.Web.Services.FactilizaService>();
+builder.Services.AddScoped<Petmor.Web.Services.AtencionService>();
+builder.Services.AddScoped<Petmor.Web.Services.EmisionVentaService>();
 
 var app = builder.Build();
 
@@ -44,7 +44,7 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
-    services.GetRequiredService<MiniMarket.Web.Services.SedeActual>().Id = 1;
+    services.GetRequiredService<Petmor.Web.Services.SedeActual>().Id = 1;
     await ActualizacionComercial.Aplicar(services.GetRequiredService<ApplicationDbContext>());
     await ActualizacionVeterinaria.Aplicar(services.GetRequiredService<ApplicationDbContext>());
     await ActualizacionSucursales.Aplicar(services.GetRequiredService<ApplicationDbContext>());
@@ -72,7 +72,7 @@ app.UseStaticFiles();
 app.UseRouting();
 
 app.UseAuthentication();
-app.UseMiddleware<MiniMarket.Web.Infrastructure.SedeMiddleware>();
+app.UseMiddleware<Petmor.Web.Infrastructure.SedeMiddleware>();
 app.UseAuthorization();
 
 app.MapControllerRoute(

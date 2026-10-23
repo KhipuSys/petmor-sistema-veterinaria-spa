@@ -1,4 +1,4 @@
-namespace MiniMarket.Web.Infrastructure;
+namespace Petmor.Web.Infrastructure;
 
 /// <summary>Fechas comerciales almacenadas como hora civil de Perú (sin zona del servidor).</summary>
 public static class HoraPeru

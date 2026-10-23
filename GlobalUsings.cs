@@ -1,1 +1,1 @@
-global using MiniMarket.Web.Infrastructure;
+global using Petmor.Web.Infrastructure;

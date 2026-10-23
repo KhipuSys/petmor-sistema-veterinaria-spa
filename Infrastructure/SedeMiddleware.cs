@@ -1,9 +1,9 @@
 using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
-using MiniMarket.Web.Data;
-using MiniMarket.Web.Services;
+using Petmor.Web.Data;
+using Petmor.Web.Services;
 
-namespace MiniMarket.Web.Infrastructure;
+namespace Petmor.Web.Infrastructure;
 
 public class SedeMiddleware(RequestDelegate next)
 {

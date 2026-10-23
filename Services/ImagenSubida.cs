@@ -1,4 +1,4 @@
-namespace MiniMarket.Web.Services;
+namespace Petmor.Web.Services;
 
 public static class ImagenSubida
 {

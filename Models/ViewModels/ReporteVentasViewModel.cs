@@ -1,6 +1,6 @@
 using System;
 
-namespace MiniMarket.Web.Models.ViewModels
+namespace Petmor.Web.Models.ViewModels
 {
     public class ReporteVentasViewModel
     {

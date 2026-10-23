@@ -13,7 +13,7 @@ if errorlevel 1 (
 )
 
 echo Restaurando dependencias...
-dotnet restore MiniMarket.Web.csproj
+dotnet restore Petmor.Web.csproj
 if errorlevel 1 (
     echo No se pudieron restaurar las dependencias.
     pause
@@ -21,7 +21,7 @@ if errorlevel 1 (
 )
 
 echo Iniciando Petmor...
-dotnet run --project MiniMarket.Web.csproj
+dotnet run --project Petmor.Web.csproj
 
 if errorlevel 1 (
     echo La aplicacion termino con un error.

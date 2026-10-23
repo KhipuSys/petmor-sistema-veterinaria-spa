@@ -2,12 +2,12 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using MiniMarket.Web.Data;
-using MiniMarket.Web.Models;
-using MiniMarket.Web.Models.ViewModels;
-using MiniMarket.Web.Services;
+using Petmor.Web.Data;
+using Petmor.Web.Models;
+using Petmor.Web.Models.ViewModels;
+using Petmor.Web.Services;
 
-namespace MiniMarket.Web.Controllers;
+namespace Petmor.Web.Controllers;
 
 [Authorize(Roles = "Administrador,Recepcionista,Veterinario,Groomer")]
 public class PetmorController(ApplicationDbContext db, AtencionService operaciones, EmisionVentaService emision) : Controller

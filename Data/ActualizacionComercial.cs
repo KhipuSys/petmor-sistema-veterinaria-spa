@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 
-namespace MiniMarket.Web.Data;
+namespace Petmor.Web.Data;
 
 // Upgrade additive para instalaciones anteriores creadas con EnsureCreated.
 // No asigna costos actuales a ventas históricas ni altera los importes de cierres existentes.
@@ -13,7 +13,7 @@ public static class ActualizacionComercial
         await BloquearOperaciones(db);
         await db.Database.ExecuteSqlRawAsync("""
             DECLARE @r int;
-            EXEC @r = sp_getapplock @Resource='MiniMarket.Schema.Comercial', @LockMode='Exclusive', @LockOwner='Transaction', @LockTimeout=30000;
+            EXEC @r = sp_getapplock @Resource='Petmor.Schema.Comercial', @LockMode='Exclusive', @LockOwner='Transaction', @LockTimeout=30000;
             IF @r < 0 THROW 51000, 'No se pudo bloquear la actualizacion del esquema.', 1;
             IF COL_LENGTH('Productos','ConCaducidad') IS NULL ALTER TABLE Productos ADD ConCaducidad bit NOT NULL DEFAULT 0;
             IF COL_LENGTH('Productos','FechaVencimiento') IS NULL ALTER TABLE Productos ADD FechaVencimiento datetime2 NULL;
@@ -87,7 +87,7 @@ public static class ActualizacionComercial
 
     public static Task BloquearOperaciones(ApplicationDbContext db) => db.Database.ExecuteSqlRawAsync("""
         DECLARE @r int;
-        EXEC @r=sp_getapplock @Resource='MiniMarket.OperacionesCaja', @LockMode='Exclusive', @LockOwner='Transaction', @LockTimeout=15000;
+        EXEC @r=sp_getapplock @Resource='Petmor.OperacionesCaja', @LockMode='Exclusive', @LockOwner='Transaction', @LockTimeout=15000;
         IF @r < 0 THROW 51001, 'Otra operacion esta en curso. Reintente.', 1;
         """);
 }

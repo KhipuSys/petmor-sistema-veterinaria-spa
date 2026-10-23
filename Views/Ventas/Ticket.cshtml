@@ -1,9 +1,9 @@
-@model MiniMarket.Web.Models.Venta
+@model Petmor.Web.Models.Venta
 
 @{
     Layout = null;
-    var historico = string.IsNullOrWhiteSpace(Model.TicketHistoricoJson) ? null : System.Text.Json.JsonSerializer.Deserialize<MiniMarket.Web.Models.TicketHistorico>(Model.TicketHistoricoJson);
-    var empresa = historico?.Empresa ?? ViewBag.Configuracion as MiniMarket.Web.Models.Configuracion;
+    var historico = string.IsNullOrWhiteSpace(Model.TicketHistoricoJson) ? null : System.Text.Json.JsonSerializer.Deserialize<Petmor.Web.Models.TicketHistorico>(Model.TicketHistoricoJson);
+    var empresa = historico?.Empresa ?? ViewBag.Configuracion as Petmor.Web.Models.Configuracion;
     var igvPct = empresa?.IgvPorcentaje ?? 18m;
     // El total ya incluye IGV (precio con IGV incluido)
     var subtotal = historico?.BaseImponible ?? Model.Total / (1 + igvPct / 100);
@@ -71,14 +71,14 @@
         @if (empresa != null)
         {
             <div class="marca">@empresa.NombreEmpresa</div>
-            <div>Sede: @(historico?.Sede ?? Context.RequestServices.GetRequiredService<MiniMarket.Web.Services.SedeActual>().Nombre)</div>
+            <div>Sede: @(historico?.Sede ?? Context.RequestServices.GetRequiredService<Petmor.Web.Services.SedeActual>().Nombre)</div>
             <div>RUC: @empresa.Ruc</div>
             <div>@empresa.Direccion</div>
             @if (!string.IsNullOrEmpty(empresa.Telefono)) { <div>Tel: @empresa.Telefono</div> }
         }
         else
         {
-            <div class="marca">MINIMARKET</div>
+            <div class="marca">PETMOR</div>
             <div>(Datos no configurados)</div>
         }
         <div class="linea"></div>

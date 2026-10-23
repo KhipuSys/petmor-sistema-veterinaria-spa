@@ -2,12 +2,12 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using MiniMarket.Web.Controllers;
-using MiniMarket.Web.Data;
-using MiniMarket.Web.Infrastructure;
-using MiniMarket.Web.Models;
-using MiniMarket.Web.Models.ViewModels;
-using MiniMarket.Web.Services;
+using Petmor.Web.Controllers;
+using Petmor.Web.Data;
+using Petmor.Web.Infrastructure;
+using Petmor.Web.Models;
+using Petmor.Web.Models.ViewModels;
+using Petmor.Web.Services;
 using System.Security.Claims;
 
 static class SucursalesTests

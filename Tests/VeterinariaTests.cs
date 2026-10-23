@@ -1,11 +1,11 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using MiniMarket.Web.Controllers;
-using MiniMarket.Web.Data;
-using MiniMarket.Web.Models;
-using MiniMarket.Web.Models.ViewModels;
-using MiniMarket.Web.Services;
-using MiniMarket.Web.Infrastructure;
+using Petmor.Web.Controllers;
+using Petmor.Web.Data;
+using Petmor.Web.Models;
+using Petmor.Web.Models.ViewModels;
+using Petmor.Web.Services;
+using Petmor.Web.Infrastructure;
 
 static class VeterinariaTests
 {

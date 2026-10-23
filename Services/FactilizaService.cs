@@ -3,9 +3,9 @@ using System.Text.Json;
 using Microsoft.Extensions.Configuration; 
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
-using MiniMarket.Web.Data;
+using Petmor.Web.Data;
 
-namespace MiniMarket.Web.Services
+namespace Petmor.Web.Services
 {
     public class FactilizaService
     {

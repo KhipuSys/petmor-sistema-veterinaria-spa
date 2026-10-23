@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace MiniMarket.Web.Models;
+namespace Petmor.Web.Models;
 
 public class UsuarioDatosModel
 {

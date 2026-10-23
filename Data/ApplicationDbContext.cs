@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using MiniMarket.Web.Models;
-using MiniMarket.Web.Services;
+using Petmor.Web.Models;
+using Petmor.Web.Services;
 
-namespace MiniMarket.Web.Data
+namespace Petmor.Web.Data
 {
     public class ApplicationDbContext : IdentityDbContext
     {

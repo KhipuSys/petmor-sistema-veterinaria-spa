@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Identity;
 
-namespace MiniMarket.Web.Models;
+namespace Petmor.Web.Models;
 
 public class Sucursal
 {

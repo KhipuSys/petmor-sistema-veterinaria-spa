@@ -1,9 +1,9 @@
-﻿using System;
+using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace MiniMarket.Web.Migrations
+namespace Petmor.Web.Migrations
 {
     /// <inheritdoc />
     public partial class MigracionInicial : Migration

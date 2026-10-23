@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace MiniMarket.Web.Models.ViewModels;
+namespace Petmor.Web.Models.ViewModels;
 
 public class AgendaForm
 {

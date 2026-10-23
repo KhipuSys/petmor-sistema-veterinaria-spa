@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 
-namespace MiniMarket.Web.Data;
+namespace Petmor.Web.Data;
 
 // Sigue la actualización aditiva de la instalación existente (creada con EnsureCreated).
 public static class ActualizacionVeterinaria

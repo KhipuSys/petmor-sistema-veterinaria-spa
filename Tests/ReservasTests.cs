@@ -1,11 +1,11 @@
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using MiniMarket.Web.Controllers;
-using MiniMarket.Web.Data;
-using MiniMarket.Web.Infrastructure;
-using MiniMarket.Web.Models;
-using MiniMarket.Web.Services;
+using Petmor.Web.Controllers;
+using Petmor.Web.Data;
+using Petmor.Web.Infrastructure;
+using Petmor.Web.Models;
+using Petmor.Web.Services;
 
 static class ReservasTests
 {

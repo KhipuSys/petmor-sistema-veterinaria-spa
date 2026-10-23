@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 
-namespace MiniMarket.Web.Data;
+namespace Petmor.Web.Data;
 
 public static class ActualizacionSucursales
 {

@@ -2,13 +2,13 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using MiniMarket.Web.Data;
-using MiniMarket.Web.Models;
+using Petmor.Web.Data;
+using Petmor.Web.Models;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace MiniMarket.Web.Controllers
+namespace Petmor.Web.Controllers
 {
     [Authorize]
     public class KardexController : Controller

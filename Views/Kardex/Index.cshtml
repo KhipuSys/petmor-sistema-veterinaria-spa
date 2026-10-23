@@ -1,9 +1,9 @@
-@model IEnumerable<MiniMarket.Web.Models.MovimientoInventario>
+@model IEnumerable<Petmor.Web.Models.MovimientoInventario>
 
 @{
     ViewData["Title"] = "Kardex";
-    var movimientos = Model?.ToList() ?? new List<MiniMarket.Web.Models.MovimientoInventario>();
-    var producto = ViewBag.ProductoObjeto as MiniMarket.Web.Models.Producto;
+    var movimientos = Model?.ToList() ?? new List<Petmor.Web.Models.MovimientoInventario>();
+    var producto = ViewBag.ProductoObjeto as Petmor.Web.Models.Producto;
     var productoSeleccionado = ViewBag.ProductoSeleccionado?.ToString();
     var stockGeneral = ViewBag.StockGeneral as int?;
     var totalEntradas = movimientos.Where(m => m.TipoMovimiento.Contains("ENTRADA") || (m.TipoMovimiento == "AJUSTE" && (m.Referencia ?? "").Contains("ENTRADA"))).Sum(m => m.Cantidad);

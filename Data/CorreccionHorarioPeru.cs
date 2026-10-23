@@ -1,7 +1,7 @@
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 
-namespace MiniMarket.Web.Data;
+namespace Petmor.Web.Data;
 
 public static class CorreccionHorarioPeru
 {

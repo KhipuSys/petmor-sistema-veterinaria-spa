@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 
-namespace MiniMarket.Web.Infrastructure;
+namespace Petmor.Web.Infrastructure;
 
 public class FiltroFechas : IActionFilter
 {

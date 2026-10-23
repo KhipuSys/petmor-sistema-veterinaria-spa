@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Razor.TagHelpers;
 using System.Globalization;
 using System.Text.RegularExpressions;
 
-namespace MiniMarket.Web.Infrastructure;
+namespace Petmor.Web.Infrastructure;
 
 // Texto localizado para lectura, clave invariable para ordenar/exportar tablas.
 [HtmlTargetElement("td")]

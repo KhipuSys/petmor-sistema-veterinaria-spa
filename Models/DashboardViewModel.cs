@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace MiniMarket.Web.Models
+namespace Petmor.Web.Models
 {
     public class DashboardViewModel
     {

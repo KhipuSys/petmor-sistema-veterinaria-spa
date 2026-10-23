@@ -1,5 +1,5 @@
-@model MiniMarket.Web.Models.Atencion
-@if (Model.Estado == MiniMarket.Web.Models.EstadoAtencion.Cancelada)
+@model Petmor.Web.Models.Atencion
+@if (Model.Estado == Petmor.Web.Models.EstadoAtencion.Cancelada)
 {
     <button type="button" class="btn reason-eye js-ver-motivo" data-title="Motivo de cancelación" data-reason="@Model.MotivoCancelacionVisible" data-audit="@Model.AuditoriaCancelacion" title="Ver motivo" aria-label="Ver motivo de cancelación"><i class="fas fa-eye" aria-hidden="true"></i></button>
 }

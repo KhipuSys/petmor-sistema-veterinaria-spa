@@ -1,6 +1,6 @@
 using System;
 
-namespace MiniMarket.Web.Models
+namespace Petmor.Web.Models
 {
     public class MovimientoInventario
     {

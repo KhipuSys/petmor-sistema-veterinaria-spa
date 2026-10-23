@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace MiniMarket.Web.Models // <--- VERIFICA ESTO
+namespace Petmor.Web.Models // <--- VERIFICA ESTO
 {
     public class DetalleVenta
     {

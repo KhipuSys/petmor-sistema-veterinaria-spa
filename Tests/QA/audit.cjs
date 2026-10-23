@@ -7,8 +7,8 @@ if (!['127.0.0.1','localhost'].includes(new URL(base).hostname)) throw Error('So
 const out = path.resolve(__dirname, '../../Docs/QA/evidencias-correcciones');
 fs.mkdirSync(out, {recursive:true});
 const cases=[];
-let cashierEmail='qa-cajero@amayasoft.com';
-const disposableEmail='qa-borrar@amayasoft.com';
+let cashierEmail='qa-cajero@petmor.com';
+const disposableEmail='qa-borrar@petmor.com';
 function record(id,title,pass,evidence) { const c={id,title,status:pass?'APROBADO':'FALLIDO',evidence}; cases.push(c); console.log(JSON.stringify(c)); }
 async function token(api,url) { const r=await api.get(base+url); const h=await r.text(); const m=h.match(/name="__RequestVerificationToken"[^>]*value="([^"]+)"/); if(!m) throw Error('Sin token: '+url); return m[1]; }
 async function login(api,email,password) { const t=await token(api,'/Identity/Account/Login'); const r=await api.post(base+'/Identity/Account/Login',{form:{'Input.Email':email,'Input.Password':password,__RequestVerificationToken:t}}); if(new URL(r.url()).pathname.includes('Login')) throw Error('Login falló: '+email); }
@@ -28,12 +28,12 @@ const blocked = r => r.status()===403 || (r.status()===302 && /Login|AccessDenie
   }
   const create=await anon.post(base+'/Clientes/Create',{form:{Documento:'QA000001',Nombre:'QA Cliente anonimo'},maxRedirects:0});
   record('ANON-WRITE','Un anónimo no puede crear clientes',blocked(create),{http:create.status()});
-  await login(admin,'admin@amayasoft.com','Admin123*');
+  await login(admin,'admin@petmor.com','Admin123*');
   const serverTime=await(await admin.get(base+'/Configuracion/HoraSistema')).json();
   const expectedPeru=new Date(Date.parse(serverTime.utc)-5*60*60*1000).toISOString().slice(0,19).replace('T',' ');
   record('TIME-PERU','Servidor usa hora Perú aunque su zona local sea distinta',Math.abs(Date.parse(serverTime.ahoraPeru.replace(' ','T')+'Z')-Date.parse(expectedPeru.replace(' ','T')+'Z'))<2000,{zone:serverTime.zona,offset:serverTime.desfase});
   await form(admin,'/Usuarios/Create',{Email:'qa-external@example.test',Password:'QaPrueba123*',Rol:'Cajero',Dni:'82000088',Nombres:'Otro',Apellidos:'Dominio'});
-  record('EMAIL-CREATE-DOMAIN','Creación rechaza dominios distintos de amayasoft.com',!(await(await admin.get(base+'/Usuarios')).text()).includes('qa-external@example.test'),{});
+  record('EMAIL-CREATE-DOMAIN','Creación rechaza dominios distintos de petmor.com',!(await(await admin.get(base+'/Usuarios')).text()).includes('qa-external@example.test'),{});
   await form(admin,'/Clientes/Create',{Documento:'81000002',Nombre:'QA Cliente autorizado'});
   const listed=await (await admin.get(base+'/Clientes')).text();
   const clientId=listed.match(/href="\/Clientes\/Edit\/(\d+)"/)[1];
@@ -47,11 +47,11 @@ const blocked = r => r.status()===403 || (r.status()===302 && /Login|AccessDenie
   const userList=await(await admin.get(base+'/Usuarios')).text();
   record('USER-PROFILE-CREATE','Usuario nuevo guarda DNI, nombres y apellidos',userList.includes('82000001') && userList.includes('Ana Prueba'),{});
   const prefixCreated=await form(admin,'/Usuarios/Create',{UsuarioAcceso:'qa-prefijo',Password:'QaPrueba123*',Rol:'Cajero',Dni:'82000011',Nombres:'Usuario',Apellidos:'Prefijo'});
-  record('EMAIL-PREFIX-CREATE','Servidor completa dominio fijo al crear con solo usuario',new URL(prefixCreated.url()).pathname==='/Usuarios' && (await prefixCreated.text()).includes('qa-prefijo@amayasoft.com'),{});
+  record('EMAIL-PREFIX-CREATE','Servidor completa dominio fijo al crear con solo usuario',new URL(prefixCreated.url()).pathname==='/Usuarios' && (await prefixCreated.text()).includes('qa-prefijo@petmor.com'),{});
   await form(admin,'/Usuarios/Create',{UsuarioAcceso:'intruso@example.test',Password:'QaPrueba123*',Rol:'Cajero',Dni:'82000012',Nombres:'Usuario',Apellidos:'Invalido'});
   record('EMAIL-PREFIX-INVALID','No se puede introducir otro dominio en el prefijo',!(await(await admin.get(base+'/Usuarios')).text()).includes('intruso@'),{});
-  await form(admin,'/Usuarios/Create',{Email:'qa-duplicado@amayasoft.com',Password:'QaPrueba123*',Rol:'Cajero',Dni:'82000001',Nombres:'Otro',Apellidos:'Ejemplo'});
-  record('USER-DNI-UNIQUE','DNI duplicado no crea una cuenta parcial',!(await(await admin.get(base+'/Usuarios')).text()).includes('qa-duplicado@amayasoft.com'),{});
+  await form(admin,'/Usuarios/Create',{Email:'qa-duplicado@petmor.com',Password:'QaPrueba123*',Rol:'Cajero',Dni:'82000001',Nombres:'Otro',Apellidos:'Ejemplo'});
+  record('USER-DNI-UNIQUE','DNI duplicado no crea una cuenta parcial',!(await(await admin.get(base+'/Usuarios')).text()).includes('qa-duplicado@petmor.com'),{});
   const invalidDni=await(await admin.get(base+'/Usuarios/ConsultarDni?dni=123')).json();
   record('DNI-VALIDATION','Consulta exige ocho dígitos antes de llamar al proveedor',invalidDni.exito===false,{});
   await login(cashier,cashierEmail,'QaPrueba123*');
@@ -107,7 +107,7 @@ const blocked = r => r.status()===403 || (r.status()===302 && /Login|AccessDenie
   record('E2E-SALE','Venta HTTP real y reintento sin duplicación',s1.exito && s2.exito && s1.idVenta===s2.idVenta && s2.repetida,{first:s1,second:s2});
   const ticket=await admin.get(base+'/Ventas/Ticket/'+s1.idVenta); record('TICKET','Ticket de venta responde',ticket.status()===200,{http:ticket.status()});
   const legacyTicket=await ticket.text();
-  record('TICKET-LEGACY-NAME','Usuario antiguo sin perfil no expone correo en ticket',legacyTicket.includes('Nombre pendiente de registrar') && !legacyTicket.includes('admin@amayasoft.com'),{});
+  record('TICKET-LEGACY-NAME','Usuario antiguo sin perfil no expone correo en ticket',legacyTicket.includes('Nombre pendiente de registrar') && !legacyTicket.includes('admin@petmor.com'),{});
   r=await cashier.get(base+'/Ventas/Ticket/'+s1.idVenta,{maxRedirects:0}); record('SALE-PRIVACY','Cajero no consulta ticket de otro vendedor',blocked(r),{http:r.status(),ventaDeOtroUsuario:s1.idVenta});
   r=await cashier.post(base+'/Ventas/Anular',{form:{id:s1.idVenta,motivo:'QA',__RequestVerificationToken:await token(cashier,'/Caja')},maxRedirects:0}); record('VOID-ROLE','Solo administrador puede anular',blocked(r),{http:r.status()});
   r=await admin.post(base+'/Ventas/Anular',{form:{id:s1.idVenta,motivo:'QA anulación',__RequestVerificationToken:saleToken}}); const cancel=await r.json();
@@ -132,7 +132,7 @@ const blocked = r => r.status()===403 || (r.status()===302 && /Login|AccessDenie
   await form(cashier,'/Caja/Cerrar',{montoCierre:20+product.precio},'/Caja');
   const ownBoxes=await(await cashier.get(base+'/Caja/Historial')).text();
   const allBoxes=await(await admin.get(base+'/Caja/Historial')).text();
-  record('CASHIER-BOX-ISOLATION','Cajero ve sus cierres; administrador ve ambos usuarios',ownBoxes.includes(cashierEmail) && !ownBoxes.includes('admin@amayasoft.com') && allBoxes.includes(cashierEmail) && allBoxes.includes('admin@amayasoft.com'),{});
+  record('CASHIER-BOX-ISOLATION','Cajero ve sus cierres; administrador ve ambos usuarios',ownBoxes.includes(cashierEmail) && !ownBoxes.includes('admin@petmor.com') && allBoxes.includes(cashierEmail) && allBoxes.includes('admin@petmor.com'),{});
   const adminSales=await(await admin.get(base+'/Ventas')).text();
   record('ADMIN-VOID-BUTTON','Administrador conserva el botón para anular ventas activas',/class="[^"]*btn-anular/.test(adminSales),{});
   const cashierUserRow=userList.split('<tr>').find(row=>row.includes(cashierEmail));
@@ -148,7 +148,7 @@ const blocked = r => r.status()===403 || (r.status()===302 && /Login|AccessDenie
   const historicalDeletion=await admin.post(base+'/Usuarios/Delete',{form:{id:cashierId,__RequestVerificationToken:deletionToken}});
   const historicalResult=await historicalDeletion.json();
   record('USER-DELETE-HISTORY','Cuenta con ventas/caja devuelve motivo y conserva usuario e historial',historicalResult.exito===false && historicalResult.codigo==='USUARIO_CON_HISTORIAL' && (await(await admin.get(base+'/Usuarios')).text()).includes(cashierEmail) && (await admin.get(base+'/Ventas/Ticket/'+ownSale.idVenta)).status()===200,{http:historicalDeletion.status(),response:historicalResult});
-  const adminRow=userList.split('<tr>').find(row=>row.includes('admin@amayasoft.com') && /href="\/Usuarios\/Edit\//.test(row));
+  const adminRow=userList.split('<tr>').find(row=>row.includes('admin@petmor.com') && /href="\/Usuarios\/Edit\//.test(row));
   const adminId=adminRow.match(/href="\/Usuarios\/Edit\/([^"]+)"/)[1];
   const selfDelete=await(await admin.post(base+'/Usuarios/Delete',{form:{id:adminId,__RequestVerificationToken:deletionToken}})).json();
   record('USER-DELETE-SELF','Administrador no se elimina a sí mismo',selfDelete.exito===false,{});
@@ -274,7 +274,7 @@ const blocked = r => r.status()===403 || (r.status()===302 && /Login|AccessDenie
   await Promise.all([page.waitForURL(u=>u.pathname==='/Clientes'),page.locator('form[action*="Edit"] button[type="submit"]').click()]);
   record('CLIENT-DNI-UI-SAVE','Corrección de DNI guardada desde el formulario',(await(await admin.get(base+editClientUrl)).text()).includes('value="00123457"'),{});
   await page.goto(base+'/Usuarios/Create');
-  record('EMAIL-CREATE-FIXED-DOMAIN','Formulario Crear muestra dominio fijo sin el mensaje anterior',await page.locator('#dominioCorreo').innerText()==='@amayasoft.com' && await page.locator('input[name="Email"]').count()===0 && !(await page.locator('body').innerText()).includes('Solo se permite @amayasoft.com'),{});
+  record('EMAIL-CREATE-FIXED-DOMAIN','Formulario Crear muestra dominio fijo sin el mensaje anterior',await page.locator('#dominioCorreo').innerText()==='@petmor.com' && await page.locator('input[name="Email"]').count()===0 && !(await page.locator('body').innerText()).includes('Solo se permite @petmor.com'),{});
   await page.route('**/Usuarios/ConsultarDni?*',route=>route.fulfill({json:{exito:true,nombres:'LUIS ALBERTO',apellidos:'PRUEBA DEMO'}}));
   await page.locator('#Dni').fill('82000002'); await page.locator('[data-buscar-dni]').click();
   await page.waitForFunction(()=>document.querySelector('#Nombres').value==='LUIS ALBERTO');
@@ -289,7 +289,7 @@ const blocked = r => r.status()===403 || (r.status()===302 && /Login|AccessDenie
   await page.locator('#Password').fill('QaPrueba123*');
   await page.locator('#Rol').selectOption('Cajero');
   await Promise.all([page.waitForURL(u=>u.pathname==='/Usuarios'),page.locator('form[action*="Create"] button[type="submit"]').click()]);
-  record('EMAIL-PREFIX-CREATE-UI','Crear usuario desde navegador completa el correo',(await page.locator('body').innerText()).includes('qa-creado-ui@amayasoft.com'),{});
+  record('EMAIL-PREFIX-CREATE-UI','Crear usuario desde navegador completa el correo',(await page.locator('body').innerText()).includes('qa-creado-ui@petmor.com'),{});
   const jsErrors=[]; page.on('pageerror',e=>jsErrors.push(e.message));
   for(const width of [320,390,768,1440]) {
    await page.setViewportSize({width,height:844});
@@ -330,14 +330,14 @@ const blocked = r => r.status()===403 || (r.status()===302 && /Login|AccessDenie
   const profileFields={Id:cashierId,Dni:'82000001',Nombres:'Ana Maria',Apellidos:'Prueba',NuevoRol:'Cajero'};
   await form(admin,'/Usuarios/Edit',{...profileFields,Email:'qa-externo@example.test'},editUrl);
   record('EMAIL-EDIT-DOMAIN','Edición rechaza dominios ajenos',(await(await admin.get(base+editUrl)).text()).includes(`value="${cashierEmail.split('@')[0]}"`),{});
-  await form(admin,'/Usuarios/Edit',{...profileFields,Email:'admin@amayasoft.com'},editUrl);
+  await form(admin,'/Usuarios/Edit',{...profileFields,Email:'admin@petmor.com'},editUrl);
   record('EMAIL-EDIT-DUPLICATE','Edición rechaza correo de otra cuenta',(await(await admin.get(base+editUrl)).text()).includes(`value="${cashierEmail.split('@')[0]}"`),{});
   // Mantener una caja abierta durante el cambio para verificar que sigue perteneciendo al usuario.
   await form(cashier,'/Caja/Abrir',{montoInicial:77},'/Caja');
   await page.goto(base+editUrl);
-  record('EMAIL-EDITABLE','Administrador escribe solo usuario y ve dominio fijo en Editar',await page.locator('#UsuarioAcceso').isEditable() && await page.locator('#dominioCorreo').innerText()==='@amayasoft.com' && await page.locator('input[name="Email"]').count()===0,{});
+  record('EMAIL-EDITABLE','Administrador escribe solo usuario y ve dominio fijo en Editar',await page.locator('#UsuarioAcceso').isEditable() && await page.locator('#dominioCorreo').innerText()==='@petmor.com' && await page.locator('input[name="Email"]').count()===0,{});
   const oldCashierEmail=cashierEmail;
-  cashierEmail='qa-cajero-nuevo@amayasoft.com';
+  cashierEmail='qa-cajero-nuevo@petmor.com';
   await page.locator('#UsuarioAcceso').fill(cashierEmail.split('@')[0]);
   await Promise.all([page.waitForURL(u=>u.pathname==='/Usuarios'),page.locator('form[action*="Edit"] button[type="submit"]').click()]);
   const oldSession=await cashier.get(base+'/Caja',{maxRedirects:0});
@@ -356,9 +356,9 @@ const blocked = r => r.status()===403 || (r.status()===302 && /Login|AccessDenie
   const acceptedAfterFailures=!new URL(loginAfterFailures.url()).pathname.includes('Login');
   record('LOGIN-LOCKOUT','Intentos fallidos repetidos activan bloqueo de cuenta',!acceptedAfterFailures,{failedAttempts:6,correctPasswordStillAccepted:acceptedAfterFailures});
   const adminEdit='/Usuarios/Edit/'+adminId;
-  const selfEdit=await form(admin,'/Usuarios/Edit',{Id:adminId,Email:'administrador-nuevo@amayasoft.com',Dni:'82000099',Nombres:'Admin',Apellidos:'Prueba',NuevoRol:'Administrador'},adminEdit);
+  const selfEdit=await form(admin,'/Usuarios/Edit',{Id:adminId,Email:'administrador-nuevo@petmor.com',Dni:'82000099',Nombres:'Admin',Apellidos:'Prueba',NuevoRol:'Administrador'},adminEdit);
   const selfCheck=await admin.get(base+'/Usuarios',{maxRedirects:0});
-  record('EMAIL-SELF-RENAME','Administrador cambia su propio correo y conserva sesión actual',new URL(selfEdit.url()).pathname==='/Usuarios' && selfCheck.status()===200 && (await selfCheck.text()).includes('administrador-nuevo@amayasoft.com'),{});
+  record('EMAIL-SELF-RENAME','Administrador cambia su propio correo y conserva sesión actual',new URL(selfEdit.url()).pathname==='/Usuarios' && selfCheck.status()===200 && (await selfCheck.text()).includes('administrador-nuevo@petmor.com'),{});
   await wrong.dispose(); await ctx.close();
  } finally {
   fs.writeFileSync(path.join(out,'resultados.json'),JSON.stringify({date:new Date().toISOString(),base,cases,summary:{total:cases.length,passed:cases.filter(c=>c.status==='APROBADO').length,failed:cases.filter(c=>c.status==='FALLIDO').length}},null,2));

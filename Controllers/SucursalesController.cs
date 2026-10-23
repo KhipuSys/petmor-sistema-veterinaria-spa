@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using MiniMarket.Web.Services;
+using Petmor.Web.Services;
 
-namespace MiniMarket.Web.Controllers;
+namespace Petmor.Web.Controllers;
 
 [Authorize(Roles = "Administrador")]
 public class SucursalesController(SedeActual sede) : Controller

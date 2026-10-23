@@ -1,14 +1,14 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using MiniMarket.Web.Data;
-using MiniMarket.Web.Models.ViewModels;
+using Petmor.Web.Data;
+using Petmor.Web.Models.ViewModels;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace MiniMarket.Web.Controllers
+namespace Petmor.Web.Controllers
 {
     [Authorize(Roles = "Administrador")]
     public class ReportesController : Controller

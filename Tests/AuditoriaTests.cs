@@ -7,11 +7,11 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
-using MiniMarket.Web.Controllers;
-using MiniMarket.Web.Data;
-using MiniMarket.Web.Infrastructure;
-using MiniMarket.Web.Models;
-using MiniMarket.Web.Services;
+using Petmor.Web.Controllers;
+using Petmor.Web.Data;
+using Petmor.Web.Infrastructure;
+using Petmor.Web.Models;
+using Petmor.Web.Services;
 using System.Security.Claims;
 using System.Text.Json;
 

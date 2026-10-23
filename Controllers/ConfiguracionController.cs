@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using MiniMarket.Web.Data;
-using MiniMarket.Web.Models;
+using Petmor.Web.Data;
+using Petmor.Web.Models;
 using System;
 using System.IO;
 using System.Threading.Tasks;
@@ -10,7 +10,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.Configuration;
 
-namespace MiniMarket.Web.Controllers
+namespace Petmor.Web.Controllers
 {
     [Authorize(Roles = "Administrador")]
     public class ConfiguracionController : Controller
@@ -79,7 +79,7 @@ namespace MiniMarket.Web.Controllers
         public async Task<IActionResult> Guardar(ConfiguracionViewModel model)
         {
             string extension = null;
-            try { extension = await MiniMarket.Web.Services.ImagenSubida.Extension(model.LogoUpload); }
+            try { extension = await Petmor.Web.Services.ImagenSubida.Extension(model.LogoUpload); }
             catch (InvalidOperationException ex) { ModelState.AddModelError(nameof(model.LogoUpload), ex.Message); }
             if (ModelState.IsValid)
             {
@@ -144,7 +144,7 @@ namespace MiniMarket.Web.Controllers
 
                 await _context.SaveChangesAsync();
                 if (model.LogoUpload != null)
-                    MiniMarket.Web.Services.ImagenSubida.BorrarAnterior(_hostEnvironment.WebRootPath, logoAnterior, "images/logos", HttpContext.RequestServices.GetRequiredService<ILogger<ConfiguracionController>>());
+                    Petmor.Web.Services.ImagenSubida.BorrarAnterior(_hostEnvironment.WebRootPath, logoAnterior, "images/logos", HttpContext.RequestServices.GetRequiredService<ILogger<ConfiguracionController>>());
                 
                 TempData["MensajeExito"] = "¡Configuración guardada correctamente en la Base de Datos!";
                 if (!string.IsNullOrWhiteSpace(model.FactilizaToken))

@@ -1,6 +1,6 @@
-using MiniMarket.Web.Models;
+using Petmor.Web.Models;
 
-namespace MiniMarket.Web.Services;
+namespace Petmor.Web.Services;
 
 // Scoped: una sede fija por solicitud; nunca se comparte entre usuarios.
 public class SedeActual

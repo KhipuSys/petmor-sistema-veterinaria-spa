@@ -2,14 +2,14 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using MiniMarket.Web.Data;
-using MiniMarket.Web.Models;
+using Petmor.Web.Data;
+using Petmor.Web.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace MiniMarket.Web.Controllers
+namespace Petmor.Web.Controllers
 {
     [Authorize(Roles = "Administrador")]
     public class SeedDataController : Controller
@@ -35,7 +35,7 @@ namespace MiniMarket.Web.Controllers
             try
             {
                 // 0. Obtener Usuario Administrador (Obligatorio para Ventas)
-                var adminUser = await _userManager.FindByEmailAsync("admin@amayasoft.com") ?? await _context.Users.FirstOrDefaultAsync();
+                var adminUser = await _userManager.FindByEmailAsync("admin@petmor.pe") ?? await _context.Users.FirstOrDefaultAsync();
                 if (adminUser == null) return Content("Error: No se encontró ningún usuario en el sistema.");
 
                 // 1. GENERAR 20 CATEGORÍAS
