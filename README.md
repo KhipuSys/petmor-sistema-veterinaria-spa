@@ -10,6 +10,10 @@ mascotas, inventario, ventas, compras, caja y reportes.
 
 ## Ejecución local
 
+En Windows, abre `ejecutar.cmd` desde la carpeta del proyecto.
+
+También puedes ejecutar manualmente:
+
 ```powershell
 dotnet restore
 dotnet run
