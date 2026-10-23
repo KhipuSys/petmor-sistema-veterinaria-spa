@@ -6,12 +6,19 @@ mascotas, inventario, ventas, compras, caja y reportes.
 ## Requisitos
 
 - .NET SDK 9
-- SQL Server local para desarrollo
+- SQL Server Express con la instancia `SQLEXPRESS` iniciada
+- PowerShell, incluido en Windows
 
 ## Ejecución local
 
-En Windows, abre `ejecutar.cmd` desde la carpeta del proyecto. El script inicia
-Petmor y abre automáticamente `http://localhost:5000` en el navegador.
+En Windows, abre `ejecutar.cmd` desde la carpeta del proyecto. El script crea o
+verifica `Petmor_BD`, restaura dependencias, inicia Petmor y abre automáticamente
+`http://localhost:5000` en el navegador.
+
+El primer inicio crea el usuario administrador:
+
+- Usuario: `admin`
+- Contraseña: `Admin123*`
 
 También puedes ejecutar manualmente:
 

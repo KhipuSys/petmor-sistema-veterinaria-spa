@@ -12,6 +12,13 @@ if errorlevel 1 (
     exit /b 1
 )
 
+echo Preparando la base de datos...
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0preparar-petmor.ps1"
+if errorlevel 1 (
+    pause
+    exit /b 1
+)
+
 echo Restaurando dependencias...
 dotnet restore Petmor.Web.csproj
 if errorlevel 1 (
