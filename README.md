@@ -21,6 +21,7 @@ dotnet run
 
 La configuración local usa `appsettings.json`. Los secretos, como el token de
 Factiliza, deben configurarse mediante User Secrets y nunca dentro del repositorio.
+La base de datos local configurada es `Petmor_BD` en `localhost\SQLEXPRESS`.
 
 ## Pruebas
 
