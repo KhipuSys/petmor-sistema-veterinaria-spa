@@ -9,6 +9,10 @@ mascotas, inventario, ventas, compras, caja y reportes.
 - SQL Server Express con la instancia `SQLEXPRESS` iniciada
 - PowerShell, incluido en Windows
 
+Si aparece un error de conexión, instala SQL Server Express usando el nombre de
+instancia `SQLEXPRESS`. El script intenta iniciar automáticamente el servicio
+`MSSQL$SQLEXPRESS` si está detenido.
+
 ## Ejecución local
 
 En Windows, abre `ejecutar.cmd` desde la carpeta del proyecto. El script crea o
