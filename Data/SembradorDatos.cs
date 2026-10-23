@@ -39,6 +39,8 @@ public static class SembradorDatos
             admin.Email = "admin@petmor.pe";
             admin.NormalizedEmail = "ADMIN@PETMOR.PE";
             admin.EmailConfirmed = true;
+            admin.AccessFailedCount = 0;
+            admin.LockoutEnd = null;
             Comprobar(await users.UpdateAsync(admin));
             Comprobar(await users.ResetPasswordAsync(admin, await users.GeneratePasswordResetTokenAsync(admin), "Admin123*"));
         }
