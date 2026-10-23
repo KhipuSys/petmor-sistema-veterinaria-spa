@@ -1,0 +1,222 @@
+{% extends 'base.html' %}
+{% block title %}Caja del Día{% endblock %}
+{% block page_title %}Control de Caja{% endblock %}
+{% block page_subtitle %}{{ hoy|date:"l, d/m/Y" }}{% endblock %}
+
+{% block content %}
+
+<!-- KPI Cards Row -->
+<div class="row g-4 mb-4">
+
+    <!-- Estado de Caja -->
+    <div class="col-sm-6 col-xl-3">
+        <div class="panel-card h-100"
+            style="border-left: 4px solid {% if caja.cerrada %}#ef4444{% else %}#10b981{% endif %};">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <div class="text-muted small fw-semibold text-uppercase" style="letter-spacing:.05em;">Estado de Caja
+                </div>
+                <div class="rounded-circle d-flex align-items-center justify-content-center"
+                    style="width:42px;height:42px;background:{% if caja.cerrada %}rgba(239,68,68,.12){% else %}rgba(16,185,129,.12){% endif %};">
+                    <i class="fa-solid {% if caja.cerrada %}fa-lock text-danger{% else %}fa-lock-open text-success{% endif %}"
+                        style="font-size:18px;"></i>
+                </div>
+            </div>
+            <div class="fw-bold fs-3 {% if caja.cerrada %}text-danger{% else %}text-success{% endif %}">
+                {% if caja.cerrada %}CERRADA{% else %}ABIERTA{% endif %}
+            </div>
+            {% if caja.cerrada %}
+            <small class="text-muted">Cerrada a las {{ caja.fecha_cierre|date:"H:i" }}</small>
+            {% else %}
+            <small class="text-muted">Turno en curso</small>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Monto Inicial -->
+    <div class="col-sm-6 col-xl-3">
+        <div class="panel-card h-100" style="border-left:4px solid #6366f1;">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <div class="text-muted small fw-semibold text-uppercase" style="letter-spacing:.05em;">Monto Inicial
+                </div>
+                <div class="rounded-circle d-flex align-items-center justify-content-center"
+                    style="width:42px;height:42px;background:rgba(99,102,241,.12);">
+                    <i class="fa-solid fa-wallet" style="font-size:18px;color:#6366f1;"></i>
+                </div>
+            </div>
+            <div class="fw-bold fs-3" style="color:#1e293b;">S/ {{ caja.monto_inicial|floatformat:2 }}</div>
+            <small class="text-muted">Apertura de caja</small>
+        </div>
+    </div>
+
+    <!-- Ingresos del Día -->
+    <div class="col-sm-6 col-xl-3">
+        <div class="panel-card h-100" style="border-left:4px solid #10b981;">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <div class="text-muted small fw-semibold text-uppercase" style="letter-spacing:.05em;">Ingresos del Día
+                </div>
+                <div class="rounded-circle d-flex align-items-center justify-content-center"
+                    style="width:42px;height:42px;background:rgba(16,185,129,.12);">
+                    <i class="fa-solid fa-arrow-trend-up" style="font-size:18px;color:#10b981;"></i>
+                </div>
+            </div>
+            <div class="fw-bold fs-3 text-success">S/ {{ total_hoy|floatformat:2 }}</div>
+            <small class="text-muted">{{ facturas_hoy.count }} factura(s) emitida(s)</small>
+        </div>
+    </div>
+
+    <!-- Monto Final -->
+    <div class="col-sm-6 col-xl-3">
+        <div class="panel-card h-100" style="border-left:4px solid #0bb8c8;">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <div class="text-muted small fw-semibold text-uppercase" style="letter-spacing:.05em;">Monto en Caja
+                </div>
+                <div class="rounded-circle d-flex align-items-center justify-content-center"
+                    style="width:42px;height:42px;background:rgba(11,184,200,.12);">
+                    <i class="fa-solid fa-sack-dollar" style="font-size:18px;color:#0bb8c8;"></i>
+                </div>
+            </div>
+            <div class="fw-bold fs-3" style="color:#0bb8c8;">S/ {{ caja.monto_final|floatformat:2 }}</div>
+            <small class="text-muted">Monto al cierre / acumulado</small>
+        </div>
+    </div>
+</div>
+
+<!-- Estado / Acciones -->
+{% if not caja.cerrada %}
+<div class="panel-card mb-4"
+    style="background:linear-gradient(135deg,rgba(16,185,129,.06),rgba(11,184,200,.06));border:1px solid rgba(16,185,129,.2);">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+        <div class="d-flex align-items-center gap-3">
+            <div class="rounded-circle d-flex align-items-center justify-content-center text-white"
+                style="width:50px;height:50px;background:linear-gradient(135deg,#10b981,#0bb8c8);flex-shrink:0;">
+                <i class="fa-solid fa-cash-register fs-5"></i>
+            </div>
+            <div>
+                <h6 class="fw-bold mb-0">Caja Abierta</h6>
+                <small class="text-muted">La caja está en operación. Puedes cerrarla al finalizar el turno.</small>
+            </div>
+        </div>
+        <form method="post" action="{% url 'caja_cerrar' %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger rounded-pill px-4 fw-semibold"
+                onclick="return confirm('¿Confirma el cierre de caja del día? Esta acción no se puede deshacer.')"
+                style="box-shadow:0 4px 14px rgba(239,68,68,.35);">
+                <i class="fa-solid fa-lock me-2"></i>Cerrar Caja del Día
+            </button>
+        </form>
+    </div>
+</div>
+{% else %}
+<div class="panel-card mb-4" style="background:rgba(239,68,68,.04);border:1px solid rgba(239,68,68,.2);">
+    <div class="d-flex align-items-center gap-3">
+        <div class="rounded-circle d-flex align-items-center justify-content-center text-white"
+            style="width:46px;height:46px;background:linear-gradient(135deg,#ef4444,#dc2626);flex-shrink:0;">
+            <i class="fa-solid fa-lock"></i>
+        </div>
+        <div>
+            <h6 class="fw-bold mb-0 text-danger">Caja Cerrada</h6>
+            <small class="text-muted">
+                Cerrada a las {{ caja.fecha_cierre|date:"H:i" }} por
+                <strong>{{ caja.usuario_cierre }}</strong>.
+            </small>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Facturas del Día -->
+<div class="panel-card">
+    <div class="d-flex align-items-center justify-content-between mb-4 pb-3 border-bottom">
+        <div class="d-flex align-items-center gap-2">
+            <i class="fa-solid fa-receipt" style="color:#0bb8c8;"></i>
+            <h6 class="fw-bold mb-0">Facturas emitidas hoy</h6>
+            <span class="badge rounded-pill ms-1" style="background:rgba(11,184,200,.15);color:#0bb8c8;">
+                {{ facturas_hoy.count }}
+            </span>
+        </div>
+        <a href="{% url 'factura_crear' %}" class="btn btn-sm rounded-pill px-3 fw-semibold"
+            style="background:linear-gradient(135deg,#10b981,#0bb8c8);color:#fff;border:none;">
+            <i class="fa-solid fa-plus me-1"></i>Nueva Factura
+        </a>
+    </div>
+
+    {% if facturas_hoy %}
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr
+                    style="background:#f8fafc;font-size:12px;text-transform:uppercase;color:#94a3b8;letter-spacing:.04em;">
+                    <th class="ps-3">N° Factura</th>
+                    <th>Hora</th>
+                    <th>Cliente</th>
+                    <th>Método Pago</th>
+                    <th class="text-end pe-3">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for f in facturas_hoy %}
+                <tr>
+                    <td class="ps-3">
+                        <a href="{% url 'factura_detalle' f.pk %}" class="fw-semibold text-decoration-none"
+                            style="color:#0bb8c8;">
+                            <i class="fa-solid fa-file-invoice me-1 opacity-50"></i>{{ f.numero }}
+                        </a>
+                    </td>
+                    <td>
+                        <span class="badge bg-light text-dark border">
+                            <i class="fa-regular fa-clock me-1"></i>{{ f.fecha|time:"H:i" }}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold"
+                                style="width:30px;height:30px;font-size:12px;background:linear-gradient(135deg,#8b5cf6,#6d28d9);flex-shrink:0;">
+                                {{ f.cliente.nombre_completo|default:"A"|make_list|first|upper }}
+                            </div>
+                            <span>{{ f.cliente.nombre_completo|default:"Anónimo" }}</span>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="badge rounded-pill bg-light text-dark border px-3">
+                            {% if f.get_metodo_pago_display == 'Efectivo' %}
+                            <i class="fa-solid fa-money-bill-wave text-success me-1"></i>
+                            {% elif f.get_metodo_pago_display == 'Tarjeta' %}
+                            <i class="fa-solid fa-credit-card text-primary me-1"></i>
+                            {% else %}
+                            <i class="fa-solid fa-mobile-alt text-info me-1"></i>
+                            {% endif %}
+                            {{ f.get_metodo_pago_display }}
+                        </span>
+                    </td>
+                    <td class="text-end pe-3">
+                        <span class="fw-bold" style="color:#10b981;font-size:15px;">S/ {{ f.total|floatformat:2
+                            }}</span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr style="background:#f0fdf4;border-top:2px solid #d1fae5;">
+                    <td colspan="4" class="ps-3 fw-bold text-end text-muted">Total del día:</td>
+                    <td class="text-end pe-3 fw-bold fs-5 text-success">S/ {{ total_hoy|floatformat:2 }}</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+    {% else %}
+    <div class="text-center py-5">
+        <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3"
+            style="width:70px;height:70px;background:#f1f5f9;">
+            <i class="fa-solid fa-receipt" style="font-size:28px;color:#cbd5e1;"></i>
+        </div>
+        <h6 class="text-muted fw-semibold mb-1">Sin facturas emitidas hoy</h6>
+        <p class="text-muted small mb-3">Las ventas del día aparecerán aquí en tiempo real.</p>
+        <a href="{% url 'factura_crear' %}" class="btn btn-sm rounded-pill px-4"
+            style="background:linear-gradient(135deg,#10b981,#0bb8c8);color:#fff;border:none;">
+            <i class="fa-solid fa-plus me-1"></i>Crear primera factura
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+{% endblock %}

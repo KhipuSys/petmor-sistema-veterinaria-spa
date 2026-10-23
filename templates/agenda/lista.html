@@ -1,0 +1,147 @@
+{% extends 'base.html' %}
+{% block title %}Agenda{% endblock %}
+{% block page_title %}Agenda de Citas{% endblock %}
+{% block page_subtitle %}Gestión de citas y estado de atención{% endblock %}
+
+{% block extra_css %}
+<style>
+    .estado-badge {
+        border-radius: 20px;
+        padding: 4px 12px;
+        font-size: 11px;
+        font-weight: 600;
+    }
+
+    .estado-PENDIENTE {
+        background: rgba(148, 163, 184, .15);
+        color: #64748b;
+    }
+
+    .estado-EN_ESPERA {
+        background: rgba(245, 158, 11, .15);
+        color: #b45309;
+    }
+
+    .estado-EN_ATENCION {
+        background: rgba(59, 130, 246, .15);
+        color: #1d4ed8;
+    }
+
+    .estado-COMPLETADA {
+        background: rgba(16, 185, 129, .15);
+        color: #047857;
+    }
+
+    .estado-CANCELADA {
+        background: rgba(244, 63, 94, .15);
+        color: #be123c;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap gap-2 justify-content-between align-items-center mb-4">
+    <form class="d-flex flex-wrap gap-2" method="get">
+        <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Buscar mascota o cliente..."
+            style="width:220px;">
+        <input type="date" name="fecha" value="{{ fecha_filtro }}" class="form-control" style="width:155px;">
+        <select name="estado" class="form-select" style="width:160px;">
+            <option value="">Todos los estados</option>
+            {% for valor, nombre in estados %}
+            {% if estado_filtro == valor %}
+            <option value="{{ valor }}" selected>{{ nombre }}</option>
+            {% else %}
+            <option value="{{ valor }}">{{ nombre }}</option>
+            {% endif %}
+            {% endfor %}
+        </select>
+        <button type="submit" class="btn btn-primary px-4" style="background:#0bb8c8;border:none;"><i
+                class="fa-solid fa-filter"></i></button>
+        {% if q or fecha_filtro or estado_filtro %}<a href="{% url 'agenda_lista' %}"
+            class="btn btn-outline-secondary">Limpiar</a>{% endif %}
+    </form>
+    <a href="{% url 'cita_crear' %}" class="btn btn-primary rounded-pill px-4" style="background:#0bb8c8;border:none;">
+        <i class="fa-regular fa-calendar-plus me-2"></i>Nueva Cita
+    </a>
+</div>
+
+<div class="panel-card">
+    {% if citas %}
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr style="background:#f8fafc; font-size:12px; text-transform:uppercase; color:#94a3b8;">
+                    <th class="ps-3">Fecha / Hora</th>
+                    <th>Mascota</th>
+                    <th>Cliente</th>
+                    <th>Tipo</th>
+                    <th>Motivo</th>
+                    <th>Veterinario</th>
+                    <th class="text-center">Estado</th>
+                    <th class="text-center">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for cita in citas %}
+                <tr>
+                    <td class="ps-3">
+                        <div class="fw-semibold">{{ cita.fecha|date:"d/m/Y" }}</div>
+                        <small class="text-muted">{{ cita.hora|time:"H:i" }}</small>
+                    </td>
+                    <td>
+                        <span class="fw-semibold">{{ cita.mascota.nombre }}</span>
+                        <small class="d-block text-muted">{{ cita.mascota.get_especie_display }}</small>
+                    </td>
+                    <td>{{ cita.mascota.cliente.nombre_completo }}</td>
+                    <td><span class="badge rounded-pill bg-light text-dark border">{{ cita.get_tipo_display }}</span>
+                    </td>
+                    <td class="text-muted">{{ cita.motivo|truncatechars:35 }}</td>
+                    <td class="text-muted">{{ cita.veterinario.get_full_name|default:"Sin asignar" }}</td>
+                    <td class="text-center">
+                        <form method="post" action="{% url 'cita_cambiar_estado' cita.pk %}" class="d-inline">
+                            {% csrf_token %}
+                            <select name="estado"
+                                class="form-select form-select-sm border-0 estado-badge estado-{{ cita.estado }}"
+                                style="width:auto;cursor:pointer;" onchange="this.form.submit()">
+                                {% for valor, nombre in estados %}
+                                {% if cita.estado == valor %}
+                                <option value="{{ valor }}" selected>{{ nombre }}</option>
+                                {% else %}
+                                <option value="{{ valor }}">{{ nombre }}</option>
+                                {% endif %}
+                                {% endfor %}
+                            </select>
+                        </form>
+                    </td>
+                    <td class="text-center">
+                        <a href="{% url 'historia_crear_desde_cita' cita.pk %}"
+                            class="btn btn-sm btn-outline-success me-1" title="Nueva Historia Clínica">
+                            <i class="fa-solid fa-stethoscope"></i>
+                        </a>
+                        <a href="{% url 'cita_editar' cita.pk %}" class="btn btn-sm btn-outline-secondary me-1"
+                            title="Editar">
+                            <i class="fa-solid fa-pen"></i>
+                        </a>
+                        <form method="post" action="{% url 'cita_estado_activo' cita.pk %}" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Ocultar Cita">
+                                <i class="fa-solid fa-ban"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="text-center py-5 text-muted">
+        <i class="fa-regular fa-calendar-xmark" style="font-size:3rem;opacity:.2;"></i>
+        <p class="mt-3">No hay citas que coincidan con los filtros.</p>
+        <a href="{% url 'cita_crear' %}" class="btn btn-primary rounded-pill" style="background:#0bb8c8;border:none;">
+            <i class="fa-regular fa-calendar-plus me-2"></i>Agendar primera cita
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,162 @@
+{% extends 'base.html' %}
+{% load l10n %}
+{% block title %}Nueva Factura{% endblock %}
+{% block page_title %}Nueva Factura{% endblock %}
+{% block page_subtitle %}Registrar venta o servicio{% endblock %}
+
+{% block extra_css %}
+<style>
+    .item-row td {
+        vertical-align: middle;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<form method="post" id="facturaForm">
+    {% csrf_token %}
+    <input type="hidden" name="clave_operacion" value="{{ clave_operacion }}">
+    <p class="text-muted">Registro interno de venta. Los precios base no incluyen IGV. La emisión electrónica SUNAT aún no está habilitada.</p>
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <!-- Cabecera -->
+            <div class="panel-card mb-4">
+                <h6 class="fw-bold mb-3" style="color:#10b981;"><i class="fa-solid fa-user me-2"></i>Datos del Cliente
+                </h6>
+                <div class="row g-3">
+                    <div class="col-md-8">
+                        <label class="form-label fw-semibold">Cliente</label>
+                        <select name="cliente" class="form-select">
+                            <option value="">— Venta sin cliente (anónimo) —</option>
+                            {% for c in clientes %}
+                            <option value="{{ c.pk }}">{{ c.nombre_completo }} — {{ c.dni }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">Método de Pago</label>
+                        <select name="metodo_pago" class="form-select">
+                            <option value="EFECTIVO">Efectivo</option>
+                            <option value="TARJETA">Tarjeta (POS)</option>
+                            <option value="TRANSFERENCIA">Transferencia / Yape</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ítems -->
+            <div class="panel-card">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="fw-bold mb-0" style="color:#10b981;"><i class="fa-solid fa-list me-2"></i>Detalle de la
+                        Venta</h6>
+                    <button type="button" class="btn btn-success btn-sm rounded-pill" onclick="agregarFila()"
+                        style="border:none;">
+                        <i class="fa-solid fa-plus me-1"></i>Agregar Ítem
+                    </button>
+                </div>
+                <div class="table-responsive">
+                    <table class="table align-middle" id="tablaItems">
+                        <thead>
+                            <tr style="background:#f8fafc;font-size:12px;text-transform:uppercase;color:#94a3b8;">
+                                <th>Producto (opcional)</th>
+                                <th style="width:35%">Descripción</th>
+                                <th style="width:8%">Cant.</th>
+                                <th style="width:12%">Precio</th>
+                                <th style="width:12%">Subtotal</th>
+                                <th style="width:5%"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="itemsBody">
+                            <tr class="item-row">
+                                <td><select name="producto_id[]" class="form-select form-select-sm"
+                                        onchange="llenarPrecio(this)">
+                                        <option value="">— Servicio libre —</option>{% for p in productos %}<option
+                                            value="{{ p.pk }}" data-nombre="{{ p.nombre }}"
+                                            data-precio="{{ p.precio_venta|unlocalize }}">{{ p.nombre }} (S/ {{ p.precio_venta }})
+                                        </option>{% endfor %}
+                                        {% for s in servicios %}<option value="s:{{ s.pk }}" data-nombre="{{ s.nombre }}" data-precio="{{ s.precio|unlocalize }}">{{ s.get_area_display }} · {{ s.nombre }} (S/ {{ s.precio }})</option>{% endfor %}
+                                    </select></td>
+                                <td><input type="text" name="descripcion[]" class="form-control form-control-sm"
+                                        placeholder="Descripción del servicio o producto" required></td>
+                                <td><input type="number" name="cantidad[]" class="form-control form-control-sm cant"
+                                        value="1" min="1" onchange="calcularSubtotales()"></td>
+                                <td><input type="number" name="precio[]" class="form-control form-control-sm precio"
+                                        value="0.00" step="0.01" onchange="calcularSubtotales()"></td>
+                                <td><span class="subtotal-val fw-bold">S/ 0.00</span></td>
+                                <td><button type="button" class="btn btn-sm btn-outline-danger"
+                                        onclick="quitarFila(this)"><i class="fa-solid fa-xmark"></i></button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resumen -->
+        <div class="col-lg-4">
+            <div class="panel-card mb-4" style="border-left:4px solid #10b981;">
+                <h6 class="fw-bold mb-4">Resumen</h6>
+                <div class="d-flex justify-content-between mb-2"><span class="text-muted">Subtotal</span><span
+                        id="res-subtotal" class="fw-semibold">S/ 0.00</span></div>
+                <div class="d-flex justify-content-between mb-2"><span class="text-muted">IGV (18%)</span><span
+                        id="res-igv" class="fw-semibold">S/ 0.00</span></div>
+                <hr>
+                <div class="d-flex justify-content-between"><span class="fw-bold fs-5">Total</span><span id="res-total"
+                        class="fw-bold fs-5 text-success">S/ 0.00</span></div>
+                <div class="d-grid mt-4">
+                    <button type="submit" class="btn btn-success rounded-pill py-2 fw-bold" style="border:none;">
+                        <i class="fa-solid fa-file-invoice-dollar me-2"></i>Registrar venta
+                    </button>
+                    <a href="{% url 'factura_lista' %}" class="btn btn-outline-secondary rounded-pill mt-2">Cancelar</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function agregarFila() {
+        const tbody = document.getElementById('itemsBody');
+        const primera = tbody.querySelector('tr');
+        const nueva = primera.cloneNode(true);
+        nueva.querySelector('select').value = '';
+        nueva.querySelector('input[name="descripcion[]"]').value = '';
+        nueva.querySelector('input[name="cantidad[]"]').value = 1;
+        nueva.querySelector('input[name="precio[]"]').value = '0.00';
+        nueva.querySelector('.subtotal-val').textContent = 'S/ 0.00';
+        tbody.appendChild(nueva);
+    }
+
+    function quitarFila(btn) {
+        const rows = document.querySelectorAll('#itemsBody tr');
+        if (rows.length > 1) { btn.closest('tr').remove(); calcularSubtotales(); }
+    }
+
+    function llenarPrecio(sel) {
+        const row = sel.closest('tr');
+        const option = sel.selectedOptions[0];
+        if (sel.value) {
+            row.querySelector('input[name="descripcion[]"]').value = option.dataset.nombre;
+            row.querySelector('input[name="precio[]"]').value = Number(option.dataset.precio).toFixed(2);
+        }
+        calcularSubtotales();
+    }
+
+    function calcularSubtotales() {
+        let subtotal = 0;
+        document.querySelectorAll('#itemsBody tr').forEach(row => {
+            const cant = parseFloat(row.querySelector('.cant').value) || 0;
+            const precio = parseFloat(row.querySelector('.precio').value) || 0;
+            const sub = cant * precio;
+            row.querySelector('.subtotal-val').textContent = 'S/ ' + sub.toFixed(2);
+            subtotal += sub;
+        });
+        const igv = subtotal * 0.18;
+        document.getElementById('res-subtotal').textContent = 'S/ ' + subtotal.toFixed(2);
+        document.getElementById('res-igv').textContent = 'S/ ' + igv.toFixed(2);
+        document.getElementById('res-total').textContent = 'S/ ' + (subtotal + igv).toFixed(2);
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% block title %}Proveedores{% endblock %}
+{% block page_title %}Proveedores{% endblock %}
+{% block content %}
+<form method="get" class="d-flex gap-2 mb-4"><input name="q" value="{{ q }}" class="form-control" placeholder="Buscar por proveedor o RUC"><button class="btn btn-outline-primary">Buscar</button></form>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h6 class="text-muted mb-0">Gestión de proveedores</h6>
+    <div class="d-flex gap-2">
+        <a href="{% url 'compra_lista' %}" class="btn btn-outline-secondary rounded-pill">Ver compras</a>
+        <a href="{% url 'proveedor_crear' %}" class="btn btn-warning rounded-pill px-4"
+            style="color:#fff;border:none;"><i class="fa-solid fa-plus me-2"></i>Nuevo Proveedor</a>
+    </div>
+</div>
+<div class="panel-card">
+    {% if proveedores %}
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr style="background:#f8fafc;font-size:12px;text-transform:uppercase;color:#94a3b8;">
+                    <th class="ps-3">Nombre</th>
+                    <th>RUC</th>
+                    <th>Teléfono</th>
+                    <th>Email</th>
+                    <th>Contacto</th>
+                    <th class="text-center">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in proveedores %}
+                <tr>
+                    <td class="ps-3 fw-semibold">{{ p.nombre }}</td>
+                    <td class="text-muted"><code>{{ p.ruc|default:"—" }}</code></td>
+                    <td>{{ p.telefono|default:"—" }}</td>
+                    <td>{{ p.email|default:"—" }}</td>
+                    <td>{{ p.contacto|default:"—" }}</td>
+                    <td class="text-center"><a href="{% url 'proveedor_editar' p.pk %}"
+                            class="btn btn-sm btn-outline-secondary"><i class="fa-solid fa-pen"></i></a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="text-center py-5 text-muted"><i class="fa-solid fa-truck" style="font-size:3rem;opacity:.2;"></i>
+        <p class="mt-3">No hay proveedores.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

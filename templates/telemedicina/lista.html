@@ -1,0 +1,184 @@
+{% extends 'base.html' %}
+{% block title %}Telemedicina{% endblock %}
+
+{% block page_title %}Telemedicina y Consultas Virtuales{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="d-flex align-items-center">
+            <h5 class="text-secondary mb-0"><i class="fas fa-video text-primary"></i> Consultas Programadas</h5>
+        </div>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{% url 'telemedicina_crear' %}" class="btn btn-primary rounded-pill shadow-sm">
+            <i class="fas fa-plus"></i> Nueva Teleconsulta
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Lista de Consultas Programadas -->
+    <div class="col-lg-8 mb-4">
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="ps-4">Paciente</th>
+                                <th>Fecha y Hora</th>
+                                <th>Plataforma</th>
+                                <th>Estado</th>
+                                <th class="text-end pe-4">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for c in consultas %}
+                            <tr>
+                                <td class="ps-4">
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar bg-primary text-white rounded-circle text-center me-3"
+                                            style="width: 40px; height: 40px; line-height: 40px;">
+                                            {{ c.cita.mascota.nombre|make_list|first }}
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0">{{ c.cita.mascota.nombre }}</h6>
+                                            <small class="text-muted">{{ c.cita.mascota.cliente.nombres }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <strong>{{ c.cita.fecha|date:"d M Y" }}</strong><br>
+                                    <small class="text-muted">
+                                        <i class="fas fa-clock"></i>
+                                        {{ c.cita.hora|time:"H:i" }}
+                                    </small>
+                                </td>
+                                <td>
+                                    {% if c.plataforma == 'MEET' %}
+                                    <span
+                                        class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25"><i
+                                            class="fas fa-video"></i> Google Meet</span>
+                                    {% elif c.plataforma == 'ZOOM' %}
+                                    <span
+                                        class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25"><i
+                                            class="fas fa-video"></i> Zoom</span>
+                                    {% elif c.plataforma == 'WHATSAPP' %}
+                                    <span
+                                        class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25"><i
+                                            class="fab fa-whatsapp"></i> WhatsApp</span>
+                                    {% else %}
+                                    <span
+                                        class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25"><i
+                                            class="fas fa-phone"></i> {{ c.get_plataforma_display }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if c.estado_conexion == 'PROGRAMADA' %}
+                                    <span class="badge bg-primary">Programada</span>
+                                    {% elif c.estado_conexion == 'EN_CURSO' %}
+                                    <span class="badge bg-warning text-dark"><i class="fas fa-circle-notch fa-spin"></i>
+                                        En Curso</span>
+                                    {% elif c.estado_conexion == 'FINALIZADA' %}
+                                    <span class="badge bg-success">Finalizada</span>
+                                    {% else %}
+                                    <span class="badge bg-danger">Cancelada</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end pe-4">
+                                    <div class="btn-group">
+                                        {% if c.enlace_reunion and c.estado_conexion != 'FINALIZADA' %}
+                                        <a href="{{ c.enlace_reunion }}" target="_blank"
+                                            class="btn btn-sm btn-outline-primary" data-bs-toggle="tooltip"
+                                            title="Unirse a la llamada">
+                                            <i class="fas fa-external-link-alt"></i> Entrar
+                                        </a>
+                                        {% endif %}
+                                        <button type="button"
+                                            class="btn btn-sm btn-outline-secondary dropdown-toggle dropdown-toggle-split"
+                                            data-bs-toggle="dropdown" aria-expanded="false">
+                                            <span class="visually-hidden">Options</span>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                                            <li><a class="dropdown-item" href="{% url 'telemedicina_editar' c.pk %}"><i
+                                                        class="fas fa-edit fa-fw text-muted"></i> Editar Enlace</a></li>
+                                            <li>
+                                                <hr class="dropdown-divider">
+                                            </li>
+                                            {% if c.estado_conexion == 'PROGRAMADA' %}
+                                            <li><a class="dropdown-item text-warning"
+                                                    href="{% url 'telemedicina_estado' c.pk 'EN_CURSO' %}"><i
+                                                        class="fas fa-play fa-fw"></i> Iniciar Consulta</a></li>
+                                            {% endif %}
+                                            {% if c.estado_conexion == 'EN_CURSO' %}
+                                            <li><a class="dropdown-item text-success"
+                                                    href="{% url 'telemedicina_estado' c.pk 'FINALIZADA' %}"><i
+                                                        class="fas fa-check-double fa-fw"></i> Marcar Finalizada</a>
+                                            </li>
+                                            {% endif %}
+                                            {% if c.estado_conexion != 'CANCELADA' %}
+                                            {% if c.estado_conexion != 'FINALIZADA' %}
+                                            <li><a class="dropdown-item text-danger"
+                                                    href="{% url 'telemedicina_estado' c.pk 'CANCELADA' %}"><i
+                                                        class="fas fa-times fa-fw"></i> Cancelar Teleconsulta</a></li>
+                                            {% endif %}
+                                            {% endif %}
+                                        </ul>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center py-5">
+                                    <i class="fas fa-laptop-medical fa-3x text-muted mb-3 opacity-50"></i>
+                                    <p class="text-muted mb-0">No hay teleconsultas programadas.</p>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Citas Médicas sin enlace virtual -->
+    <div class="col-lg-4">
+        <div class="card shadow-sm border-0 bg-light">
+            <div class="card-header bg-transparent border-0 pt-4 pb-2">
+                <h6 class="card-title text-secondary mb-0"><i class="fas fa-calendar-alt"></i> Citas Médicas Pendientes
+                </h6>
+                <small class="text-muted">Citas regulares para agendar virtualmente</small>
+            </div>
+            <div class="card-body">
+                {% for cita in citas_pendientes %}
+                <div class="card border-0 shadow-sm mb-3">
+                    <div class="card-body p-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="mb-0 text-primary">{{ cita.mascota.nombre }}</h6>
+                            <span class="badge bg-secondary bg-opacity-10 text-secondary">
+                                {{ cita.fecha|date:"d M" }}
+                            </span>
+                        </div>
+                        <p class="text-muted small mb-3">
+                            <i class="fas fa-clock"></i>
+                            {{ cita.hora|time:"H:i" }} | {{ cita.mascota.cliente.nombres }}
+                        </p>
+                        <a href="{% url 'telemedicina_crear' %}?cita={{ cita.pk }}"
+                            class="btn btn-sm btn-outline-primary w-100 rounded-pill">
+                            <i class="fas fa-link"></i> Generar Enlace
+                        </a>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="text-center py-4">
+                    <i class="fas fa-check-circle text-success opacity-50 mb-2 fa-2x"></i>
+                    <p class="text-muted small mb-0">No hay citas médicas pendientes para hoy y futuro.</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

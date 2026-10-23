@@ -1,0 +1,196 @@
+{% extends 'base.html' %}
+{% block title %}Configuración del Sistema{% endblock %}
+{% block page_title %}Configuración del Sistema{% endblock %}
+{% block page_subtitle %}Datos de la empresa y preferencias generales{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+
+    <!-- Sidebar de estado -->
+    <div class="col-lg-3">
+        <!-- Vista previa del Logo -->
+        <div class="panel-card text-center mb-4">
+            <div class="mb-3">
+                {% if config.logo %}
+                <img src="{{ config.logo.url }}" alt="Logo" class="rounded-3 shadow-sm"
+                    style="max-width:100%;max-height:120px;object-fit:contain;">
+                {% else %}
+                <div class="rounded-circle d-flex align-items-center justify-content-center text-white mx-auto"
+                    style="width:90px;height:90px;background:linear-gradient(135deg,#0bb8c8,#6d28d9);font-size:36px;">
+                    <i class="fa-solid fa-heart-pulse"></i>
+                </div>
+                {% endif %}
+            </div>
+            <h6 class="fw-bold mb-0">{{ config.nombre_empresa }}</h6>
+            {% if config.slogan %}
+            <small class="text-muted">{{ config.slogan }}</small>
+            {% endif %}
+            <hr>
+            <div class="text-start small">
+                {% if config.ruc %}
+                <div class="mb-1"><i class="fa-solid fa-id-card text-muted me-2"></i>{{ config.ruc }}</div>
+                {% endif %}
+                {% if config.telefono %}
+                <div class="mb-1"><i class="fa-solid fa-phone text-muted me-2"></i>{{ config.telefono }}</div>
+                {% endif %}
+                {% if config.email %}
+                <div class="mb-1"><i class="fa-solid fa-envelope text-muted me-2"></i>{{ config.email }}</div>
+                {% endif %}
+                {% if config.ciudad %}
+                <div class="mb-1">
+                    <i class="fa-solid fa-location-dot text-muted me-2"></i>{{ config.ciudad }}, {{ config.pais }}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Moneda activa -->
+        <div class="panel-card text-center" style="border-left:4px solid #10b981;">
+            <div class="text-muted small mb-1">Símbolo de moneda activo</div>
+            <div class="fw-bold fs-2" style="color:#10b981;">{{ config.simbolo_moneda }}</div>
+            <small class="text-muted">{{ config.nombre_moneda }}</small>
+        </div>
+    </div>
+
+    <!-- Formulario principal -->
+    <div class="col-lg-9">
+        <form method="post" enctype="multipart/form-data" novalidate>
+            {% csrf_token %}
+
+            {% if form.errors %}
+            <div class="alert alert-danger mb-4">
+                <h6 class="alert-heading fw-bold mb-1">
+                    <i class="fa-solid fa-triangle-exclamation me-2"></i>Corrija los siguientes errores:
+                </h6>
+                <ul class="mb-0 mt-2">
+                    {% for field in form %}
+                    {% if field.errors %}
+                    <li><strong>{{ field.label }}:</strong> {{ field.errors|striptags }}</li>
+                    {% endif %}
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            <!-- Datos de la Empresa -->
+            <div class="panel-card mb-4">
+                <div class="d-flex align-items-center gap-2 mb-4 pb-3 border-bottom">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center text-white"
+                        style="width:38px;height:38px;background:linear-gradient(135deg,#0bb8c8,#6d28d9);">
+                        <i class="fa-solid fa-building-columns" style="font-size:14px;"></i>
+                    </div>
+                    <h6 class="fw-bold mb-0">Datos de la Empresa</h6>
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-7">
+                        <label class="form-label fw-semibold">Nombre de la Empresa <span
+                                class="text-danger">*</span></label>
+                        {{ form.nombre_empresa }}
+                    </div>
+                    <div class="col-md-5">
+                        <label class="form-label fw-semibold">RUC / RIF / NIT</label>
+                        {{ form.ruc }}
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">Eslogan / Descripción</label>
+                        {{ form.slogan }}
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">Logo de la Empresa</label>
+                        {% if config.logo %}
+                        <div class="mb-2 d-flex align-items-center gap-2">
+                            <img src="{{ config.logo.url }}" alt="Logo actual"
+                                style="height:50px;object-fit:contain;border-radius:6px;">
+                            <small class="text-muted">Logo actual – sube uno nuevo para reemplazarlo</small>
+                        </div>
+                        {% endif %}
+                        {{ form.logo }}
+                        <small class="text-muted d-block mt-1">
+                            Formatos aceptados: JPG, PNG, SVG. Tamaño recomendado: 300×100px.
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Datos de Contacto -->
+            <div class="panel-card mb-4">
+                <div class="d-flex align-items-center gap-2 mb-4 pb-3 border-bottom">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center text-white"
+                        style="width:38px;height:38px;background:linear-gradient(135deg,#10b981,#047857);">
+                        <i class="fa-solid fa-address-book" style="font-size:14px;"></i>
+                    </div>
+                    <h6 class="fw-bold mb-0">Datos de Contacto</h6>
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Teléfono principal</label>
+                        {{ form.telefono }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Teléfono alternativo</label>
+                        {{ form.telefono2 }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Correo electrónico</label>
+                        {{ form.email }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Sitio web</label>
+                        {{ form.sitio_web }}
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">Dirección</label>
+                        {{ form.direccion }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Ciudad</label>
+                        {{ form.ciudad }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">País</label>
+                        {{ form.pais }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Moneda y Visual -->
+            <div class="panel-card mb-4">
+                <div class="d-flex align-items-center gap-2 mb-4 pb-3 border-bottom">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center text-white"
+                        style="width:38px;height:38px;background:linear-gradient(135deg,#f59e0b,#d97706);">
+                        <i class="fa-solid fa-coins" style="font-size:14px;"></i>
+                    </div>
+                    <h6 class="fw-bold mb-0">Moneda y Personalización Visual</h6>
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold">Símbolo de moneda</label>
+                        {{ form.simbolo_moneda }}
+                        <small class="text-muted">Ej: S/, $, €, Bs.</small>
+                    </div>
+                    <div class="col-md-5">
+                        <label class="form-label fw-semibold">Nombre de la moneda</label>
+                        {{ form.nombre_moneda }}
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">Color primario del sistema</label>
+                        <div class="d-flex align-items-center gap-2">
+                            {{ form.color_primario }}
+                            <small class="text-muted">Color principal de la interfaz</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botones -->
+            <div class="d-flex gap-3 justify-content-end mt-2">
+                <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary rounded-pill px-4">Cancelar</a>
+                <button type="submit" class="btn rounded-pill px-5 fw-semibold text-white"
+                    style="background:linear-gradient(135deg,#0bb8c8,#6d28d9);border:none;box-shadow:0 4px 14px rgba(11,184,200,.35);">
+                    <i class="fa-solid fa-floppy-disk me-2"></i>Guardar Configuración
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

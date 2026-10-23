@@ -1,0 +1,222 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Petmor - {% block title %}Dashboard{% endblock %}</title>
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="{% static 'vendor/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="{% static 'vendor/fontawesome/css/all.min.css' %}">
+    <!-- Theme CSS -->
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=petmor">
+    {% block extra_css %}{% endblock %}
+    <link rel="stylesheet" href="{% static 'css/petmor.css' %}?v=9">
+</head>
+
+<body>
+
+    <!-- Sidebar -->
+    <nav id="sidebar">
+        <div class="sidebar-brand">
+            <div class="sidebar-brand-logo">
+                <img src="{% static 'img/logo2pngblanco.png' %}" alt="Logo Petmor">
+            </div>
+            <div class="sidebar-brand-text">
+                {% if configuracion %}
+                {{ configuracion.nombre_empresa }}
+                {% else %}
+                Petmor
+                {% endif %}
+                <span>
+                    {% if configuracion and configuracion.slogan %}
+                    {{ configuracion.slogan }}
+                    {% else %}
+                    Veterinaria &amp; Spa
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+
+        <ul class="nav flex-column mb-auto w-100">
+            <!-- Dashboard Menu -->
+            <li class="nav-item">
+                <a href="{% url 'dashboard' %}"
+                    class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                    <i class="fa-solid fa-house"></i> Dashboard
+                </a>
+            </li>
+
+            <div class="nav-section">GESTIÓN</div>
+            <li class="nav-item">
+                <a href="{% url 'cliente_lista' %}"
+                    class="nav-link {% if 'clientes' in request.path %}active{% endif %}">
+                    <i class="fa-solid fa-users"></i> Clientes
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{% url 'agenda_lista' %}" class="nav-link {% if 'agenda' in request.path %}active{% endif %}">
+                    <i class="fa-regular fa-calendar"></i> Agenda
+                </a>
+            </li>
+
+            <div class="nav-section">CLÍNICA</div>
+            <li class="nav-item">
+                <a href="{% url 'historia_lista' %}"
+                    class="nav-link {% if 'medico' in request.path %}active{% endif %}">
+                    <i class="fa-solid fa-stethoscope"></i> Historia Clínica
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{% url 'telemedicina_lista' %}"
+                    class="nav-link {% if 'telemedicina' in request.path %}active{% endif %}">
+                    <i class="fas fa-video"></i> Telemedicina
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{% url 'vacuna_lista' %}" class="nav-link {% if 'vacunas' in request.path %}active{% endif %}">
+                    <i class="fa-solid fa-syringe"></i> Vacunaciones
+                </a>
+            </li>
+            <div class="nav-section">SPA Y SERVICIOS</div>
+            <li class="nav-item">
+                <a href="{% url 'grooming_lista' %}"
+                    class="nav-link {% if 'grooming' in request.path and 'servicios' not in request.path %}active{% endif %}">
+                    <i class="fa-solid fa-scissors"></i> Órdenes de spa
+                </a>
+            </li>
+            <li class="nav-item"><a href="{% url 'servicio_catalogo' %}" class="nav-link {% if 'servicios' in request.path %}active{% endif %}"><i class="fa-solid fa-list"></i> Catálogo de servicios</a></li>
+
+            <div class="nav-section">ABASTECIMIENTO</div>
+            <li class="nav-item"><a href="{% url 'proveedor_lista' %}" class="nav-link {% if 'proveedores' in request.path %}active{% endif %}"><i class="fa-solid fa-truck"></i> Proveedores</a></li>
+            <li class="nav-item"><a href="{% url 'compra_lista' %}" class="nav-link {% if 'compras' in request.path %}active{% endif %}"><i class="fa-solid fa-cart-shopping"></i> Compras</a></li>
+            <li class="nav-item">
+                <a href="{% url 'producto_lista' %}"
+                    class="nav-link {% if 'inventario' in request.path %}active{% endif %}">
+                    <i class="fa-solid fa-box"></i> Inventario
+                </a>
+            </li>
+            <li class="nav-item"><a href="{% url 'movimiento_lista' %}" class="nav-link {% if 'kardex' in request.path %}active{% endif %}"><i class="fa-solid fa-arrow-right-arrow-left"></i> Kardex</a></li>
+            <div class="nav-section">VENTAS Y TESORERÍA</div>
+            <li class="nav-item">
+                <a href="{% url 'factura_lista' %}"
+                    class="nav-link {% if 'facturacion' in request.path and 'caja' not in request.path %}active{% endif %}">
+                    <i class="fa-solid fa-file-invoice-dollar"></i> Facturación
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{% url 'caja_hoy' %}" class="nav-link {% if 'caja' in request.path %}active{% endif %}">
+                    <i class="fa-solid fa-cash-register"></i> Control de Caja
+                </a>
+            </li>
+
+            <div class="nav-section">GERENCIA</div>
+            <li class="nav-item">
+                <a href="{% url 'reportes_index' %}"
+                    class="nav-link {% if 'reportes' in request.path %}active{% endif %}">
+                    <i class="fa-solid fa-chart-line"></i> Reportes y BI
+                </a>
+            </li>
+
+            {% if request.user.is_superuser %}
+            <div class="nav-section mt-3">SISTEMA</div>
+            <li class="nav-item"><a href="{% url 'integraciones_estado' %}" class="nav-link {% if 'integraciones' in request.path %}active{% endif %}"><i class="fa-solid fa-plug"></i> Integraciones</a></li>
+            <li class="nav-item">
+                <a href="{% url 'usuario_lista' %}"
+                    class="nav-link {% if 'usuarios' in request.path %}active{% endif %}">
+                    <i class="fas fa-users-cog"></i> Usuarios
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{% url 'configuracion' %}"
+                    class="nav-link {% if 'configuracion' in request.path %}active{% endif %}">
+                    <i class="fas fa-cog"></i> Configuración
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{% url 'mantenimiento_index' %}"
+                    class="nav-link {% if 'mantenimiento' in request.path %}active{% endif %}">
+                    <i class="fas fa-tools"></i> Mantenimiento
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+
+        <div class="mt-auto mb-4 w-100">
+            <form method="post" action="{% url 'logout' %}" id="logoutForm">
+                {% csrf_token %}
+                <button type="submit" class="nav-link w-100 text-start border-0 bg-transparent" style="cursor:pointer;">
+                    <i class="fa-solid fa-arrow-right-from-bracket"></i> Salir
+                </button>
+            </form>
+        </div>
+    </nav>
+
+    <!-- Content Wrapper -->
+    <div id="content-wrapper">
+        <!-- Topbar -->
+        <header class="topbar">
+            <div>
+                <h4 class="mb-0 fw-bold">{% block page_title %}Dashboard{% endblock %}</h4>
+                <small class="text-muted">{% block page_subtitle %}Vista general del sistema{% endblock %}</small>
+            </div>
+
+            <div class="d-flex align-items-center">
+                <div class="user-profile ms-3 d-flex align-items-center">
+                    <span class="petmor-avatar" aria-hidden="true">{{ request.user.username|first|upper }}</span>
+                    <div class="ms-2 d-none d-md-block">
+                        <span class="d-block fw-bold small">{{ request.user.username }}</span>
+                        <span class="d-block text-muted" style="font-size: 0.75rem;">Administrador</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main>
+            {% if messages %}
+            <div class="meteor-stack" aria-live="polite" aria-atomic="true">
+                {% for message in messages %}
+                <div class="meteor-toast meteor-{{ message.tags|default:'info' }}" role="alert">
+                    <span class="meteor-orbit" aria-hidden="true"></span>
+                    <div class="meteor-content">
+                        <strong>Meteor</strong>
+                        <span>{{ message }}</span>
+                    </div>
+                    <button type="button" class="meteor-close" aria-label="Cerrar notificación">&times;</button>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            {% block content %}
+            <!-- Content Here -->
+            {% endblock %}
+        </main>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="{% static 'vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+    <script>
+        // Initialize tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        })
+        document.querySelectorAll('.meteor-toast').forEach(function (toast) {
+            const close = toast.querySelector('.meteor-close');
+            const dismiss = function () {
+                toast.classList.add('meteor-hide');
+                setTimeout(function () { toast.remove(); }, 260);
+            };
+            if (close) close.addEventListener('click', dismiss);
+            setTimeout(dismiss, 5200);
+        });
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+
+</html>

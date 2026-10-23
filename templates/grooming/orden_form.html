@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% block title %}{{ titulo }}{% endblock %}
+{% block page_title %}{{ titulo }}{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-7">
+        <div class="panel-card">
+            <form method="post">
+                {% csrf_token %}
+                {{ form.errors }}
+                <div class="mb-3"><label class="form-label">Servicio del catálogo (opcional)</label>{{ form.servicio }}</div>
+                <div class="row g-3">
+                    <div class="col-12"><label class="form-label fw-semibold">Cita de Grooming <span
+                                class="text-danger">*</span></label>{{ form.cita }}</div>
+                    <div class="col-12"><label class="form-label fw-semibold">Peluquero</label>{{ form.peluquero }}
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">Servicios a realizar</label>
+                        <div class="row g-2 mt-1">
+                            <div class="col-6 col-md-4">
+                                <div class="form-check">{{ form.bano }}<label class="form-check-label ms-2">Baño</label>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-4">
+                                <div class="form-check">{{ form.corte_pelo }}<label class="form-check-label ms-2">Corte
+                                        de Pelo</label></div>
+                            </div>
+                            <div class="col-6 col-md-4">
+                                <div class="form-check">{{ form.corte_unas }}<label class="form-check-label ms-2">Corte
+                                        de Uñas</label></div>
+                            </div>
+                            <div class="col-6 col-md-4">
+                                <div class="form-check">{{ form.limpieza_oidos }}<label
+                                        class="form-check-label ms-2">Limpieza de Oídos</label></div>
+                            </div>
+                            <div class="col-6 col-md-4">
+                                <div class="form-check">{{ form.glandulas }}<label
+                                        class="form-check-label ms-2">Glándulas Anales</label></div>
+                            </div>
+                            <div class="col-6 col-md-4">
+                                <div class="form-check">{{ form.perfume }}<label class="form-check-label ms-2">Perfume /
+                                        Lazo</label></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6"><label class="form-label fw-semibold">Inicio</label>{{ form.fecha_inicio }}
+                    </div>
+                    <div class="col-md-6"><label class="form-label fw-semibold">Fin</label>{{ form.fecha_fin }}</div>
+                    <div class="col-12"><label class="form-label fw-semibold">Observaciones</label>
+                        {{ form.observaciones }}
+                    </div>
+                </div>
+                <div class="d-flex gap-2 mt-4">
+                    <button type="submit" class="btn btn-primary rounded-pill px-4"
+                        style="background:#0bb8c8;border:none;"><i
+                            class="fa-solid fa-floppy-disk me-2"></i>Guardar</button>
+                    <a href="{% url 'grooming_lista' %}"
+                        class="btn btn-outline-secondary rounded-pill px-4">Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

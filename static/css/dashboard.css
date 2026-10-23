@@ -1,0 +1,109 @@
+/* Dashboard overview: scoped to keep legacy page utilities from changing its layout. */
+#petmor-overview {
+    --overview-ink: #382b23;
+    --overview-muted: #796c62;
+    margin-bottom: 28px;
+}
+#petmor-overview a { text-decoration: none; }
+#petmor-overview .overview-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+}
+#petmor-overview .overview-eyebrow {
+    display: block;
+    color: #b94f00;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .14em;
+    margin-bottom: 8px;
+}
+#petmor-overview h2 {
+    color: var(--overview-ink);
+    font-size: clamp(21px, 2vw, 27px);
+    font-weight: 700;
+    letter-spacing: -.6px;
+    margin: 0 0 6px;
+}
+#petmor-overview .overview-heading p { color: var(--overview-muted); font-size: 13px; margin: 0; }
+#petmor-overview .overview-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+#petmor-overview .overview-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 42px;
+    padding: 10px 16px;
+    border: 1px solid #ece7e3;
+    border-radius: 12px;
+    background: white;
+    color: var(--overview-ink);
+    font-size: 12px;
+    font-weight: 600;
+    transition: background .18s ease, border-color .18s ease;
+}
+#petmor-overview .overview-action i { color: #f06800; }
+#petmor-overview .overview-action:hover { background: #fff8f2; border-color: #f06800; }
+#petmor-overview .overview-action-primary { background: #f06800; color: white; border-color: #f06800; }
+#petmor-overview .overview-action-primary i { color: white; }
+#petmor-overview .overview-action-primary:hover { background: #b94f00; border-color: #b94f00; }
+#petmor-overview .overview-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; }
+#petmor-overview .overview-metric {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    padding: 22px;
+    background: white;
+    color: var(--overview-ink);
+    border: 1px solid #f0edea;
+    border-radius: 18px;
+    box-shadow: 0 4px 16px rgba(56, 43, 35, .035);
+    transition: border-color .18s ease, box-shadow .18s ease;
+}
+#petmor-overview .overview-metric:hover { border-color: #f06800; box-shadow: 0 5px 20px rgba(56, 43, 35, .07); }
+#petmor-overview .metric-heading { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 12px; font-weight: 600; }
+#petmor-overview .metric-icon, #petmor-overview .operation-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    color: #f06800;
+    background: #fff6ee;
+    flex-shrink: 0;
+}
+#petmor-overview .metric-value { display: block; font-size: clamp(25px, 2.2vw, 34px); font-weight: 700; letter-spacing: -1px; line-height: 1.25; margin-top: 14px; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+#petmor-overview .metric-value small { font-size: 18px; font-weight: 500; }
+#petmor-overview .metric-description { font-size: 12px; color: var(--overview-muted); margin: 7px 0 20px; }
+#petmor-overview .metric-footer { display: flex; justify-content: space-between; gap: 8px; align-items: center; margin-top: auto; font-size: 11px; font-weight: 600; color: #b94f00; }
+#petmor-overview .metric-footer i { font-size: 10px; }
+#petmor-overview .overview-metric-featured { background: #f06800; color: white; border-color: #f06800; }
+#petmor-overview .overview-metric-featured .metric-icon { background: rgba(255,255,255,.18); color: white; }
+#petmor-overview .overview-metric-featured .metric-description,
+#petmor-overview .overview-metric-featured .metric-footer { color: white; }
+#petmor-overview .overview-operation { margin-top: 24px; padding: 22px; background: #fff; border-radius: 18px; box-shadow: 0 4px 16px rgba(56,43,35,.035); border: 1px solid #f0edea; }
+#petmor-overview .operation-heading { display: flex; justify-content: space-between; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 18px; }
+#petmor-overview .operation-heading h3 { margin: 0; font-size: 14px; font-weight: 700; color: var(--overview-ink); }
+#petmor-overview .operation-heading a { color: #b94f00; font-size: 12px; font-weight: 600; padding: 6px 0; }
+#petmor-overview .operation-heading a:hover { text-decoration: underline; }
+#petmor-overview .operation-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+#petmor-overview .operation-item { display: flex; align-items: flex-start; gap: 12px; padding: 12px; border-radius: 12px; color: var(--overview-ink); transition: background .18s ease; }
+#petmor-overview .operation-item:hover { background: #fcfaf8; }
+#petmor-overview .operation-item > div { min-width: 0; }
+#petmor-overview .operation-label { display: block; font-size: 11px; color: var(--overview-muted); }
+#petmor-overview .operation-item strong { display: block; font-size: 21px; font-weight: 700; line-height: 1.3; margin: 5px 0; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+#petmor-overview .operation-item small { display: block; font-size: 10px; color: var(--overview-muted); }
+#petmor-overview a:focus-visible { outline: 3px solid #b94f00; outline-offset: 4px; }
+@media (max-width: 1200px) {
+    #petmor-overview .overview-metrics, #petmor-overview .operation-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 600px) {
+    #petmor-overview .overview-metrics, #petmor-overview .operation-grid { grid-template-columns: 1fr; }
+    #petmor-overview .overview-actions { width: 100%; }
+    #petmor-overview .overview-action { flex: 1 1 auto; }
+    #petmor-overview .overview-operation { padding: 18px; }
+}

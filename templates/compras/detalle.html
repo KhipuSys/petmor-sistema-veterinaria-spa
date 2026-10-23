@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+{% block page_title %}Compra #{{ compra.pk }}{% endblock %}
+{% block content %}<div class="panel-card">
+<h5>{{ compra.proveedor }}</h5><p>{{ compra.comprobante }} · {{ compra.fecha|date:'d/m/Y' }} · {{ compra.get_estado_display }}</p>
+<div class="table-responsive"><table class="table"><thead><tr><th>Producto</th><th>Cantidad</th><th>Costo final</th><th>Subtotal</th></tr></thead><tbody>
+{% for d in compra.detalles.all %}<tr><td>{{ d.producto.nombre }}</td><td>{{ d.cantidad }}</td><td>S/ {{ d.costo_unitario }}</td><td>S/ {{ d.subtotal }}</td></tr>{% endfor %}</tbody></table></div>
+<h4 class="mt-4">Total: S/ {{ compra.total }}</h4><p>{{ compra.observaciones }}</p>
+{% if compra.estado == 'RECIBIDA' %}<form method="post" action="{% url 'compra_anular' compra.pk %}">{% csrf_token %}<button class="btn btn-outline-danger">Anular compra y revertir existencias</button></form>{% endif %}
+<a class="d-inline-block mt-3" href="{% url 'compra_lista' %}">Volver a compras</a>
+</div>{% endblock %}

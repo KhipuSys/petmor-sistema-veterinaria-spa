@@ -1,0 +1,6 @@
+{% load static %}
+<button class="btn btn-outline-primary petmor-document-button" type="button" data-consulta-documento data-campo="{{ campo_documento }}" data-tipo="{{ tipo_documento }}" data-url="{% url 'factiliza_documento' %}">
+    <i class="fa-solid fa-magnifying-glass me-1" aria-hidden="true"></i>
+    Buscar
+</button>
+<script src="{% static 'js/factiliza.js' %}?v=4" defer></script>

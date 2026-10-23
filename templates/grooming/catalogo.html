@@ -1,0 +1,5 @@
+{% extends 'base.html' %}
+{% block page_title %}Catálogo de servicios{% endblock %}
+{% block page_subtitle %}Tarifas base sin IGV y duración de atención · Veterinaria y spa{% endblock %}
+{% block content %}<a class="btn btn-primary mb-4" href="{% url 'servicio_crear' %}">Nuevo servicio</a>
+<div class="panel-card table-responsive"><table class="table"><thead><tr><th>Servicio</th><th>Área</th><th>Precio base</th><th>Duración</th><th>Estado</th><th></th></tr></thead><tbody>{% for s in servicios %}<tr><td>{{ s.nombre }}</td><td>{{ s.get_area_display }}</td><td>S/ {{ s.precio }}</td><td>{{ s.duracion_minutos }} min</td><td>{{ s.activo|yesno:'Activo,Inactivo' }}</td><td><a href="{% url 'servicio_editar' s.pk %}">Editar</a></td></tr>{% empty %}<tr><td colspan="6">Registre baños, cortes, tratamientos spa o consultas veterinarias.</td></tr>{% endfor %}</tbody></table></div>{% endblock %}

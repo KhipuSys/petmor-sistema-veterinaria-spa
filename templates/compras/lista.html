@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block page_title %}Compras{% endblock %}
+{% block page_subtitle %}Recepción de productos e insumos de veterinaria y spa{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between gap-3 mb-4">
+  <form method="get" class="d-flex gap-2"><input class="form-control" name="q" value="{{ q }}" placeholder="Comprobante o proveedor"><button class="btn btn-outline-primary">Buscar</button></form>
+  <a class="btn btn-primary" href="{% url 'compra_crear' %}">Registrar compra recibida</a>
+</div>
+<div class="panel-card table-responsive"><table class="table"><thead><tr><th>Fecha</th><th>Proveedor</th><th>Comprobante</th><th>Total</th><th>Estado</th><th></th></tr></thead><tbody>
+{% for compra in compras %}<tr><td>{{ compra.fecha|date:'d/m/Y' }}</td><td>{{ compra.proveedor }}</td><td>{{ compra.comprobante }}</td><td>S/ {{ compra.total }}</td><td>{{ compra.get_estado_display }}</td><td><a href="{% url 'compra_detalle' compra.pk %}">Ver detalle</a></td></tr>
+{% empty %}<tr><td colspan="6" class="text-center py-5">No hay compras registradas.</td></tr>{% endfor %}
+</tbody></table>
+{% if compras.has_previous %}<a href="?q={{ q|urlencode }}&page={{ compras.previous_page_number }}">Anterior</a>{% endif %}
+<span class="small mx-3">Página {{ compras.number }} de {{ compras.paginator.num_pages }}</span>
+{% if compras.has_next %}<a href="?q={{ q|urlencode }}&page={{ compras.next_page_number }}">Siguiente</a>{% endif %}
+</div>{% endblock %}

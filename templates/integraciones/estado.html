@@ -1,0 +1,8 @@
+{% extends 'base.html' %}
+{% block page_title %}Integraciones{% endblock %}
+{% block content %}<div class="panel-card"><h5>Factiliza · DNI y RUC</h5>
+<p>Credencial: <strong>{{ factiliza_configurada|yesno:'Configurada,Pendiente' }}</strong></p>
+<p>El botón «Consultar Factiliza» está disponible en los formularios de clientes y proveedores. La consulta no guarda registros automáticamente.</p>
+<p>Para habilitarla, defina <code>FACTILIZA_TOKEN</code> en el entorno del servidor y reinícielo. El token no se envía al navegador.</p>
+<hr><h5>Comprobantes electrónicos</h5><p>Emisión SUNAT pendiente de validar el contrato de la API, los datos del emisor, series, impuestos y ambiente de pruebas. Las ventas actuales son registros internos; no se envían automáticamente.</p>
+</div>{% endblock %}

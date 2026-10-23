@@ -1,0 +1,135 @@
+{% extends 'base.html' %}
+{% block title %}Nueva Historia Clínica{% endblock %}
+{% block page_title %}{{ titulo }}{% endblock %}
+{% block page_subtitle %}Registro de consulta médica{% endblock %}
+
+{% block content %}
+{% if cita %}
+<div class="alert alert-info mb-4 d-flex align-items-center gap-2">
+    <i class="fa-solid fa-calendar-check fs-5"></i>
+    <div>
+        Registrando historia clínica para la cita de <strong>{{ cita.mascota.nombre }}</strong> —
+        {{ cita.fecha|date:"d/m/Y" }} {{ cita.hora|time:"H:i" }}
+    </div>
+</div>
+{% endif %}
+
+<form method="post" novalidate>
+    {% csrf_token %}
+    {% if form.errors %}
+    <div class="alert alert-danger mb-4">
+        <h6 class="alert-heading fw-bold mb-1"><i class="fa-solid fa-triangle-exclamation me-2"></i>Por favor, corrija
+            los siguientes errores:</h6>
+        <ul class="mb-0 mt-2">
+            {% for field in form %}
+            {% if field.errors %}
+            <li><strong>{{ field.label }}:</strong> {{ field.errors|striptags }}</li>
+            {% endif %}
+            {% endfor %}
+            {% for error in form.non_field_errors %}
+            <li>{{ error }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+    <div class="row g-4">
+        <!-- Datos principales -->
+        <div class="col-lg-8">
+            <div class="panel-card mb-4">
+                <h6 class="fw-bold mb-3" style="color:#8b5cf6;">
+                    <i class="fa-solid fa-file-medical me-2"></i>Datos de la Consulta
+                </h6>
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">Mascota <span class="text-danger">*</span></label>
+                        {{ form.mascota }}
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">Veterinario</label>
+                        {{ form.veterinario }}
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">
+                            Motivo de Consulta <span class="text-danger">*</span>
+                        </label>
+                        {{ form.motivo_consulta }}
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">Anamnesis</label>
+                        {{ form.anamnesis }}
+                    </div>
+                </div>
+            </div>
+            <div class="panel-card mb-4">
+                <h6 class="fw-bold mb-3" style="color:#0bb8c8;">
+                    <i class="fa-solid fa-heart-pulse me-2"></i>Examen Físico
+                </h6>
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label">Peso (Kg)</label>
+                        {{ form.peso }}
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Temp (°C)</label>
+                        {{ form.temperatura }}
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">FC (BPM)</label>
+                        {{ form.frecuencia_cardiaca }}
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">FR (RPM)</label>
+                        {{ form.frecuencia_respiratoria }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Mucosas</label>
+                        {{ form.mucosas }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">TLC</label>
+                        {{ form.tiempo_llenado_capilar }}
+                    </div>
+                </div>
+            </div>
+            <div class="panel-card">
+                <h6 class="fw-bold mb-3" style="color:#10b981;">
+                    <i class="fa-solid fa-stethoscope me-2"></i>Diagnóstico y Tratamiento
+                </h6>
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">Diagnóstico <span class="text-danger">*</span></label>
+                        {{ form.diagnostico }}
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">Tratamiento <span class="text-danger">*</span></label>
+                        {{ form.tratamiento }}
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Observaciones</label>
+                        {{ form.observaciones }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Próxima Cita</label>
+                        {{ form.proxima_cita }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Barra lateral -->
+        <div class="col-lg-4">
+            <div class="panel-card mb-4" style="border-left:4px solid #8b5cf6;">
+                <h6 class="fw-bold mb-3">Accede después de guardar para agregar la receta</h6>
+                <p class="text-muted small">Una vez creada la historia, podrás agregar los medicamentos recetados desde
+                    el detalle.</p>
+            </div>
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primary rounded-pill py-2"
+                    style="background:#8b5cf6;border:none;font-weight:600;">
+                    <i class="fa-solid fa-floppy-disk me-2"></i>Guardar Historia Clínica
+                </button>
+                <a href="{% url 'historia_lista' %}" class="btn btn-outline-secondary rounded-pill">Cancelar</a>
+            </div>
+        </div>
+    </div>
+</form>
+{% endblock %}

@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% block title %}Vacuna{% endblock %}
+{% block page_title %}{% if vacuna %}Editar Vacuna{% else %}Registrar Vacuna{% endif %}{% endblock %}
+{% block page_subtitle %}Datos de vacunación{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-7">
+        {% if mascota %}
+        <div class="alert alert-success mb-4">
+            Para: <strong>{{ mascota.nombre }}</strong> — {{ mascota.get_especie_display }}
+        </div>
+        {% endif %}
+        <div class="panel-card">
+            <form method="post">
+                {% csrf_token %}
+                {% if form.errors %}
+                <div class="alert alert-danger mb-4">
+                    <h6 class="alert-heading fw-bold mb-1"><i class="fa-solid fa-triangle-exclamation me-2"></i>Por
+                        favor, corrija los siguientes errores:</h6>
+                    <ul class="mb-0 mt-2">
+                        {% for field in form %}
+                        {% if field.errors %}
+                        <li><strong>{{ field.label }}:</strong> {{ field.errors|striptags }}</li>
+                        {% endif %}
+                        {% endfor %}
+                        {% for error in form.non_field_errors %}
+                        <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+                <div class="row g-3">
+                    <div class="col-12"><label class="form-label fw-semibold">Mascota</label>{{ form.mascota }}</div>
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">Nombre de la Vacuna</label>
+                        {{ form.nombre_vacuna }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Fecha de Aplicación</label>
+                        {{ form.fecha_aplicacion }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">N° de Lote</label>
+                        {{ form.lote }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Próxima Dosis</label>
+                        {{ form.fecha_proxima_dosis }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Veterinario</label>
+                        {{ form.veterinario }}
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">Observaciones</label>
+                        {{ form.observaciones }}
+                    </div>
+                </div>
+                <div class="d-flex gap-2 mt-4">
+                    <button type="submit" class="btn btn-success rounded-pill px-4">
+                        <i class="fa-solid fa-floppy-disk me-2"></i>Guardar
+                    </button>
+                    <a href="{% url 'vacuna_lista' %}" class="btn btn-outline-secondary rounded-pill px-4">Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

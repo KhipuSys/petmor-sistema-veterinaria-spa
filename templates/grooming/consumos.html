@@ -1,0 +1,5 @@
+{% extends 'base.html' %}{% load crispy_forms_tags %}
+{% block page_title %}Insumos de spa · Orden #{{ orden.pk }}{% endblock %}
+{% block page_subtitle %}{{ orden.cita.mascota.nombre }} · Registro de consumo real{% endblock %}
+{% block content %}<div class="row g-4"><div class="col-lg-4"><form method="post" class="panel-card">{% csrf_token %}{{ form|crispy }}<button class="btn btn-primary">Registrar consumo</button><a class="d-block mt-3" href="{% url 'grooming_lista' %}">Volver a órdenes</a></form></div>
+<div class="col-lg-8"><div class="panel-card table-responsive"><h5>Costo de insumos: S/ {{ costo_total|floatformat:2 }}</h5><table class="table"><thead><tr><th>Insumo</th><th>Unidades</th><th>Costo</th><th>Fecha</th></tr></thead><tbody>{% for c in consumos %}<tr><td>{{ c.movimiento.producto.nombre }}</td><td>{{ c.movimiento.cantidad }}</td><td>S/ {{ c.costo_total }}</td><td>{{ c.movimiento.fecha|date:'d/m/Y H:i' }}</td></tr>{% empty %}<tr><td colspan="4">Sin insumos consumidos.</td></tr>{% endfor %}</tbody></table></div></div></div>{% endblock %}

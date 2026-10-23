@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+{% block title %}Grooming{% endblock %}
+{% block page_title %}Spa y peluquería{% endblock %}
+{% block page_subtitle %}Ordenes de servicio de bano y estetica{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h6 class="text-muted mb-0">Gestion de ordenes de grooming</h6>
+    <a href="{% url 'grooming_crear' %}" class="btn btn-primary rounded-pill px-4"
+        style="background:#0bb8c8;border:none;">
+        <i class="fa-solid fa-scissors me-2"></i>Nueva Orden
+    </a>
+</div>
+
+{% if citas_pendientes %}
+<div class="alert alert-info mb-4">
+    <i class="fa-solid fa-triangle-exclamation me-2"></i>
+    Hay <strong>{{ citas_pendientes.count }}</strong> cita(s) de grooming sin orden de trabajo:
+    {% for c in citas_pendientes %}
+    <a href="{% url 'grooming_crear' %}?cita={{ c.pk }}" class="btn btn-sm btn-outline-info ms-2">{{ c.mascota.nombre }}
+        - {{ c.fecha|date:"d/m" }}</a>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div class="panel-card">
+    {% if ordenes %}
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr style="background:#f8fafc;font-size:12px;text-transform:uppercase;color:#94a3b8;">
+                    <th class="ps-3">Mascota</th>
+                    <th>Cliente</th>
+                    <th>Peluquero</th>
+                    <th>Servicios</th>
+                    <th>Fecha</th>
+                    <th class="text-center">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for o in ordenes %}
+                <tr {% if not o.is_active %}class="opacity-50" {% endif %}>
+                    <td class="ps-3 fw-semibold">
+                        {{ o.cita.mascota.nombre }}
+                        <small class="d-block text-muted">
+                            {{ o.cita.mascota.get_especie_display }}
+                        </small>
+                    </td>
+                    <td>{{ o.cita.mascota.cliente.nombre_completo }}</td>
+                    <td class="text-muted">{{ o.peluquero.get_full_name|default:"Sin asignar" }}</td>
+                    <td>
+                        {% if o.servicio %}<strong class="d-block">{{ o.servicio.nombre }}</strong>{% endif %}
+                        <small class="d-block">{% if o.fecha_fin %}Finalizada{% elif o.fecha_inicio %}En atención{% else %}Pendiente{% endif %}</small>
+                        {% if o.bano %}<span class="badge bg-light text-dark border me-1">Bano</span>{% endif %}
+                        {% if o.corte_pelo %}<span class="badge bg-light text-dark border me-1">Corte</span>{% endif %}
+                        {% if o.corte_unas %}<span class="badge bg-light text-dark border me-1">Unas</span>{% endif %}
+                        {% if o.limpieza_oidos %}
+                        <span class="badge bg-light text-dark border me-1">Oidos</span>
+                        {% endif %}
+                        {% if o.perfume %}<span class="badge bg-light text-dark border me-1">Perfume</span>{% endif %}
+                    </td>
+                    <td class="text-muted">{{ o.cita.fecha|date:"d/m/Y" }}</td>
+                    <td class="text-center">
+                        <a href="{% url 'grooming_consumos' o.pk %}" class="btn btn-sm btn-outline-primary">Insumos</a>
+                        <a href="{% url 'grooming_editar' o.pk %}" class="btn btn-sm btn-outline-secondary me-1"><i
+                                class="fa-solid fa-pen"></i></a>
+                        <form method="post" action="{% url 'grooming_estado' o.pk %}" class="d-inline">
+                            {% csrf_token %}
+                            {% if o.is_active %}
+                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Desactivar">
+                                <i class="fa-solid fa-ban"></i>
+                            </button>
+                            {% else %}
+                            <button type="submit" class="btn btn-sm btn-outline-success" title="Activar">
+                                <i class="fa-solid fa-check"></i>
+                            </button>
+                            {% endif %}
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="text-center py-5 text-muted">
+        <i class="fa-solid fa-scissors" style="font-size:3rem;opacity:.2;"></i>
+        <p class="mt-3">Sin ordenes de grooming registradas.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

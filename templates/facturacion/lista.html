@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+{% block title %}Facturación{% endblock %}
+{% block page_title %}Facturación{% endblock %}
+{% block page_subtitle %}Comprobantes y ventas{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap gap-2 justify-content-between align-items-center mb-4">
+    <form class="d-flex flex-wrap gap-2" method="get">
+        <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="N° Factura o cliente..."
+            style="width:200px;">
+        <input type="date" name="fecha_desde" value="{{ fecha_desde }}" class="form-control" style="width:150px;">
+        <input type="date" name="fecha_hasta" value="{{ fecha_hasta }}" class="form-control" style="width:150px;">
+        <button type="submit" class="btn btn-success px-3" style="border:none;"><i
+                class="fa-solid fa-filter"></i></button>
+        {% if q or fecha_desde or fecha_hasta %}<a href="{% url 'factura_lista' %}"
+            class="btn btn-outline-secondary">Limpiar</a>{% endif %}
+    </form>
+    <div class="d-flex gap-2">
+        <a href="{% url 'caja_hoy' %}" class="btn btn-outline-secondary rounded-pill"><i
+                class="fa-solid fa-cash-register me-1"></i>Caja del Día</a>
+        <a href="{% url 'factura_crear' %}" class="btn btn-success rounded-pill px-4" style="border:none;"><i
+                class="fa-solid fa-plus me-2"></i>Nueva Factura</a>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-6">
+        <div class="panel-card d-flex align-items-center gap-3">
+            <div class="rounded-circle d-flex align-items-center justify-content-center text-white"
+                style="width:50px;height:50px;background:linear-gradient(135deg,#10b981,#047857);flex-shrink:0;"><i
+                    class="fa-solid fa-sack-dollar fs-5"></i></div>
+            <div><small class="text-muted d-block">Total período filtrado</small>
+                <h4 class="fw-bold mb-0 text-success">S/ {{ total_ingresos|floatformat:2 }}</h4>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="panel-card">
+    {% if facturas %}
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr style="background:#f8fafc;font-size:12px;text-transform:uppercase;color:#94a3b8;">
+                    <th class="ps-3">N° Factura</th>
+                    <th>Fecha</th>
+                    <th>Cliente</th>
+                    <th>Método</th>
+                    <th class="text-end">Subtotal</th>
+                    <th class="text-end">IGV</th>
+                    <th class="text-end">Total</th>
+                    <th class="text-center">Estado</th>
+                    <th class="text-center">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for f in facturas %}
+                <tr>
+                    <td class="ps-3"><code class="fw-bold text-dark">{{ f.numero }}</code></td>
+                    <td class="text-muted small">{{ f.fecha|date:"d/m/Y H:i" }}</td>
+                    <td>{{ f.cliente.nombre_completo|default:"Anónimo" }}</td>
+                    <td><span class="badge bg-light text-dark border">{{ f.get_metodo_pago_display }}</span></td>
+                    <td class="text-end text-muted">S/ {{ f.subtotal|floatformat:2 }}</td>
+                    <td class="text-end text-muted">S/ {{ f.igv|floatformat:2 }}</td>
+                    <td class="text-end fw-bold">S/ {{ f.total|floatformat:2 }}</td>
+                    <td class="text-center">
+                        <span
+                            class="badge rounded-pill {% if f.estado == 'PAGADA' %}bg-success{% else %}bg-danger{% endif %}">
+                            {{ f.get_estado_display }}
+                        </span>
+                    </td>
+                    <td class="text-center">
+                        <a href="{% url 'factura_detalle' f.pk %}" class="btn btn-sm btn-outline-info me-1"><i
+                                class="fa-solid fa-eye"></i></a>
+                        {% if f.estado != 'ANULADA' %}<a href="{% url 'factura_anular' f.pk %}"
+                            class="btn btn-sm btn-outline-danger"><i class="fa-solid fa-ban"></i></a>{% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="text-center py-5 text-muted"><i class="fa-solid fa-file-invoice-dollar"
+            style="font-size:3rem;opacity:.2;"></i>
+        <p class="mt-3">Sin facturas.</p><a href="{% url 'factura_crear' %}" class="btn btn-success rounded-pill"
+            style="border:none;">Nueva Factura</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

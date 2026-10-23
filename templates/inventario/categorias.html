@@ -1,0 +1,4 @@
+{% extends 'base.html' %}
+{% block page_title %}Categorías de inventario{% endblock %}
+{% block content %}<a class="btn btn-primary mb-4" href="{% url 'categoria_crear' %}">Nueva categoría</a>
+<div class="panel-card"><table class="table"><thead><tr><th>Nombre</th><th>Descripción</th></tr></thead><tbody>{% for c in categorias %}<tr><td>{{ c.nombre }}</td><td>{{ c.descripcion|default:'' }}</td></tr>{% empty %}<tr><td colspan="2">Agregue categorías para medicamentos, alimentos e insumos de spa.</td></tr>{% endfor %}</tbody></table></div>{% endblock %}

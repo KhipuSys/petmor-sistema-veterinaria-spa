@@ -1,0 +1,12 @@
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+db.sqlite3
+media/
+backups/
+staticfiles/
+.env
+.factiliza_token
+.coverage
+htmlcov/

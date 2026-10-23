@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% block page_title %}Kardex{% endblock %}
+{% block page_subtitle %}Entradas, salidas, ajustes y saldo de existencias{% endblock %}
+{% block content %}
+<div class="panel-card mb-4"><form method="get" class="row g-3 align-items-end">{% for field in filtro %}<div class="col-md-3">{{ field|as_crispy_field }}</div>{% endfor %}<div class="col-md-3 mb-3"><button class="btn btn-primary">Filtrar</button> <a class="btn btn-light" href="{% url 'movimiento_lista' %}">Limpiar</a></div></form>
+<a href="{% url 'movimiento_crear' %}" class="btn btn-outline-primary">Registrar movimiento / conteo físico</a></div>
+<div class="panel-card table-responsive"><table class="table"><thead><tr><th>Fecha (Perú)</th><th>Producto</th><th>Tipo</th><th>Cantidad / conteo</th><th>Anterior</th><th>Saldo</th><th>Referencia</th><th>Usuario</th></tr></thead><tbody>
+{% for m in movimientos %}<tr><td>{{ m.fecha|date:'d/m/Y H:i' }}</td><td>{{ m.producto.nombre }}</td><td>{{ m.get_tipo_display }}</td><td>{{ m.cantidad }}</td><td>{{ m.saldo_anterior|default_if_none:'—' }}</td><td>{{ m.saldo_posterior|default_if_none:'—' }}</td><td>{{ m.motivo }}<small class="d-block">{{ m.comprobante|default:'' }}</small></td><td>{{ m.usuario|default:'Histórico' }}</td></tr>
+{% empty %}<tr><td colspan="8" class="text-center py-5">No hay movimientos para estos filtros.</td></tr>{% endfor %}</tbody></table>
+<p class="small text-muted mt-3">Los registros anteriores a la implementación del kardex no tienen saldos auditados. Ajuste significa conteo físico final, no incremento.</p>
+{% if movimientos.has_previous %}<a href="?{{ query }}&page={{ movimientos.previous_page_number }}">Anterior</a>{% endif %}
+<span class="mx-3">Página {{ movimientos.number }} de {{ movimientos.paginator.num_pages }}</span>
+{% if movimientos.has_next %}<a href="?{{ query }}&page={{ movimientos.next_page_number }}">Siguiente</a>{% endif %}
+</div>{% endblock %}
