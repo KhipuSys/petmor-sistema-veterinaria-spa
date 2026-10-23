@@ -1,0 +1,71 @@
+@model MiniMarket.Web.Models.ViewModels.AgendaForm
+@using MiniMarket.Web.Models
+@{ ViewData["Title"] = "Registrar recepción"; }
+<form method="post" class="card pm-form-card">
+<header class="pm-form-heading"><i class="far fa-calendar-plus" aria-hidden="true"></i><h2>Registrar recepción inmediata</h2></header>
+<div class="pm-form-body"><div asp-validation-summary="All" class="text-danger"></div><div class="row g-4">
+<div class="col-md-6"><label asp-for="MascotaId" class="form-label">Mascota</label><select asp-for="MascotaId" asp-items="ViewBag.Mascotas" class="form-select"><option value="">Seleccione una mascota</option></select></div>
+<div class="col-md-6"><label asp-for="ServicioId" class="form-label">Servicio / tarifa</label><select asp-for="ServicioId" class="form-select" required><option value="">Seleccione un servicio</option>@foreach (var servicio in ViewBag.Servicios) { <option value="@servicio.Id" data-area="@servicio.Area" data-duracion="@servicio.Duracion" selected="@(Model.ServicioId == servicio.Id)">@servicio.Nombre</option> }</select><small class="text-muted">Define el área y se agregará automáticamente a la cuenta de atención.</small></div>
+<div class="col-md-6"><label asp-for="Area" class="form-label">Área</label><input asp-for="Area" type="hidden" id="Area" /><select id="AreaVisual" class="form-select" disabled><option value="" selected="@(Model.ServicioId == null)">Seleccione un servicio primero</option>@foreach (AreaAtencion area in Enum.GetValues(typeof(AreaAtencion))) { <option value="@((int)area)" selected="@(Model.ServicioId != null && Model.Area == area)">@area</option> }</select></div>
+<div class="col-md-6"><label asp-for="ResponsableId" class="form-label">Profesional responsable<span class="required-mark" aria-hidden="true">*</span></label><select asp-for="ResponsableId" class="form-select" required aria-describedby="responsableAyuda"><option value="">Seleccione un profesional del área</option>@foreach (var responsable in ViewBag.Responsables) { <option value="@responsable.Id" data-rol="@responsable.Rol" selected="@(Model.ResponsableId == responsable.Id)">@responsable.Nombre</option> }</select><small id="responsableAyuda" class="text-muted" role="status" hidden></small></div>
+<div class="col-md-3"><label asp-for="Inicio" class="form-label">Fecha y hora</label><input name="Inicio" id="Inicio" type="datetime-local" class="form-control" value="@HoraPeru.Ahora.ToString("yyyy-MM-ddTHH:mm")" readonly /></div>
+<div class="col-md-3"><label asp-for="Duracion" class="form-label">Duración del servicio (minutos)</label><input asp-for="Duracion" class="form-control" readonly /><small>Definida por la tarifa seleccionada.</small></div>
+<input asp-for="Motivo" type="hidden" />
+<div class="col-12"><label asp-for="Recepcion" class="form-label">Condiciones de recepción e indicaciones del propietario</label><textarea asp-for="Recepcion" class="form-control" rows="3"></textarea></div>
+</div><div class="pm-actions"><a asp-action="Agenda" class="btn btn-outline-primary"><i class="fas fa-arrow-left me-2"></i>Volver</a><button class="btn btn-primary"><i class="fas fa-check me-2"></i>Registrar atención</button></div></div></form>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        const servicio = document.getElementById('ServicioId');
+        const area = document.getElementById('Area');
+        const areaVisual = document.getElementById('AreaVisual');
+        const responsable = document.getElementById('ResponsableId');
+        const duracion = document.getElementById('Duracion');
+        const responsableAyuda = document.getElementById('responsableAyuda');
+
+        function sincronizarServicio() {
+            const selected = servicio?.selectedOptions?.[0];
+            if (!selected || !selected.value) {
+                areaVisual.value = '';
+                return filtrarResponsables();
+            }
+            const areaServicio = selected.dataset.area;
+            const duracionServicio = selected.dataset.duracion;
+            area.value = areaServicio;
+            areaVisual.value = areaServicio;
+            if (duracionServicio && Number(duracionServicio) > 0) duracion.value = duracionServicio;
+            filtrarResponsables();
+        }
+
+        function filtrarResponsables() {
+            responsableAyuda.hidden = true;
+            const areaActual = area.value || areaVisual.value;
+            if (!areaVisual.value) {
+                for (const option of responsable.options) {
+                    if (!option.value) continue;
+                    option.hidden = true;
+                    option.disabled = true;
+                }
+                responsable.value = '';
+                return;
+            }
+            const rolNecesario = areaActual === '2' ? 'Groomer' : 'Veterinario';
+            let disponibles = 0;
+            for (const option of responsable.options) {
+                if (!option.value) continue;
+                const visible = option.dataset.rol === rolNecesario;
+                if (visible) disponibles++;
+                option.hidden = !visible;
+                option.disabled = !visible;
+                if (!visible && option.selected) responsable.value = '';
+            }
+            if (!disponibles) {
+                responsableAyuda.textContent = `No hay profesionales con rol ${rolNecesario} asignados a esta sede o a Ambas sedes. Solicita al administrador revisar Usuarios.`;
+                responsableAyuda.hidden = false;
+            }
+        }
+
+        servicio?.addEventListener('change', sincronizarServicio);
+        sincronizarServicio();
+    </script>
+}

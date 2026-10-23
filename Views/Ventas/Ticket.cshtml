@@ -1,0 +1,171 @@
+@model MiniMarket.Web.Models.Venta
+
+@{
+    Layout = null;
+    var historico = string.IsNullOrWhiteSpace(Model.TicketHistoricoJson) ? null : System.Text.Json.JsonSerializer.Deserialize<MiniMarket.Web.Models.TicketHistorico>(Model.TicketHistoricoJson);
+    var empresa = historico?.Empresa ?? ViewBag.Configuracion as MiniMarket.Web.Models.Configuracion;
+    var igvPct = empresa?.IgvPorcentaje ?? 18m;
+    // El total ya incluye IGV (precio con IGV incluido)
+    var subtotal = historico?.BaseImponible ?? Model.Total / (1 + igvPct / 100);
+    var igvMonto = historico?.Igv ?? Model.Total - subtotal;
+    var nombreCliente = historico?.Cliente ?? Model.Cliente?.Nombre?.Trim() ?? "Público General";
+    var documentoCliente = historico != null ? historico.Documento : Model.Cliente?.Documento?.Trim();
+    var etiquetaDocumentoCliente = documentoCliente?.Length == 11 ? "RUC" : "DNI";
+    // Registros antiguos de DNI pueden venir como "APELLIDOS, NOMBRES".
+    // No se reordenan razones sociales de RUC ni nombres que ya estén sin coma.
+    if (documentoCliente?.Length != 11)
+    {
+        var partesCliente = nombreCliente.Split(',', 2, StringSplitOptions.TrimEntries);
+        if (partesCliente.Length == 2 && partesCliente.All(parte => !string.IsNullOrWhiteSpace(parte)))
+            nombreCliente = $"{partesCliente[1]} {partesCliente[0]}";
+    }
+}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <title>Ticket #@Model.Id.ToString("D5")</title>
+    <style>
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            width: 80mm;
+            margin: 0 auto;
+            padding: 5px;
+            color: #000;
+            font-size: 12px;
+        }
+        .centrado { text-align: center; }
+        .derecha { text-align: right; }
+        .linea { border-top: 1px dashed #000; margin: 5px 0; }
+        table { width: 100%; border-collapse: collapse; }
+        td, th { padding: 2px 0; vertical-align: top; }
+
+        @@media print {
+            .no-print { display: none; }
+        }
+
+        .btn-imprimir {
+            background-color: #0d6efd; color: white; border: none;
+            padding: 10px 20px; border-radius: 5px; cursor: pointer;
+            width: 100%; margin-bottom: 10px; font-weight: bold;
+        }
+        .marca { font-size: 16px; font-weight: bold; margin-bottom: 2px; text-transform: uppercase; }
+        .anulado-banner { background: #dc3545; color: white; text-align: center; font-weight: bold; padding: 4px; margin: 5px 0; letter-spacing: 2px; }
+    </style>
+</head>
+<body>
+
+    <div class="no-print">
+        <button onclick="window.print()" class="btn-imprimir">🖨 IMPRIMIR</button>
+        @if (historico == null) { <p>Registro antiguo: no se conservó la configuración histórica; se muestran datos actuales de referencia.</p> }
+    </div>
+
+    @if (Model.Estado == "Anulada")
+    {
+        <div class="anulado-banner">⚠ VENTA ANULADA ⚠</div>
+        <div>Motivo: @(Model.MotivoAnulacion ?? "Sin motivo registrado.")</div>
+    }
+
+    <div class="centrado">
+        @if (empresa != null)
+        {
+            <div class="marca">@empresa.NombreEmpresa</div>
+            <div>Sede: @(historico?.Sede ?? Context.RequestServices.GetRequiredService<MiniMarket.Web.Services.SedeActual>().Nombre)</div>
+            <div>RUC: @empresa.Ruc</div>
+            <div>@empresa.Direccion</div>
+            @if (!string.IsNullOrEmpty(empresa.Telefono)) { <div>Tel: @empresa.Telefono</div> }
+        }
+        else
+        {
+            <div class="marca">MINIMARKET</div>
+            <div>(Datos no configurados)</div>
+        }
+        <div class="linea"></div>
+    </div>
+
+    <div>
+        <strong>Ticket:</strong> #@Model.Id.ToString("D6")<br />
+        <strong>Fecha:</strong> @Model.Fecha.ToString("dd/MM/yyyy HH:mm")<br />
+        <strong>Atención:</strong> @(historico?.Cajero ?? ViewBag.NombreCajero)<br />
+        @if (!string.IsNullOrWhiteSpace(documentoCliente))
+        {
+            <strong>@etiquetaDocumentoCliente:</strong> @documentoCliente<br />
+        }
+        <strong>Cliente:</strong> @nombreCliente<br />
+        <strong>Pago:</strong> @(Model.MetodoPago ?? "Efectivo")
+    </div>
+
+    <div class="linea"></div>
+
+    <table>
+        <thead>
+            <tr style="text-align:left;">
+                <th style="width:50%">Prod.</th>
+                <th style="width:10%">Cant.</th>
+                <th style="width:20%" class="derecha">P.U.</th>
+                <th style="width:20%" class="derecha">Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model.Detalles)
+            {
+                <tr>
+                    <td>@(item.DescripcionHistorica ?? item.Producto.Nombre)</td>
+                    <td style="text-align:center;">@item.Cantidad</td>
+                    <td class="derecha">@item.PrecioUnitario.ToString("N2")</td>
+                    <td class="derecha">@item.SubTotal.ToString("N2")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <div class="linea"></div>
+
+    <table style="font-size: 12px;">
+        @if(Model.Descuento > 0)
+        {
+            <tr>
+                <td>Subtotal Orig:</td>
+                <td class="derecha">@(empresa?.MonedaSimbolo ?? "S/.") @((Model.Total + Model.Descuento - Model.Recargo).ToString("N2"))</td>
+            </tr>
+            <tr>
+                <td>Descuento:</td>
+                <td class="derecha fw-bold">- @(empresa?.MonedaSimbolo ?? "S/.") @Model.Descuento.ToString("N2")</td>
+            </tr>
+        }
+        @if(Model.Recargo > 0)
+        {
+            <tr>
+                <td>Recargo tarjeta:</td>
+                <td class="derecha fw-bold">+ @(empresa?.MonedaSimbolo ?? "S/.") @Model.Recargo.ToString("N2")</td>
+            </tr>
+        }
+        <tr>
+            <td>Op. Gravada (@igvPct%):</td>
+            <td class="derecha">@(empresa?.MonedaSimbolo ?? "S/.") @subtotal.ToString("N2")</td>
+        </tr>
+        <tr>
+            <td>IGV (@igvPct%):</td>
+            <td class="derecha">@(empresa?.MonedaSimbolo ?? "S/.") @igvMonto.ToString("N2")</td>
+        </tr>
+    </table>
+
+    <div class="linea"></div>
+
+    <table style="font-size: 15px; font-weight: bold;">
+        <tr>
+            <td>TOTAL:</td>
+            <td class="derecha">@(empresa?.MonedaSimbolo ?? "S/.") @Model.Total.ToString("N2")</td>
+        </tr>
+    </table>
+
+    <div class="linea"></div>
+
+    <div class="centrado">
+        <br />
+        ¡GRACIAS POR SU COMPRA!
+    </div>
+
+</body>
+</html>

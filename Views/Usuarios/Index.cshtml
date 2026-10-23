@@ -1,0 +1,118 @@
+@model IEnumerable<MiniMarket.Web.Models.UsuarioViewModel>
+
+@{
+    ViewData["Title"] = "Gestión de Usuarios";
+    var usuarios = Model.ToList();
+    var administradores = usuarios.Count(u => (u.Rol ?? "").Contains("Administrador"));
+    var recepcionistas = usuarios.Count(u => (u.Rol ?? "").Contains("Recepcionista"));
+    var clinicos = usuarios.Count(u => (u.Rol ?? "").Contains("Veterinario") || (u.Rol ?? "").Contains("Groomer"));
+    var incompletos = usuarios.Count(u => string.IsNullOrWhiteSpace(u.NombreCompleto) || string.IsNullOrWhiteSpace(u.Dni));
+}
+
+<section class="usuarios-metrics">
+    <article class="metric-card metric-total"><div class="metric-icon"><i class="fas fa-users-cog"></i></div><div><span>Usuarios</span><strong>@usuarios.Count</strong><small>Cuentas registradas</small></div></article>
+    <article class="metric-card metric-admin"><div class="metric-icon"><i class="fas fa-user-shield"></i></div><div><span>Administradores</span><strong>@administradores</strong><small>Control total</small></div></article>
+    <article class="metric-card metric-cash"><div class="metric-icon"><i class="fas fa-cash-register"></i></div><div><span>Recepción</span><strong>@recepcionistas</strong><small>POS y atención</small></div></article>
+    <article class="metric-card metric-clinic"><div class="metric-icon"><i class="fas fa-stethoscope"></i></div><div><span>Vet / Spa</span><strong>@clinicos</strong><small>@incompletos perfiles pendientes</small></div></article>
+</section>
+
+<section class="usuarios-card">
+    <div class="usuarios-head">
+        <div class="usuarios-title"><div class="usuarios-icon"><i class="fas fa-user-shield"></i></div><div><h2>Usuarios del Sistema</h2><p>Administra accesos, roles y datos del personal</p></div></div>
+        <a asp-action="Create" class="btn btn-usuarios-primary"><i class="fas fa-user-plus me-2"></i>Nuevo usuario</a>
+    </div>
+
+    <div class="usuarios-filter-row">
+        <div class="user-search"><i class="fas fa-search"></i><input id="buscarUsuario" type="search" placeholder="Buscar por usuario, nombre, DNI o rol" autocomplete="off" /></div>
+    </div>
+
+    <div class="usuarios-tools">
+        <span>Filtros rápidos:</span>
+        <button type="button" class="quick-chip active" data-filter="todos"><i class="fas fa-list"></i>Todos</button>
+        <button type="button" class="quick-chip" data-filter="admin"><i class="fas fa-user-shield"></i>Administradores</button>
+        <button type="button" class="quick-chip" data-filter="recepcion"><i class="fas fa-cash-register"></i>Recepción</button>
+        <button type="button" class="quick-chip" data-filter="clinica"><i class="fas fa-stethoscope"></i>Vet / Spa</button>
+        <button type="button" class="quick-chip" data-filter="incompleto"><i class="fas fa-triangle-exclamation"></i>Pendientes</button>
+        <div class="export-actions">
+            <button type="button" class="export-btn" id="btnExportExcel"><i class="fas fa-file-excel"></i>Excel</button>
+            <button type="button" class="export-btn" id="btnExportPdf"><i class="fas fa-file-pdf"></i>PDF</button>
+            <button type="button" class="export-btn" id="btnExportPrint"><i class="fas fa-print"></i>Imprimir</button>
+        </div>
+    </div>
+
+    <div class="table-responsive usuarios-table-wrap">
+        <table class="table usuarios-table align-middle" id="tablaUsuarios">
+            <thead><tr><th>Usuario</th><th>Datos personales</th><th>DNI</th><th>Sede</th><th>Rol asignado</th><th class="text-end">Acciones</th></tr></thead>
+            <tbody>
+            @foreach (var item in usuarios)
+            {
+                var rol = item.Rol ?? "Sin rol";
+                var esAdmin = rol.Contains("Administrador");
+                var esRecepcion = rol.Contains("Recepcionista");
+                var esClinica = rol.Contains("Veterinario") || rol.Contains("Groomer");
+                var incompleto = string.IsNullOrWhiteSpace(item.NombreCompleto) || string.IsNullOrWhiteSpace(item.Dni);
+                <tr data-admin="@(esAdmin ? "true" : "false")" data-recepcion="@(esRecepcion ? "true" : "false")" data-clinica="@(esClinica ? "true" : "false")" data-incompleto="@(incompleto ? "true" : "false")">
+                    <td><div class="user-cell"><span class="user-avatar"><i class="fas fa-user"></i></span><div><strong>@item.Email</strong><small>@(item.Email == User.Identity.Name ? "Cuenta actual" : "Acceso Petmor")</small></div></div></td>
+                    <td><strong>@(item.NombreCompleto ?? "Pendiente de completar")</strong><small>@(incompleto ? "Revisar datos personales" : "Perfil completo")</small></td>
+                    <td><span class="dni-pill"><i class="fas fa-id-card"></i>@(item.Dni ?? "Sin DNI")</span></td>
+                    <td><span class="dni-pill"><i class="fas fa-map-marker-alt"></i>@item.SedeNombre</span></td>
+                    <td>
+                        @foreach (var parte in rol.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                        {
+                            var clase = parte == "Administrador" ? "role-admin" : parte == "Recepcionista" ? "role-cash" : parte == "Veterinario" ? "role-vet" : parte == "Groomer" ? "role-spa" : "role-default";
+                            <span class="role-pill @clase">@parte</span>
+                        }
+                    </td>
+                    <td class="text-end text-nowrap">
+                        <a asp-action="Edit" asp-route-id="@item.Id" class="btn user-action action-edit" title="Editar"><i class="fas fa-pen"></i></a>
+                        @if (item.Email != User.Identity.Name)
+                        {
+                            <button type="button" class="btn user-action action-delete btn-eliminar" data-id="@item.Id" data-email="@item.Email" title="Eliminar"><i class="fas fa-trash-alt"></i></button>
+                            <form id="formDelete_@item.Id" asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-none">@Html.AntiForgeryToken()</form>
+                        }
+                        else
+                        {
+                            <span class="self-pill">Tú</span>
+                        }
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<style>
+    .usuarios-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; margin-bottom: 22px; }
+    .metric-card { min-height: 112px; display: flex; align-items: center; gap: 16px; padding: 20px; border: 1px solid #e5e7eb; border-radius: 14px; background: linear-gradient(135deg, #fff, #fbfdff); }
+    .metric-icon { width: 58px; height: 58px; border-radius: 16px; display: inline-flex; align-items: center; justify-content: center; font-size: 25px; flex: 0 0 auto; }
+    .metric-card span { color: #64748b; font-weight: 900; font-size: .82rem; text-transform: uppercase; letter-spacing: .05em; } .metric-card strong { display: block; color: #0f172a; font-size: 1.6rem; font-weight: 900; line-height: 1; } .metric-card small { display: block; margin-top: 8px; color: #64748b; font-weight: 600; }
+    .metric-total .metric-icon { background: #fff3ea; color: #f06800; } .metric-admin .metric-icon { background: #fee2e2; color: #dc2626; } .metric-cash .metric-icon { background: #ecfdf5; color: #059669; } .metric-clinic .metric-icon { background: #eff6ff; color: #2563eb; }
+    .usuarios-card { border: 1px solid #e5e7eb; border-radius: 14px; background: #fff; overflow: hidden; } .usuarios-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px 20px; border-bottom: 1px solid #e5e7eb; background: linear-gradient(135deg, #fff, #f8fafc); }
+    .usuarios-title { display: flex; align-items: center; gap: 12px; } .usuarios-icon { width: 42px; height: 42px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; background: #fff3ea; color: #f06800; } .usuarios-title h2 { margin: 0; color: #0f172a; font-size: 1.1rem; font-weight: 900; } .usuarios-title p { margin: 3px 0 0; color: #64748b; font-size: .92rem; }
+    .btn-usuarios-primary { min-height: 46px; border-radius: 10px; padding: 11px 18px; background: #f06800; border: 1px solid #f06800; color: #fff !important; font-weight: 900; } .btn-usuarios-primary:hover { background: #d95f00; color: #fff !important; }
+    .usuarios-filter-row { padding: 14px 20px 0; } .user-search { min-height: 46px; display: flex; align-items: center; gap: 10px; border: 1px solid #dbe3ee; border-radius: 10px; padding: 0 13px; color: #64748b; } .user-search input { width: 100%; border: 0; outline: 0; color: #0f172a; font-weight: 700; background: transparent; }
+    .usuarios-tools { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 14px 20px 0; color: #475569; font-weight: 900; font-size: .86rem; } .quick-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 6px 12px; border-radius: 999px; border: 1px solid #fed7aa; background: #fff; color: #f06800; font-size: .82rem; font-weight: 900; } .quick-chip.active, .quick-chip:hover { background: #f06800; color: #fff; border-color: #f06800; }
+    .export-actions { display: inline-flex; gap: 8px; flex-wrap: wrap; margin-left: auto; } .export-btn { min-height: 34px; display: inline-flex; align-items: center; gap: 6px; border-radius: 9px; border: 1px solid #fed7aa; background: #fff; color: #f06800; padding: 6px 12px; font-size: .82rem; font-weight: 900; }
+    .usuarios-table-wrap { margin: 18px; border: 1px solid #e5e7eb; border-radius: 12px; } .usuarios-table { margin: 0; min-width: 980px; } .usuarios-table thead th { background: #f8fafc !important; color: #0f172a; font-weight: 900; padding: 16px 18px; border-bottom: 1px solid #e2e8f0; font-size: .88rem; } .usuarios-table tbody td { padding: 18px; border-bottom: 1px solid #e2e8f0; color: #334155; vertical-align: middle; } .usuarios-table strong { display: block; color: #0f172a; font-weight: 900; } .usuarios-table small { display: block; color: #64748b; margin-top: 3px; }
+    .user-cell { display: flex; align-items: center; gap: 12px; } .user-avatar { width: 46px; height: 46px; border-radius: 13px; display: inline-flex; align-items: center; justify-content: center; background: #fff3ea; color: #f06800; flex: 0 0 auto; } .dni-pill, .role-pill, .self-pill { display: inline-flex; align-items: center; gap: 7px; border-radius: 999px; padding: 8px 13px; font-weight: 900; font-size: .78rem; margin: 2px; } .dni-pill { background: #f1f5f9; color: #334155; } .role-admin { background: #fee2e2; color: #dc2626; } .role-cash { background: #ecfdf5; color: #059669; } .role-vet { background: #eff6ff; color: #2563eb; } .role-spa { background: #f5f3ff; color: #7c3aed; } .role-default, .self-pill { background: #f1f5f9; color: #334155; }
+    .user-action { width: 42px; height: 42px; display: inline-flex; align-items: center; justify-content: center; border-radius: 9px; background: #fff; margin-left: 4px; } .action-edit { color: #f06800; border: 1px solid #fb923c; } .action-delete { color: #dc2626; border: 1px solid #fecaca; }
+    .dataTables_wrapper { padding: 0 18px 18px; } .dataTables_filter { display: none; }
+    @@media (max-width: 1199.98px) { .usuarios-metrics { grid-template-columns: 1fr 1fr; } } @@media (max-width: 767.98px) { .usuarios-metrics { grid-template-columns: 1fr; } .usuarios-head { flex-direction: column; align-items: flex-start; } .btn-usuarios-primary { width: 100%; } .export-actions { margin-left: 0; width: 100%; } }
+</style>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        $(document).ready(function() {
+            if ($.fn.DataTable.isDataTable('#tablaUsuarios')) $('#tablaUsuarios').DataTable().destroy();
+            let filtroRapido = 'todos';
+            $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) { if (settings.nTable.id !== 'tablaUsuarios' || filtroRapido === 'todos') return true; const row = settings.aoData[dataIndex].nTr; return row ? row.dataset[filtroRapido] === 'true' : true; });
+            const tabla = $('#tablaUsuarios').DataTable({ dom: PetmorTables.dom, buttons: PetmorTables.exportButtons('Usuarios Petmor'), order: [[0, 'asc']] });
+            $('#buscarUsuario').on('input', function() { tabla.search(this.value).draw(); });
+            $('.quick-chip').on('click', function() { $('.quick-chip').removeClass('active'); $(this).addClass('active'); filtroRapido = $(this).data('filter'); tabla.draw(); });
+            $('#btnExportExcel').on('click', () => tabla.button('.buttons-excel').trigger()); $('#btnExportPdf').on('click', () => tabla.button('.buttons-pdf').trigger()); $('#btnExportPrint').on('click', () => tabla.button('.buttons-print').trigger());
+            $(document).on('click', '.btn-eliminar', function() { const $boton = $(this); if ($boton.prop('disabled')) return; const id = $boton.data('id'); const email = $boton.data('email'); PetmorUI.confirmDanger({ title: 'Eliminar usuario', text: `Se eliminará permanentemente ${email} si no tiene movimientos asociados.`, confirmButtonText: 'Sí, eliminar' }).then((result) => { if (!result.isConfirmed) return; $boton.prop('disabled', true); $.ajax({ url: '@Url.Action("Delete", "Usuarios")', type: 'POST', dataType: 'json', data: { id: id, __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').first().val() }, success: function(resp) { if (resp.exito) PetmorUI.alert('Eliminado', resp.mensaje, 'success').then(() => location.reload()); else PetmorUI.alert('No se puede eliminar', resp.mensaje || 'No se pudo eliminar la cuenta.', 'warning'); }, error: function(xhr) { const mensaje = xhr.responseJSON?.mensaje || (xhr.status === 0 ? 'No se pudo conectar. Comprueba tu conexión y actualiza el listado antes de reintentar.' : xhr.status === 401 || xhr.status === 403 || xhr.status === 200 ? 'La sesión puede haber vencido. Inicia sesión nuevamente.' : xhr.status === 400 ? 'La solicitud no es válida o expiró. Recarga la página e inténtalo de nuevo.' : 'El servidor no pudo completar la solicitud. Actualiza el listado para comprobar su estado.'); PetmorUI.alert('No se pudo completar la eliminación', mensaje, 'warning'); }, complete: function() { $boton.prop('disabled', false); } }); }); });
+        });
+    </script>
+}

@@ -1,0 +1,27 @@
+@{ ViewData["Title"] = "Revisa las fechas"; }
+<section class="card p-4">
+    <h2>Revisa el filtro de fechas</h2>
+    <form method="get" action="@Context.Request.Path">
+        @foreach (var filtro in Context.Request.Query)
+        {
+            if (new[] { "desde", "hasta", "fechaInicio", "fechaFin", "fecha" }.Contains(filtro.Key))
+            {
+                <label for="filtro-@filtro.Key">@filtro.Key</label>
+                <input id="filtro-@filtro.Key" type="date" name="@filtro.Key" value="@filtro.Value" class="form-control mb-3" min="1900-01-01" max="2100-12-31" />
+            }
+            else { <input type="hidden" name="@filtro.Key" value="@filtro.Value" /> }
+        }
+        <button class="btn btn-primary">Aplicar fechas</button>
+        <a href="@Context.Request.Path" class="btn btn-secondary">Limpiar filtros</a>
+    </form>
+</section>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        Swal.fire({
+            title: 'Revisa el filtro',
+            text: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewData["ErrorFiltro"]?.ToString())),
+            icon: 'warning',
+            confirmButtonColor: '#f06800'
+        });
+    });
+</script>

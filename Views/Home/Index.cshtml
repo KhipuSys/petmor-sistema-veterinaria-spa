@@ -1,0 +1,6 @@
+@model MiniMarket.Web.Models.DashboardViewModel
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<partial name="_Operacion" model="(List<MiniMarket.Web.Models.Atencion>)ViewBag.AgendaHoy" />

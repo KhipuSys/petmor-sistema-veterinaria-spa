@@ -1,0 +1,39 @@
+@inject MiniMarket.Web.Services.SedeActual Sede
+@if (Sede.Id > 0)
+{
+    <div class="sede-selector me-auto">
+        @if (Sede.PuedeCambiar)
+        {
+            <form asp-controller="Sucursales" asp-action="Cambiar" method="post" id="cambiarSedeForm" class="d-flex align-items-center gap-2 flex-wrap">
+                <label for="sedeActiva" class="mb-0"><i class="fas fa-map-marker-alt me-1"></i>Sede activa</label>
+                <select id="sedeActiva" name="sucursalId" class="form-select" style="width:auto;max-width:220px" aria-label="Sede activa">
+                    @foreach (var sede in Sede.Disponibles)
+                    {
+                        <option value="@sede.Id" selected="@(sede.Id == Sede.Id)">@sede.Nombre</option>
+                    }
+                </select>
+                <button type="submit" class="btn btn-outline-primary">Cambiar sede</button>
+            </form>
+        }
+        else
+        {
+            <span class="fw-bold"><i class="fas fa-map-marker-alt me-2"></i>Sede: @Sede.Nombre</span>
+        }
+    </div>
+    <style>
+        .sede-selector { padding: 4px 12px 4px 0; }
+        @@media (max-width: 767.98px) {
+            .navbar-top { flex-wrap: wrap; gap: 10px; }
+            .sede-selector { width: 100%; }
+        }
+    </style>
+    <script>
+        document.getElementById('cambiarSedeForm')?.addEventListener('submit', async function(event) {
+            if (this.sucursalId.value === '@Sede.Id') { event.preventDefault(); return; }
+            if (this.dataset.confirmed === 'true') return;
+            event.preventDefault();
+            const result = await PetmorUI.confirmDanger({ title: 'Cambiar sede', text: 'Vas a cambiar de sede. Los cambios sin guardar y el carrito en pantalla se perderán. La caja actual seguirá perteneciendo a su sede.', confirmButtonText: 'Sí, cambiar' });
+            if (result.isConfirmed) { this.dataset.confirmed = 'true'; this.requestSubmit(); }
+        });
+    </script>
+}

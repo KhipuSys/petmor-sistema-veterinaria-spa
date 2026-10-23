@@ -1,0 +1,56 @@
+@model List<MiniMarket.Web.Models.Atencion>
+@using MiniMarket.Web.Models
+@{
+    var enProceso = Model.Count(x => x.Estado is EstadoAtencion.EnEspera or EstadoAtencion.EnAtencion);
+}
+
+<section class="dashboard-metrics">
+    <a asp-controller="Petmor" asp-action="Mascotas" class="dashboard-metric metric-pets">
+        <div class="metric-icon"><i class="fas fa-paw"></i></div>
+        <div><span>Mascotas activas</span><strong>@ViewBag.Mascotas</strong><small>Pacientes registrados</small></div>
+    </a>
+    <a asp-controller="Petmor" asp-action="Agenda" asp-route-fecha="@(((DateTime)ViewBag.FechaAgenda).ToString("yyyy-MM-dd"))" class="dashboard-metric metric-today">
+        <div class="metric-icon"><i class="fas fa-calendar-check"></i></div>
+        <div><span>Atenciones del día</span><strong>@Model.Count</strong><small>@(((DateTime)ViewBag.FechaAgenda).ToString("dd/MM/yyyy"))</small></div>
+    </a>
+    <a asp-controller="Petmor" asp-action="Agenda" asp-route-activas="true" class="dashboard-metric metric-process">
+        <div class="metric-icon"><i class="fas fa-play"></i></div>
+        <div><span>En proceso (día)</span><strong>@enProceso</strong><small>Ver todas las atenciones activas</small></div>
+    </a>
+    <a asp-controller="Petmor" asp-action="Cuentas" class="dashboard-metric metric-cuentas">
+        <div class="metric-icon"><i class="fas fa-receipt"></i></div>
+        <div><span>Cuentas pendientes</span><strong>@ViewBag.Pendientes</strong><small>Por cobrar en caja</small></div>
+    </a>
+</section>
+
+<section class="dashboard-agenda-card">
+    <div class="dashboard-agenda-head">
+        <div class="agenda-title"><div class="agenda-title-icon"><i class="fas fa-list-ul"></i></div><div><h2>Agenda del día seleccionado</h2><p>@Model.Count atención@(Model.Count == 1 ? "" : "es") registrada@(Model.Count == 1 ? "" : "s")</p></div></div>
+        @{ ViewData["DateFilterController"] = "Home"; ViewData["DateFilterAction"] = "Index"; ViewData["DateFilterMode"] = "single"; ViewData["DateFilterSingle"] = ViewBag.FechaAgenda ?? HoraPeru.Hoy; ViewData["DateFilterClearLabel"] = "Hoy"; }
+        <partial name="_DateFilter" />
+    </div>
+    <partial name="~/Views/Petmor/_AgendaTabla.cshtml" model="Model" />
+</section>
+
+<style>
+    .dashboard-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; margin-bottom: 22px; }
+    .dashboard-metric { min-height: 112px; display: flex; align-items: center; gap: 16px; padding: 20px; border: 1px solid #e5e7eb; border-radius: 14px; background: linear-gradient(135deg, #fff, #fbfdff); text-decoration: none; transition: border-color .2s ease, transform .2s ease; }
+    .dashboard-metric:hover { border-color: #fed7aa; transform: translateY(-1px); }
+    .metric-icon { width: 58px; height: 58px; border-radius: 16px; display: inline-flex; align-items: center; justify-content: center; font-size: 25px; flex: 0 0 auto; }
+    .dashboard-metric span { color: #64748b; font-weight: 900; font-size: .82rem; text-transform: uppercase; letter-spacing: .05em; }
+    .dashboard-metric strong { display: block; margin-top: 2px; color: #0f172a; font-size: 2rem; line-height: 1; font-weight: 900; }
+    .dashboard-metric small { display: block; margin-top: 8px; color: #64748b; font-weight: 600; }
+    .metric-pets .metric-icon { background: #fff3ea; color: #f06800; }
+    .metric-today .metric-icon { background: #eff6ff; color: #2563eb; }
+    .metric-process .metric-icon { background: #dcfce7; color: #16a34a; }
+    .metric-cuentas .metric-icon { background: #fef3c7; color: #d97706; }
+    .dashboard-agenda-card { border: 1px solid #e5e7eb; border-radius: 14px; background: #fff; overflow: hidden; }
+    .dashboard-agenda-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px 20px; border-bottom: 1px solid #e5e7eb; background: linear-gradient(135deg, #fff, #f8fafc); }
+    .agenda-title { display: flex; align-items: center; gap: 12px; }
+    .agenda-title-icon { width: 42px; height: 42px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; background: #eff6ff; color: #2563eb; }
+    .agenda-title h2 { margin: 0; color: #0f172a; font-size: 1.1rem; font-weight: 900; }
+    .agenda-title p { margin: 3px 0 0; color: #64748b; font-size: .92rem; }
+    .dashboard-agenda-card .table-responsive { margin: 18px; border: 1px solid #e5e7eb; border-radius: 12px; }
+    @@media (max-width: 1199.98px) { .dashboard-metrics { grid-template-columns: 1fr 1fr; } }
+    @@media (max-width: 767.98px) { .dashboard-metrics { grid-template-columns: 1fr; } .dashboard-agenda-head { align-items: flex-start; flex-direction: column; } }
+</style>

@@ -1,0 +1,119 @@
+@model IEnumerable<MiniMarket.Web.Models.ViewModels.PrediccionViewModel>
+
+@{
+    ViewData["Title"] = "Predicción de Stock";
+    var predicciones = Model.ToList();
+    var criticos = predicciones.Count(m => m.EstadoStock == "Crítico");
+    var bajos = predicciones.Count(m => m.EstadoStock == "Bajo");
+    var sugerido = predicciones.Sum(m => m.CantidadSugeridaComprar);
+    var inversion = predicciones.Sum(m => m.InversionEstimada);
+}
+
+<section class="pred-metrics">
+    <article class="metric-card metric-critical"><div class="metric-icon"><i class="fas fa-triangle-exclamation"></i></div><div><span>Críticos</span><strong>@criticos</strong><small>Por agotarse</small></div></article>
+    <article class="metric-card metric-low"><div class="metric-icon"><i class="fas fa-arrow-trend-down"></i></div><div><span>Stock bajo</span><strong>@bajos</strong><small>Requieren seguimiento</small></div></article>
+    <article class="metric-card metric-units"><div class="metric-icon"><i class="fas fa-boxes-stacked"></i></div><div><span>Sugerido</span><strong>@sugerido u.</strong><small>Unidades a reponer</small></div></article>
+    <article class="metric-card metric-budget"><div class="metric-icon"><i class="fas fa-coins"></i></div><div><span>Inversión</span><strong>S/. @inversion.ToString("N2")</strong><small>Presupuesto estimado</small></div></article>
+</section>
+
+<section class="pred-card">
+    <div class="pred-head">
+        <div class="pred-title"><div class="pred-icon"><i class="fas fa-chart-line"></i></div><div><h2>Predicción de Stock</h2><p>Demanda estimada para 7 días según rotación histórica</p></div></div>
+        <a asp-controller="Productos" asp-action="Index" class="btn btn-pred-primary"><i class="fas fa-boxes me-2"></i>Gestionar productos</a>
+    </div>
+
+    <div class="pred-tools">
+        <span>Filtros rápidos:</span>
+        <button type="button" class="quick-chip active" data-filter="todos"><i class="fas fa-list"></i>Todos</button>
+        <button type="button" class="quick-chip" data-filter="critico"><i class="fas fa-triangle-exclamation"></i>Críticos</button>
+        <button type="button" class="quick-chip" data-filter="bajo"><i class="fas fa-arrow-trend-down"></i>Stock bajo</button>
+        <button type="button" class="quick-chip" data-filter="optimo"><i class="fas fa-check"></i>Óptimos</button>
+        <button type="button" class="quick-chip" data-filter="comprar"><i class="fas fa-cart-plus"></i>Reponer</button>
+        <div class="export-actions">
+            <button type="button" class="export-btn" id="btnExportExcel"><i class="fas fa-file-excel"></i>Excel</button>
+            <button type="button" class="export-btn" id="btnExportPdf"><i class="fas fa-file-pdf"></i>PDF</button>
+            <button type="button" class="export-btn" id="btnExportPrint"><i class="fas fa-print"></i>Imprimir</button>
+        </div>
+    </div>
+
+    <div class="table-responsive pred-table-wrap">
+        <table class="table pred-table align-middle" id="tablaPrediccion">
+            <thead><tr><th>Producto</th><th>Categoría</th><th class="text-center">Stock</th><th class="text-center">Promedio diario</th><th class="text-center">Demanda 7 días</th><th class="text-center">Sugerido</th><th class="text-end">Inversión</th><th>Estado</th><th class="text-end">Acción</th></tr></thead>
+            <tbody>
+            @foreach (var item in predicciones)
+            {
+                var estadoKey = item.EstadoStock == "Crítico" ? "critico" : item.EstadoStock == "Bajo" ? "bajo" : "optimo";
+                var comprar = item.CantidadSugeridaComprar > 0;
+                <tr data-critico="@(estadoKey == "critico" ? "true" : "false")" data-bajo="@(estadoKey == "bajo" ? "true" : "false")" data-optimo="@(estadoKey == "optimo" ? "true" : "false")" data-comprar="@(comprar ? "true" : "false")">
+                    <td><div class="product-cell">@if (!string.IsNullOrWhiteSpace(item.ImagenUrl)) { <img src="@item.ImagenUrl" class="product-thumb" alt="@item.ProductoNombre" /> } else { <span class="product-thumb-empty"><i class="fas fa-image"></i></span> }<div class="product-copy"><strong>@item.ProductoNombre</strong><small><i class="fas fa-barcode me-1"></i>@(string.IsNullOrWhiteSpace(item.CodigoBarras) ? "Sin código" : item.CodigoBarras)</small></div></div></td>
+                    <td><span class="category-pill"><i class="fas fa-tags"></i>@item.CategoriaNombre</span></td>
+                    <td class="text-center"><span class="stock-pill @(estadoKey == "critico" ? "stock-critical" : estadoKey == "bajo" ? "stock-low" : "stock-ok")">@item.StockActual</span><small>Mín. @item.StockMinimo</small></td>
+                    <td class="text-center"><strong>@item.PromedioVentaDiaria.ToString("N2")</strong><small>u/día</small></td>
+                    <td class="text-center"><strong>@item.DemandaEstimada7Dias</strong><small>u.</small></td>
+                    <td class="text-center">@if (comprar) { <span class="suggest-pill"><i class="fas fa-plus"></i>@item.CantidadSugeridaComprar u.</span> } else { <span class="covered-pill"><i class="fas fa-check"></i>Cubierto</span> }</td>
+                    <td class="text-end"><strong class="money-text">S/. @item.InversionEstimada.ToString("N2")</strong></td>
+                    <td><span class="state-pill state-@estadoKey"><i class="fas @(estadoKey == "critico" ? "fa-triangle-exclamation" : estadoKey == "bajo" ? "fa-arrow-trend-down" : "fa-check")"></i>@(estadoKey == "bajo" ? "Stock bajo" : item.EstadoStock)</span></td>
+                    <td class="text-end">@if (comprar) { <a asp-controller="Productos" asp-action="Edit" asp-route-id="@item.ProductoId" class="btn pred-action action-buy" title="Editar stock"><i class="fas fa-pen"></i></a> } else { <button class="btn pred-action action-ok" disabled title="Al día"><i class="fas fa-check"></i></button> }</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<style>
+    .pred-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; margin-bottom: 22px; }
+    .metric-card { min-height: 112px; display: flex; align-items: center; gap: 16px; padding: 20px; border: 1px solid #e5e7eb; border-radius: 14px; background: linear-gradient(135deg, #fff, #fbfdff); }
+    .metric-icon { width: 58px; height: 58px; border-radius: 16px; display: inline-flex; align-items: center; justify-content: center; font-size: 25px; flex: 0 0 auto; }
+    .metric-card span { color: #64748b; font-weight: 900; font-size: .82rem; text-transform: uppercase; letter-spacing: .05em; }
+    .metric-card strong { display: block; margin-top: 2px; color: #0f172a; font-size: 1.55rem; line-height: 1; font-weight: 900; }
+    .metric-card small { display: block; margin-top: 8px; color: #64748b; font-weight: 600; }
+    .metric-critical .metric-icon { background: #fee2e2; color: #dc2626; } .metric-low .metric-icon { background: #fffbeb; color: #d97706; } .metric-units .metric-icon { background: #eff6ff; color: #2563eb; } .metric-budget .metric-icon { background: #fff3ea; color: #f06800; }
+    .pred-card { border: 1px solid #e5e7eb; border-radius: 14px; background: #fff; overflow: hidden; }
+    .pred-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px 20px; border-bottom: 1px solid #e5e7eb; background: linear-gradient(135deg, #fff, #f8fafc); }
+    .pred-title { display: flex; align-items: center; gap: 12px; } .pred-icon { width: 42px; height: 42px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; background: #fff3ea; color: #f06800; }
+    .pred-title h2 { margin: 0; color: #0f172a; font-size: 1.1rem; font-weight: 900; } .pred-title p { margin: 3px 0 0; color: #64748b; font-size: .92rem; }
+    .btn-pred-primary { min-height: 46px; border-radius: 10px; padding: 11px 18px; background: #f06800; border: 1px solid #f06800; color: #fff !important; font-weight: 900; } .btn-pred-primary:hover { background: #d95f00; color: #fff !important; }
+    .pred-tools { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 14px 20px 0; color: #475569; font-weight: 900; font-size: .86rem; }
+    .quick-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 6px 12px; border-radius: 999px; border: 1px solid #fed7aa; background: #fff; color: #f06800; font-size: .82rem; font-weight: 900; }
+    .quick-chip.active, .quick-chip:hover { background: #f06800; color: #fff; border-color: #f06800; }
+    .export-actions { display: inline-flex; gap: 8px; flex-wrap: wrap; margin-left: auto; }
+    .export-btn { min-height: 34px; display: inline-flex; align-items: center; gap: 6px; border-radius: 9px; border: 1px solid #fed7aa; background: #fff; color: #f06800; padding: 6px 12px; font-size: .82rem; font-weight: 900; }
+    .pred-table-wrap { margin: 18px; border: 1px solid #e5e7eb; border-radius: 12px; }
+    .pred-table { margin: 0; min-width: 1180px; }
+    .pred-table thead th { background: #f8fafc !important; color: #0f172a; font-weight: 900; padding: 16px 18px; border-bottom: 1px solid #e2e8f0; font-size: .88rem; }
+    .pred-table tbody td { padding: 18px; border-bottom: 1px solid #e2e8f0; color: #334155; vertical-align: middle; }
+    .pred-table strong { display: block; color: #0f172a; font-weight: 900; } .pred-table small { display: block; color: #64748b; margin-top: 3px; }
+    .product-cell { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .product-thumb, .product-thumb-empty { width: 58px; height: 58px; border-radius: 12px; border: 1px solid #e5e7eb; flex: 0 0 auto; }
+    .product-thumb { object-fit: cover; background: #f8fafc; }
+    .product-thumb-empty { display: inline-flex; align-items: center; justify-content: center; color: #94a3b8; background: #f8fafc; }
+    .product-copy { min-width: 0; }
+    .product-copy strong, .product-copy small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 330px; }
+    .category-pill, .stock-pill, .suggest-pill, .covered-pill, .state-pill { display: inline-flex; align-items: center; gap: 7px; border-radius: 999px; padding: 8px 13px; font-weight: 900; font-size: .8rem; }
+    .category-pill { background: #fff7ed; color: #f06800; } .stock-critical, .state-critico, .suggest-pill { background: #fee2e2; color: #dc2626; } .stock-low, .state-bajo { background: #fffbeb; color: #d97706; } .stock-ok, .state-optimo, .covered-pill { background: #ecfdf5; color: #059669; }
+    .money-text { color: #059669 !important; }
+    .pred-action { width: 42px; height: 42px; display: inline-flex; align-items: center; justify-content: center; border-radius: 9px; } .action-buy, .action-buy:visited, .action-buy:hover, .action-buy:focus, .action-buy:active { background: #f06800 !important; color: #fff !important; border: 1px solid #f06800 !important; box-shadow: none !important; } .action-buy:hover { filter: brightness(.95); } .action-buy i { color: #fff !important; } .action-ok { background: #ecfdf5; color: #059669; border: 1px solid #bbf7d0; }
+    .dataTables_wrapper { padding: 0 18px 18px; } .dataTables_filter input, .dataTables_length select { border: 1px solid #dbe3ee; border-radius: 9px; padding: 6px 10px; }
+    @@media (max-width: 1199.98px) { .pred-metrics { grid-template-columns: 1fr 1fr; } }
+    @@media (max-width: 767.98px) { .pred-metrics { grid-template-columns: 1fr; } .pred-head { align-items: flex-start; flex-direction: column; } .btn-pred-primary { width: 100%; } .export-actions { margin-left: 0; width: 100%; } }
+</style>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            if ($.fn.DataTable.isDataTable('#tablaPrediccion')) $('#tablaPrediccion').DataTable().destroy();
+            let filtroRapido = 'todos';
+            $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
+                if (settings.nTable.id !== 'tablaPrediccion' || filtroRapido === 'todos') return true;
+                const row = settings.aoData[dataIndex].nTr;
+                return row ? row.dataset[filtroRapido] === 'true' : true;
+            });
+            const tabla = $('#tablaPrediccion').DataTable({ dom: PetmorTables.dom, buttons: PetmorTables.exportButtons('Predicción de stock'), order: [[5, 'desc']] });
+            $('.quick-chip').on('click', function() { $('.quick-chip').removeClass('active'); $(this).addClass('active'); filtroRapido = $(this).data('filter'); tabla.draw(); });
+            $('#btnExportExcel').on('click', () => tabla.button('.buttons-excel').trigger());
+            $('#btnExportPdf').on('click', () => tabla.button('.buttons-pdf').trigger());
+            $('#btnExportPrint').on('click', () => tabla.button('.buttons-print').trigger());
+        });
+    </script>
+}

@@ -1,0 +1,132 @@
+@model List<MiniMarket.Web.Models.Producto>
+@using MiniMarket.Web.Models
+@{
+    ViewData["Title"] = "Servicios y tarifas";
+    var total = Model.Count;
+    var veterinaria = Model.Count(x => x.AreaServicio == AreaAtencion.Veterinaria);
+    var spa = Model.Count(x => x.AreaServicio == AreaAtencion.Spa);
+    var activos = Model.Count(x => x.Estado);
+}
+<partial name="_Avisos" />
+
+<section class="servicios-metrics">
+    <article class="metric-card metric-total"><div class="metric-icon"><i class="fas fa-list-check"></i></div><div><span>Total</span><strong>@total</strong><small>Servicios registrados</small></div></article>
+    <article class="metric-card metric-vet"><div class="metric-icon"><i class="fas fa-stethoscope"></i></div><div><span>Veterinaria</span><strong>@veterinaria</strong><small>Consultas y procedimientos</small></div></article>
+    <article class="metric-card metric-spa"><div class="metric-icon"><i class="fab fa-pagelines"></i></div><div><span>Spa</span><strong>@spa</strong><small>Baños y grooming</small></div></article>
+    <article class="metric-card metric-active"><div class="metric-icon"><i class="fas fa-toggle-on"></i></div><div><span>Disponibles</span><strong>@activos</strong><small>Activos para agenda</small></div></article>
+</section>
+
+<section class="servicios-card">
+    <div class="servicios-head">
+        <div class="servicios-title"><div class="servicios-icon"><i class="fas fa-stethoscope"></i></div><div><h2>Servicios y tarifas</h2><p>Conceptos facturables para agenda, atención y cobro</p></div></div>
+        @if(User.IsInRole("Administrador"))
+        {
+            <a class="btn btn-servicio-primary" asp-action="Servicio"><i class="fas fa-plus me-2"></i>Nuevo servicio</a>
+        }
+    </div>
+    <div class="servicios-tools">
+        <label class="search-box"><i class="fas fa-search"></i><input id="buscarServicio" type="search" placeholder="Buscar servicio o descripción" /></label>
+        <div class="quick-filters" role="group" aria-label="Filtros de servicios">
+            <button type="button" class="quick-chip active" data-filter="todos">Todos</button>
+            <button type="button" class="quick-chip" data-filter="veterinaria">Veterinaria</button>
+            <button type="button" class="quick-chip" data-filter="spa">Spa</button>
+            <button type="button" class="quick-chip" data-filter="activos">Disponibles</button>
+            <button type="button" class="quick-chip" data-filter="inactivos">Inactivos</button>
+        </div>
+    </div>
+    <div class="table-responsive servicios-table-wrap">
+        <table class="table servicios-table align-middle" data-petmor-list>
+            <thead><tr><th>Servicio</th><th>Área</th><th>Duración</th><th>Precio final</th><th>Estado</th><th class="text-end">Acciones</th></tr></thead>
+            <tbody>
+            @foreach(var p in Model)
+            {
+                var area = p.AreaServicio ?? AreaAtencion.Veterinaria;
+                <tr data-nombre="@p.Nombre" data-descripcion="@p.Descripcion" data-area="@(area == AreaAtencion.Spa ? "spa" : "veterinaria")" data-estado="@(p.Estado ? "activos" : "inactivos")">
+                    <td><strong>@p.Nombre</strong><small>@(string.IsNullOrWhiteSpace(p.Descripcion) ? "Sin descripción" : p.Descripcion)</small></td>
+                    <td><span class="area-pill @(area == AreaAtencion.Spa ? "area-spa" : "area-vet")">@area</span></td>
+                    <td><span class="duration-pill"><i class="far fa-clock"></i>@p.DuracionMinutos min</span></td>
+                    <td><strong class="price-text">S/. @p.Precio.ToString("N2")</strong></td>
+                    <td><span class="status-pill @(p.Estado ? "status-active" : "status-inactive")">@(p.Estado ? "Disponible" : "Inactivo")</span></td>
+                    <td><div class="acciones-cell">@if(User.IsInRole("Administrador")){<a class="btn btn-service-action" asp-action="Servicio" asp-route-id="@p.Id" title="Editar servicio" aria-label="Editar servicio"><i class="fas fa-pen"></i></a>}</div></td>
+                </tr>
+            }
+            @if(Model.Count == 0) { <tr><td colspan="6" class="text-center text-muted py-5">Registre sus consultas, procedimientos y servicios de spa con sus tarifas reales.</td></tr> }
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<style>
+    .servicios-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; margin-bottom: 22px; }
+    .metric-card { min-height: 112px; display: flex; align-items: center; gap: 16px; padding: 20px; border: 1px solid #e5e7eb; border-radius: 12px; background: linear-gradient(135deg, #fff, #fbfdff); }
+    .metric-icon { width: 58px; height: 58px; border-radius: 16px; display: inline-flex; align-items: center; justify-content: center; font-size: 25px; flex: 0 0 auto; }
+    .metric-card span { color: #64748b; font-weight: 900; font-size: .82rem; text-transform: uppercase; letter-spacing: .05em; }
+    .metric-card strong { display: block; margin-top: 2px; color: #0f172a; font-size: 2rem; line-height: 1; font-weight: 900; }
+    .metric-card small { display: block; margin-top: 8px; color: #64748b; font-weight: 600; }
+    .metric-total .metric-icon { background: #fff3ea; color: #f06800; }
+    .metric-vet .metric-icon { background: #dcfce7; color: #16a34a; }
+    .metric-spa .metric-icon { background: #fce7f3; color: #db2777; }
+    .metric-active .metric-icon { background: #eff6ff; color: #2563eb; }
+    .servicios-card { border: 1px solid #e5e7eb; border-radius: 14px; background: #fff; overflow: hidden; }
+    .servicios-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px 20px; border-bottom: 1px solid #e5e7eb; background: linear-gradient(135deg, #fff, #f8fafc); }
+    .servicios-title { display: flex; align-items: center; gap: 12px; }
+    .servicios-icon { width: 42px; height: 42px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; background: #fff3ea; color: #f06800; }
+    .servicios-title h2 { margin: 0; color: #0f172a; font-size: 1.1rem; font-weight: 900; }
+    .servicios-title p { margin: 3px 0 0; color: #64748b; font-size: .92rem; }
+    .btn-servicio-primary { min-height: 46px; border-radius: 10px; padding: 11px 18px; background: #f06800; border: 1px solid #f06800; color: #fff !important; font-weight: 900; }
+    .btn-servicio-primary:hover { background: #d95f00; color: #fff !important; }
+    .servicios-tools { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 18px 20px 12px; flex-wrap: wrap; }
+    .search-box { position: relative; flex: 1 1 320px; margin: 0; }
+    .search-box i { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #64748b; }
+    .search-box input { width: 100%; min-height: 46px; border: 1px solid #dbe3ee; border-radius: 10px; padding: 10px 14px 10px 40px; font-weight: 700; color: #334155; outline: 0; }
+    .search-box input:focus { border-color: #f06800; box-shadow: 0 0 0 3px rgba(240,104,0,.12); }
+    .quick-filters { display: flex; gap: 8px; flex-wrap: wrap; }
+    .quick-chip { min-height: 34px; border-radius: 999px; border: 1px solid #fed7aa; background: #fff; color: #f06800; padding: 6px 12px; font-size: .82rem; font-weight: 900; }
+    .quick-chip.active, .quick-chip:hover { background: #f06800; color: #fff; border-color: #f06800; }
+    .servicios-table-wrap { margin: 0 18px 18px; border: 1px solid #e5e7eb; border-radius: 12px; }
+    .servicios-table { margin: 0; table-layout: fixed; min-width: 980px; }
+    .servicios-table thead th { background: #f8fafc; color: #0f172a; font-weight: 900; padding: 16px 18px; border-bottom: 1px solid #e2e8f0; font-size: .88rem; }
+    .servicios-table tbody td { padding: 18px; border-bottom: 1px solid #e2e8f0; color: #334155; vertical-align: middle; }
+    .servicios-table tbody tr:last-child td { border-bottom: 0; }
+    .servicios-table strong { color: #0f172a; font-weight: 900; }
+    .servicios-table small { display: block; color: #64748b; margin-top: 3px; }
+    .area-pill, .duration-pill, .status-pill { display: inline-flex; align-items: center; gap: 7px; border-radius: 999px; padding: 8px 13px; font-weight: 900; font-size: .8rem; }
+    .area-vet { background: #dcfce7; color: #16a34a; }
+    .area-spa { background: #fce7f3; color: #db2777; }
+    .area-vet::before { content: "\f0f1"; font-family: "Font Awesome 6 Free"; font-weight: 900; }
+    .area-spa::before { content: "\f5bb"; font-family: "Font Awesome 6 Free"; font-weight: 900; }
+    .duration-pill { background: #fff7ed; color: #f06800; }
+    .status-active { background: #ecfdf5; color: #059669; }
+    .status-inactive { background: #fee2e2; color: #dc2626; }
+    .price-text { font-size: 1.02rem; }
+    .acciones-cell { display: flex; justify-content: flex-end; }
+    .btn-service-action { width: 42px; height: 42px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #fb923c; border-radius: 9px; color: #f06800; background: #fff; }
+    .btn-service-action:hover { background: #fff7ed; color: #c2410c; }
+    @@media (max-width: 1199.98px) { .servicios-metrics { grid-template-columns: 1fr 1fr; } }
+    @@media (max-width: 767.98px) { .servicios-metrics { grid-template-columns: 1fr; } .servicios-head { align-items: flex-start; flex-direction: column; } .btn-servicio-primary { width: 100%; } }
+</style>
+
+<script>
+    (() => {
+        const search = document.getElementById('buscarServicio');
+        const buttons = document.querySelectorAll('.quick-chip');
+        const rows = document.querySelectorAll('.servicios-table tbody tr[data-nombre]');
+        let filter = 'todos';
+        const apply = () => {
+            const term = (search?.value || '').trim().toLowerCase();
+            rows.forEach(row => {
+                const text = `${row.dataset.nombre || ''} ${row.dataset.descripcion || ''}`.toLowerCase();
+                const matchesText = !term || text.includes(term);
+                const matchesFilter = filter === 'todos' || row.dataset.area === filter || row.dataset.estado === filter;
+                row.style.display = matchesText && matchesFilter ? '' : 'none';
+            });
+        };
+        search?.addEventListener('input', apply);
+        buttons.forEach(button => button.addEventListener('click', () => {
+            buttons.forEach(x => x.classList.remove('active'));
+            button.classList.add('active');
+            filter = button.dataset.filter;
+            apply();
+        }));
+    })();
+</script>

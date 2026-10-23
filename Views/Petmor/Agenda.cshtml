@@ -1,0 +1,77 @@
+@model List<MiniMarket.Web.Models.Atencion>
+@using MiniMarket.Web.Models
+@{
+    ViewData["Title"] = "Agenda y Atenciones";
+    var fecha = (DateTime)ViewBag.Fecha;
+    AreaAtencion? area = ViewBag.Area as AreaAtencion?;
+    EstadoAtencion? estado = ViewBag.Estado as EstadoAtencion?;
+    bool activas = ViewBag.Activas is bool a && a;
+    var totalVeterinaria = Model.Count(x => x.Area == AreaAtencion.Veterinaria);
+    var totalSpa = Model.Count(x => x.Area == AreaAtencion.Spa);
+    var pendientes = Model.Count(x => x.Estado is EstadoAtencion.Programada or EstadoAtencion.Confirmada or EstadoAtencion.EnEspera or EstadoAtencion.EnAtencion or EstadoAtencion.Lista);
+}
+
+<section class="agenda-metrics">
+    <article class="metric-card metric-total"><div class="metric-icon"><i class="fas fa-paw"></i></div><div><span>Total</span><strong>@Model.Count</strong><small>Todas las atenciones</small></div></article>
+    <article class="metric-card metric-vet"><div class="metric-icon"><i class="fas fa-stethoscope"></i></div><div><span>Veterinaria</span><strong>@totalVeterinaria</strong><small>Atenciones veterinarias</small></div></article>
+    <article class="metric-card metric-spa"><div class="metric-icon"><i class="fab fa-pagelines"></i></div><div><span>Spa</span><strong>@totalSpa</strong><small>Atenciones de spa</small></div></article>
+    <article class="metric-card metric-pending"><div class="metric-icon"><i class="far fa-clock"></i></div><div><span>Pendientes</span><strong>@pendientes</strong><small>Atenciones por confirmar</small></div></article>
+</section>
+
+<section class="agenda-filter-card">
+    <div class="filter-heading">
+        <div class="filter-title"><div class="filter-icon"><i class="fas fa-filter"></i></div><div><h2>Filtros de búsqueda</h2><p>Encuentra rápidamente las atenciones que necesitas</p></div></div>
+    </div>
+    <form class="agenda-filtros" method="get">
+        <div class="field-wrap"><label>Fecha</label><div class="control-wrap"><i class="far fa-calendar-alt"></i><input name="fecha" aria-label="Fecha" type="date" value="@fecha.ToString("yyyy-MM-dd")" class="form-control" /></div></div>
+        <div class="field-wrap"><label>Área</label><div class="control-wrap"><i class="fas fa-layer-group"></i><select name="areaAtencion" aria-label="Área" class="form-select"><option value="">Todas las áreas</option><option value="1" selected="@(area == AreaAtencion.Veterinaria)">Veterinaria</option><option value="2" selected="@(area == AreaAtencion.Spa)">Spa</option></select></div></div>
+        <div class="field-wrap"><label>Estado</label><div class="control-wrap"><i class="far fa-gem"></i><select name="estado" aria-label="Estado" class="form-select"><option value="">Todos los estados</option>@foreach (EstadoAtencion item in Enum.GetValues(typeof(EstadoAtencion))) { <option value="@((int)item)" selected="@(estado == item)">@item.Texto()</option> }</select></div></div>
+        <button class="btn btn-agenda-primary"><i class="fas fa-filter me-2"></i>Filtrar</button>
+        <a class="btn btn-agenda-outline" asp-action="Agenda"><i class="fas fa-eraser me-2"></i>Limpiar</a>
+    </form>
+    <div class="agenda-quick"><span>Filtros rápidos:</span><a class="quick-chip @(area == null && !activas ? "active" : "")" asp-action="Agenda"><i class="fas fa-calendar-check"></i>Hoy</a><a class="quick-chip @(area == AreaAtencion.Veterinaria ? "active" : "")" asp-action="Agenda" asp-route-areaAtencion="Veterinaria"><i class="fas fa-stethoscope"></i>Veterinaria</a><a class="quick-chip @(area == AreaAtencion.Spa ? "active" : "")" asp-action="Agenda" asp-route-areaAtencion="Spa" asp-route-activas="true"><i class="fab fa-pagelines"></i>Spa activas</a><a class="quick-chip @(activas && area == null ? "active" : "")" asp-action="Agenda" asp-route-activas="true"><i class="fas fa-users"></i>Todas activas</a></div>
+</section>
+
+<section class="agenda-day-card">
+    <div class="agenda-day-head">
+        <div class="filter-title"><div class="day-icon"><i class="fas fa-list-ul"></i></div><div><h2>Agenda del día</h2><p>@Model.Count atención@(Model.Count == 1 ? "" : "es") encontrada@(Model.Count == 1 ? "" : "s")</p></div></div>
+        <a asp-action="Agendar" class="btn btn-agenda-primary"><i class="fas fa-plus me-2"></i>Nueva atención</a>
+    </div>
+    <partial name="_AgendaTabla" model="Model" />
+</section>
+
+<style>
+    .agenda-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; margin-bottom: 22px; }
+    .metric-card { min-height: 112px; display: flex; align-items: center; gap: 16px; padding: 20px; border: 1px solid #e5e7eb; border-radius: 12px; background: linear-gradient(135deg, #fff, #fbfdff); overflow: hidden; }
+    .metric-icon { width: 58px; height: 58px; border-radius: 16px; display: inline-flex; align-items: center; justify-content: center; font-size: 27px; flex: 0 0 auto; }
+    .metric-card span { color: #64748b; font-weight: 900; font-size: .82rem; text-transform: uppercase; letter-spacing: .05em; }
+    .metric-card strong { display: block; margin-top: 2px; color: #0f172a; font-size: 2rem; line-height: 1; font-weight: 900; }
+    .metric-card small { display: block; margin-top: 8px; color: #64748b; font-weight: 600; }
+    .metric-total .metric-icon { background: #fff3ea; color: #f06800; }
+    .metric-vet .metric-icon { background: #dcfce7; color: #16a34a; }
+    .metric-spa .metric-icon { background: #fce7f3; color: #ec4899; }
+    .metric-pending .metric-icon { background: #fff7ed; color: #f59e0b; }
+    .agenda-filter-card, .agenda-day-card { border: 1px solid #e5e7eb; border-radius: 14px; background: #fff; margin-bottom: 22px; overflow: hidden; }
+    .filter-heading, .agenda-day-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px 20px; border-bottom: 1px solid #e5e7eb; background: linear-gradient(135deg, #fff, #f8fafc); }
+    .filter-title { display: flex; align-items: center; gap: 12px; }
+    .filter-title h2 { margin: 0; color: #0f172a; font-size: 1.1rem; font-weight: 900; }
+    .filter-title p { margin: 3px 0 0; color: #64748b; font-size: .92rem; }
+    .filter-icon, .day-icon { width: 42px; height: 42px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; background: #fff3ea; color: #f06800; }
+    .day-icon { background: #eff6ff; color: #2563eb; }
+    .agenda-filtros { display: grid; grid-template-columns: 1.05fr 1.05fr 1.05fr .8fr .8fr; gap: 14px; align-items: end; padding: 18px 20px 12px; }
+    .field-wrap label { display: block; margin-bottom: 8px; color: #0f172a; font-weight: 900; font-size: .86rem; }
+    .control-wrap { position: relative; }
+    .control-wrap i { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #64748b; z-index: 2; }
+    .control-wrap .form-control, .control-wrap .form-select { min-height: 52px; border-radius: 10px; padding-left: 42px; border-color: #dbe3ee; color: #334155; font-weight: 700; }
+    .btn-agenda-primary { min-height: 52px; border-radius: 10px; padding: 13px 22px; background: #f06800; border: 1px solid #f06800; color: #fff !important; font-weight: 900; }
+    .btn-agenda-primary:hover { background: #d95f00; border-color: #d95f00; color: #fff !important; }
+    .btn-agenda-outline { min-height: 52px; border-radius: 10px; padding: 13px 20px; border: 1px solid #f06800; background: #fff; color: #f06800; font-weight: 900; }
+    .btn-agenda-outline:hover { background: #fff7ed; color: #c2410c; }
+    .agenda-quick { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 0 20px 16px; color: #475569; font-weight: 900; font-size: .86rem; }
+    .quick-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 6px 12px; border-radius: 999px; border: 1px solid #fed7aa; background: #fff; color: #f06800; font-size: .82rem; font-weight: 900; text-decoration: none; }
+    .quick-chip.active, .quick-chip:hover { background: #f06800; color: #fff !important; border-color: #f06800; }
+    .agenda-day-card { padding-bottom: 18px; }
+    .agenda-day-card .table-responsive { margin: 18px; border: 1px solid #e5e7eb; border-radius: 12px; }
+    @@media (max-width: 1199.98px) { .agenda-metrics { grid-template-columns: 1fr 1fr; } .agenda-filtros { grid-template-columns: 1fr 1fr; } }
+    @@media (max-width: 767.98px) { .agenda-metrics, .agenda-filtros { grid-template-columns: 1fr; } .filter-heading, .agenda-day-head { align-items: flex-start; flex-direction: column; } .btn-agenda-primary, .btn-agenda-outline { width: 100%; } }
+</style>

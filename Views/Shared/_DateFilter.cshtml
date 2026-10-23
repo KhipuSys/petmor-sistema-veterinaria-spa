@@ -1,0 +1,42 @@
+@{
+    DateTime? GetDate(object value)
+    {
+        if (value is DateTime date) return date;
+        if (value is string text && DateTime.TryParse(text, out var parsed)) return parsed;
+        return null;
+    }
+
+    var controller = (ViewData["DateFilterController"] ?? ViewContext.RouteData.Values["controller"] ?? "Home").ToString();
+    var action = (ViewData["DateFilterAction"] ?? ViewContext.RouteData.Values["action"] ?? "Index").ToString();
+    var mode = (ViewData["DateFilterMode"] ?? "range").ToString();
+    var singleName = (ViewData["DateFilterSingleName"] ?? "fecha").ToString();
+    var fromName = (ViewData["DateFilterFromName"] ?? "desde").ToString();
+    var toName = (ViewData["DateFilterToName"] ?? "hasta").ToString();
+    var singleValue = GetDate(ViewData["DateFilterSingle"]);
+    var fromValue = GetDate(ViewData["DateFilterFrom"]);
+    var toValue = GetDate(ViewData["DateFilterTo"]);
+    var clearLabel = (ViewData["DateFilterClearLabel"] ?? "Limpiar").ToString();
+}
+
+<form method="get" asp-controller="@controller" asp-action="@action" class="date-filter-panel">
+    @if (mode == "single")
+    {
+        <div class="date-filter-control">
+            <i class="far fa-calendar-alt"></i>
+            <input name="@singleName" type="date" value="@(singleValue?.ToString("yyyy-MM-dd"))" aria-label="Filtrar por fecha" />
+        </div>
+    }
+    else
+    {
+        <div class="date-filter-control">
+            <i class="far fa-calendar-alt"></i>
+            <input name="@fromName" type="date" value="@(fromValue?.ToString("yyyy-MM-dd"))" aria-label="Fecha desde" />
+        </div>
+        <div class="date-filter-control">
+            <i class="fas fa-calendar-check"></i>
+            <input name="@toName" type="date" value="@(toValue?.ToString("yyyy-MM-dd"))" aria-label="Fecha hasta" />
+        </div>
+    }
+    <button class="btn date-filter-apply" title="Filtrar fecha" aria-label="Filtrar fecha"><i class="fas fa-filter"></i><span>Filtrar</span></button>
+    <a asp-controller="@controller" asp-action="@action" class="btn date-filter-clear" title="@clearLabel" aria-label="@clearLabel"><i class="fas fa-rotate-left"></i><span>@clearLabel</span></a>
+</form>

@@ -1,0 +1,116 @@
+@model MiniMarket.Web.Models.AperturaCaja
+
+@{
+    ViewData["Title"] = "Control de Turno";
+    string estado = ViewBag.Estado;
+    var ventasEfectivo = Model.VentasEfectivo ?? 0;
+    var esperado = Model.MontoInicial + ventasEfectivo - Model.TotalGastos;
+}
+
+<section class="turno-hero">
+    <div class="turno-title"><div class="turno-title-icon"><i class="fas fa-cash-register"></i></div><div><h1>Control de Turno</h1><p>Administra apertura, ventas, gastos y cierre de caja</p></div></div>
+    <span class="turno-status @(estado == "Abierto" ? "status-open" : "status-closed")"><i class="fas @(estado == "Abierto" ? "fa-lock-open" : "fa-lock")"></i>@estado</span>
+</section>
+
+@if (estado == "Cerrado")
+{
+    <section class="turno-open-card">
+        <div class="open-copy"><div class="open-icon"><i class="fas fa-lock-open"></i></div><h2>Abrir caja</h2><p>Ingresa el sencillo inicial para empezar a vender y cobrar cuentas.</p></div>
+        <form asp-action="Abrir" method="post" class="open-form js-open-turno">
+            <label for="montoInput">Monto inicial</label>
+            <div class="money-input"><span>S/.</span><input type="number" name="montoInicial" id="montoInput" step="0.10" min="0" required placeholder="0.00" oninvalid="this.setCustomValidity('Ingresa el monto inicial para abrir caja.')" oninput="this.setCustomValidity('')" /></div>
+            <button type="submit" class="btn btn-turno-primary"><i class="fas fa-lock-open me-2"></i>Abrir caja</button>
+        </form>
+    </section>
+}
+else
+{
+    <section class="turno-metrics">
+        <article class="metric-card metric-inicial"><div class="metric-icon"><i class="fas fa-wallet"></i></div><div><span>Inicial</span><strong>S/. @Model.MontoInicial.ToString("N2")</strong><small>Apertura @Model.FechaApertura.ToString("HH:mm")</small></div></article>
+        <article class="metric-card metric-ventas"><div class="metric-icon"><i class="fas fa-cart-shopping"></i></div><div><span>Ventas</span><strong>S/. @Model.TotalVentas.ToString("N2")</strong><small>Total del turno</small></div></article>
+        <article class="metric-card metric-gastos"><div class="metric-icon"><i class="fas fa-hand-holding-dollar"></i></div><div><span>Gastos</span><strong>S/. @Model.TotalGastos.ToString("N2")</strong><small>Retiros registrados</small></div></article>
+        <article class="metric-card metric-esperado"><div class="metric-icon"><i class="fas fa-scale-balanced"></i></div><div><span>Esperado</span><strong>S/. @esperado.ToString("N2")</strong><small>Efectivo físico</small></div></article>
+    </section>
+
+    <section class="turno-panel">
+        <div class="turno-panel-head"><div class="panel-title"><div class="panel-icon"><i class="fas fa-calculator"></i></div><div><h2>Cerrar turno</h2><p>Cuenta billetes y monedas antes de cerrar la caja</p></div></div></div>
+        <div class="turno-breakdown">
+            <div><span>Ventas en efectivo</span><strong>S/. @ventasEfectivo.ToString("N2")</strong></div>
+            <div><span>Inicial + efectivo - gastos</span><strong>S/. @esperado.ToString("N2")</strong></div>
+        </div>
+        <form asp-action="Cerrar" method="post" class="close-form js-close-turno" data-esperado="S/. @esperado.ToString("N2")">
+            <div class="field-wrap"><label for="montoCierre">Efectivo contado</label><div class="money-input"><span>S/.</span><input id="montoCierre" type="number" name="montoCierre" step="0.10" min="0" required placeholder="0.00" oninvalid="this.setCustomValidity('Ingresa el efectivo contado para cerrar caja.')" oninput="this.setCustomValidity('')" /></div></div>
+            <button type="submit" class="btn btn-turno-danger"><i class="fas fa-lock me-2"></i>Cerrar caja</button>
+        </form>
+    </section>
+
+    <section class="turno-actions">
+        <a asp-controller="Ventas" asp-action="Create" class="quick-action action-sale"><i class="fas fa-cart-shopping"></i><span>Ir a vender</span></a>
+        <a asp-controller="Gastos" asp-action="Create" class="quick-action action-expense"><i class="fas fa-hand-holding-usd"></i><span>Registrar gasto</span></a>
+        @if (User.IsInRole("Administrador") || User.IsInRole("Recepcionista"))
+        {
+            <a asp-action="Historial" class="quick-action action-history"><i class="fas fa-history"></i><span>Historial de caja</span></a>
+        }
+    </section>
+}
+
+<style>
+    .turno-hero { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 24px 28px; border: 1px solid #e5e7eb; border-radius: 16px; background: #fff; margin-bottom: 22px; }
+    .turno-title { display: flex; align-items: center; gap: 14px; }
+    .turno-title-icon { width: 58px; height: 58px; border-radius: 15px; display: inline-flex; align-items: center; justify-content: center; background: #fff3ea; color: #f06800; font-size: 26px; }
+    .turno-title h1 { margin: 0; color: #0f172a; font-size: 1.8rem; font-weight: 900; }
+    .turno-title p { margin: 4px 0 0; color: #64748b; }
+    .turno-status { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; border-radius: 999px; padding: 10px 16px; font-weight: 900; }
+    .status-open { background: #ecfdf5; color: #059669; } .status-closed { background: #fee2e2; color: #dc2626; }
+    .turno-open-card { display: grid; grid-template-columns: 1fr minmax(280px, 420px); gap: 24px; align-items: center; padding: 28px; border: 1px solid #e5e7eb; border-radius: 16px; background: #fff; }
+    .open-icon { width: 64px; height: 64px; border-radius: 16px; display: inline-flex; align-items: center; justify-content: center; background: #fff3ea; color: #f06800; font-size: 28px; margin-bottom: 14px; }
+    .open-copy h2 { margin: 0; color: #0f172a; font-weight: 900; } .open-copy p { margin: 8px 0 0; color: #64748b; }
+    .open-form, .close-form { display: grid; gap: 12px; }
+    .open-form label, .field-wrap label { color: #0f172a; font-weight: 900; }
+    .money-input { display: flex; align-items: center; min-height: 54px; border: 1px solid #dbe3ee; border-radius: 10px; overflow: hidden; background: #fff; }
+    .money-input span { min-width: 58px; height: 54px; display: inline-flex; align-items: center; justify-content: center; background: #fff7ed; color: #f06800; font-weight: 900; }
+    .money-input input { width: 100%; border: 0; outline: 0; padding: 12px 14px; font-weight: 900; color: #0f172a; }
+    .btn-turno-primary, .btn-turno-danger { min-height: 52px; border-radius: 10px; padding: 13px 22px; color: #fff !important; font-weight: 900; }
+    .btn-turno-primary { background: #f06800; border: 1px solid #f06800; } .btn-turno-primary:hover { background: #d95f00; color: #fff !important; }
+    .btn-turno-danger { background: #dc2626; border: 1px solid #dc2626; } .btn-turno-danger:hover { background: #b91c1c; color: #fff !important; }
+    .turno-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; margin-bottom: 22px; }
+    .metric-card { min-height: 112px; display: flex; align-items: center; gap: 16px; padding: 20px; border: 1px solid #e5e7eb; border-radius: 12px; background: linear-gradient(135deg, #fff, #fbfdff); }
+    .metric-icon { width: 58px; height: 58px; border-radius: 16px; display: inline-flex; align-items: center; justify-content: center; font-size: 25px; flex: 0 0 auto; }
+    .metric-card span { color: #64748b; font-weight: 900; font-size: .82rem; text-transform: uppercase; letter-spacing: .05em; }
+    .metric-card strong { display: block; margin-top: 2px; color: #0f172a; font-size: 1.65rem; line-height: 1; font-weight: 900; }
+    .metric-card small { display: block; margin-top: 8px; color: #64748b; font-weight: 600; }
+    .metric-inicial .metric-icon { background: #fff3ea; color: #f06800; } .metric-ventas .metric-icon { background: #dcfce7; color: #16a34a; } .metric-gastos .metric-icon { background: #fee2e2; color: #dc2626; } .metric-esperado .metric-icon { background: #eff6ff; color: #2563eb; }
+    .turno-panel { border: 1px solid #e5e7eb; border-radius: 14px; background: #fff; overflow: hidden; margin-bottom: 18px; }
+    .turno-panel-head { padding: 18px 20px; border-bottom: 1px solid #e5e7eb; background: linear-gradient(135deg, #fff, #f8fafc); }
+    .panel-title { display: flex; align-items: center; gap: 12px; } .panel-icon { width: 42px; height: 42px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; background: #eff6ff; color: #2563eb; }
+    .panel-title h2 { margin: 0; color: #0f172a; font-size: 1.1rem; font-weight: 900; } .panel-title p { margin: 3px 0 0; color: #64748b; font-size: .92rem; }
+    .turno-breakdown { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 18px 20px 0; }
+    .turno-breakdown div { padding: 16px; border: 1px solid #e5e7eb; border-radius: 12px; background: #fbfdff; } .turno-breakdown span { display: block; color: #64748b; font-weight: 800; } .turno-breakdown strong { display: block; margin-top: 4px; color: #0f172a; font-size: 1.25rem; }
+    .close-form { grid-template-columns: 1fr auto; align-items: end; padding: 18px 20px 20px; }
+    .turno-actions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+    .quick-action { min-height: 74px; display: flex; align-items: center; gap: 12px; padding: 16px; border: 1px solid #e5e7eb; border-radius: 12px; background: #fff; text-decoration: none; font-weight: 900; color: #0f172a; }
+    .quick-action i { width: 42px; height: 42px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; }
+    .action-sale i { background: #fff3ea; color: #f06800; } .action-expense i { background: #fee2e2; color: #dc2626; } .action-history i { background: #eff6ff; color: #2563eb; }
+    .quick-action:hover { border-color: #fed7aa; color: #0f172a; }
+    @@media (max-width: 1199.98px) { .turno-metrics { grid-template-columns: 1fr 1fr; } .turno-open-card { grid-template-columns: 1fr; } }
+    @@media (max-width: 767.98px) { .turno-hero { align-items: flex-start; flex-direction: column; } .turno-metrics, .turno-breakdown, .close-form, .turno-actions { grid-template-columns: 1fr; } .btn-turno-danger, .btn-turno-primary { width: 100%; } }
+</style>
+
+<script>
+    document.querySelector('.js-open-turno')?.addEventListener('submit', async event => {
+        const form = event.currentTarget;
+        if (form.dataset.confirmed === 'true') return;
+        event.preventDefault();
+        const monto = form.querySelector('[name="montoInicial"]').value || '0.00';
+        const result = await PetmorUI.confirm({ title: 'Abrir caja', text: `¿Abrir caja con S/. ${monto}?`, confirmButtonText: 'Sí, abrir' });
+        if (result.isConfirmed) { form.dataset.confirmed = 'true'; form.submit(); }
+    });
+    document.querySelector('.js-close-turno')?.addEventListener('submit', async event => {
+        const form = event.currentTarget;
+        if (form.dataset.confirmed === 'true') return;
+        event.preventDefault();
+        const contado = form.querySelector('[name="montoCierre"]').value || '0.00';
+        const result = await PetmorUI.confirmDanger({ title: 'Cerrar caja', html: `<div style="text-align:center">Efectivo contado: <strong>S/. ${contado}</strong><br>Esperado: <strong>${form.dataset.esperado}</strong></div>`, confirmButtonText: 'Sí, cerrar' });
+        if (result.isConfirmed) { form.dataset.confirmed = 'true'; form.submit(); }
+    });
+</script>

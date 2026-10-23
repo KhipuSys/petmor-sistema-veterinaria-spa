@@ -1,0 +1,121 @@
+@model IEnumerable<MiniMarket.Web.Models.Proveedor>
+
+@{
+    ViewData["Title"] = "Proveedores";
+    var proveedores = Model.ToList();
+    var activos = proveedores.Count(p => p.Estado);
+    var inactivos = proveedores.Count(p => !p.Estado);
+    var conContacto = proveedores.Count(p => !string.IsNullOrWhiteSpace(p.Contacto));
+    var conCorreo = proveedores.Count(p => !string.IsNullOrWhiteSpace(p.Correo));
+}
+
+<section class="proveedores-metrics">
+    <article class="metric-card metric-total"><div class="metric-icon"><i class="fas fa-truck"></i></div><div><span>Proveedores</span><strong>@proveedores.Count</strong><small>Directorio comercial</small></div></article>
+    <article class="metric-card metric-active"><div class="metric-icon"><i class="fas fa-check"></i></div><div><span>Activos</span><strong>@activos</strong><small>Disponibles para operaciones</small></div></article>
+    <article class="metric-card metric-inactive"><div class="metric-icon"><i class="fas fa-ban"></i></div><div><span>Inactivos</span><strong>@inactivos</strong><small>Fuera de operación</small></div></article>
+    <article class="metric-card metric-contact"><div class="metric-icon"><i class="fas fa-id-card"></i></div><div><span>Con contacto</span><strong>@conContacto</strong><small>@conCorreo con correo</small></div></article>
+</section>
+
+<section class="proveedores-card">
+    <div class="proveedores-head">
+        <div class="proveedores-title"><div class="proveedores-icon"><i class="fas fa-truck"></i></div><div><h2>Directorio de Proveedores</h2><p>Gestiona proveedores, contactos y estado operativo</p></div></div>
+        <a asp-action="Create" class="btn btn-proveedores-primary"><i class="fas fa-plus me-2"></i>Nuevo proveedor</a>
+    </div>
+
+    <div class="proveedores-filter-row">
+        <div class="provider-search"><i class="fas fa-search"></i><input id="buscarProveedor" type="search" placeholder="Buscar por RUC, razón social, contacto o teléfono" autocomplete="off" /></div>
+    </div>
+
+    <div class="proveedores-tools">
+        <span>Filtros rápidos:</span>
+        <button type="button" class="quick-chip active" data-filter="todos"><i class="fas fa-list"></i>Todos</button>
+        <button type="button" class="quick-chip" data-filter="activo"><i class="fas fa-check"></i>Activos</button>
+        <button type="button" class="quick-chip" data-filter="inactivo"><i class="fas fa-ban"></i>Inactivos</button>
+        <button type="button" class="quick-chip" data-filter="contacto"><i class="fas fa-user-tie"></i>Con contacto</button>
+        <button type="button" class="quick-chip" data-filter="correo"><i class="fas fa-envelope"></i>Con correo</button>
+        <div class="export-actions">
+            <button type="button" class="export-btn" id="btnExportExcel"><i class="fas fa-file-excel"></i>Excel</button>
+            <button type="button" class="export-btn" id="btnExportPdf"><i class="fas fa-file-pdf"></i>PDF</button>
+            <button type="button" class="export-btn" id="btnExportPrint"><i class="fas fa-print"></i>Imprimir</button>
+        </div>
+    </div>
+
+    <div class="table-responsive proveedores-table-wrap">
+        <table class="table proveedores-table align-middle" id="tablaProveedores">
+            <thead><tr><th>ID</th><th>RUC</th><th>Razón social</th><th>Contacto</th><th>Comunicación</th><th>Estado</th><th class="text-end">Acciones</th></tr></thead>
+            <tbody>
+            @foreach (var item in proveedores)
+            {
+                <tr data-activo="@(item.Estado ? "true" : "false")" data-inactivo="@(!item.Estado ? "true" : "false")" data-contacto="@(!string.IsNullOrWhiteSpace(item.Contacto) ? "true" : "false")" data-correo="@(!string.IsNullOrWhiteSpace(item.Correo) ? "true" : "false")">
+                    <td><strong>#@item.Id.ToString("D4")</strong></td>
+                    <td><span class="ruc-pill"><i class="fas fa-id-card"></i>@item.Ruc</span></td>
+                    <td><strong>@item.RazonSocial</strong><small>@(string.IsNullOrWhiteSpace(item.Direccion) ? "Sin dirección" : item.Direccion)</small></td>
+                    <td><span class="contact-pill"><i class="fas fa-user-tie"></i>@(string.IsNullOrWhiteSpace(item.Contacto) ? "Sin contacto" : item.Contacto)</span></td>
+                    <td><strong>@(string.IsNullOrWhiteSpace(item.Telefono) ? "Sin teléfono" : item.Telefono)</strong><small>@(string.IsNullOrWhiteSpace(item.Correo) ? "Sin correo" : item.Correo)</small></td>
+                    <td>@if (item.Estado) { <span class="status-pill status-active"><i class="fas fa-circle"></i>Activo</span> } else { <span class="status-pill status-inactive"><i class="fas fa-circle"></i>Inactivo</span> }</td>
+                    <td class="text-end text-nowrap">
+                        <a asp-action="Edit" asp-route-id="@item.Id" class="btn provider-action action-edit" title="Editar"><i class="fas fa-pen"></i></a>
+                        <form asp-action="CambiarEstado" asp-route-id="@item.Id" method="post" class="d-inline form-toggle" data-title="@(item.Estado ? "Desactivar proveedor" : "Activar proveedor")" data-text="@(item.Estado ? "No aparecerá como proveedor activo." : "Volverá a estar disponible para operaciones.")"><button type="submit" class="btn provider-action @(item.Estado ? "action-power" : "action-power-on")" title="Cambiar estado"><i class="fas fa-power-off"></i></button></form>
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+
+    @if (!proveedores.Any())
+    {
+        <div class="proveedores-empty"><i class="fas fa-truck-loading"></i><h3>Sin proveedores registrados</h3><p>Agrega proveedores para mantener información comercial de abastecimiento.</p><a asp-action="Create" class="btn btn-proveedores-primary">Nuevo proveedor</a></div>
+    }
+</section>
+
+<style>
+    .proveedores-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; margin-bottom: 22px; }
+    .metric-card { min-height: 112px; display: flex; align-items: center; gap: 16px; padding: 20px; border: 1px solid #e5e7eb; border-radius: 14px; background: linear-gradient(135deg, #fff, #fbfdff); }
+    .metric-icon { width: 58px; height: 58px; border-radius: 16px; display: inline-flex; align-items: center; justify-content: center; font-size: 25px; flex: 0 0 auto; }
+    .metric-card span { color: #64748b; font-weight: 900; font-size: .82rem; text-transform: uppercase; letter-spacing: .05em; }
+    .metric-card strong { display: block; margin-top: 2px; color: #0f172a; font-size: 1.6rem; line-height: 1; font-weight: 900; }
+    .metric-card small { display: block; margin-top: 8px; color: #64748b; font-weight: 600; }
+    .metric-total .metric-icon { background: #fff3ea; color: #f06800; } .metric-active .metric-icon { background: #ecfdf5; color: #059669; } .metric-inactive .metric-icon { background: #fee2e2; color: #dc2626; } .metric-contact .metric-icon { background: #eff6ff; color: #2563eb; }
+    .proveedores-card { border: 1px solid #e5e7eb; border-radius: 14px; background: #fff; overflow: hidden; }
+    .proveedores-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px 20px; border-bottom: 1px solid #e5e7eb; background: linear-gradient(135deg, #fff, #f8fafc); }
+    .proveedores-title { display: flex; align-items: center; gap: 12px; } .proveedores-icon { width: 42px; height: 42px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; background: #fff3ea; color: #f06800; }
+    .proveedores-title h2 { margin: 0; color: #0f172a; font-size: 1.1rem; font-weight: 900; } .proveedores-title p { margin: 3px 0 0; color: #64748b; font-size: .92rem; }
+    .btn-proveedores-primary { min-height: 46px; border-radius: 10px; padding: 11px 18px; background: #f06800; border: 1px solid #f06800; color: #fff !important; font-weight: 900; }
+    .proveedores-filter-row { padding: 14px 20px 0; }
+    .provider-search { min-height: 46px; display: flex; align-items: center; gap: 10px; border: 1px solid #dbe3ee; border-radius: 10px; padding: 0 13px; color: #64748b; }
+    .provider-search input { width: 100%; border: 0; outline: 0; color: #0f172a; font-weight: 700; background: transparent; }
+    .proveedores-tools { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 14px 20px 0; color: #475569; font-weight: 900; font-size: .86rem; }
+    .quick-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 6px 12px; border-radius: 999px; border: 1px solid #fed7aa; background: #fff; color: #f06800; font-size: .82rem; font-weight: 900; }
+    .quick-chip.active, .quick-chip:hover { background: #f06800; color: #fff; border-color: #f06800; }
+    .export-actions { display: inline-flex; gap: 8px; flex-wrap: wrap; margin-left: auto; }
+    .export-btn { min-height: 34px; display: inline-flex; align-items: center; gap: 6px; border-radius: 9px; border: 1px solid #fed7aa; background: #fff; color: #f06800; padding: 6px 12px; font-size: .82rem; font-weight: 900; }
+    .proveedores-table-wrap { margin: 18px; border: 1px solid #e5e7eb; border-radius: 12px; }
+    .proveedores-table { margin: 0; min-width: 1080px; }
+    .proveedores-table thead th { background: #f8fafc !important; color: #0f172a; font-weight: 900; padding: 16px 18px; border-bottom: 1px solid #e2e8f0; font-size: .88rem; }
+    .proveedores-table tbody td { padding: 18px; border-bottom: 1px solid #e2e8f0; color: #334155; vertical-align: middle; }
+    .proveedores-table strong { display: block; color: #0f172a; font-weight: 900; } .proveedores-table small { display: block; color: #64748b; margin-top: 3px; }
+    .ruc-pill, .contact-pill, .status-pill { display: inline-flex; align-items: center; gap: 7px; border-radius: 999px; padding: 8px 13px; font-weight: 900; font-size: .8rem; }
+    .ruc-pill { background: #fff7ed; color: #f06800; } .contact-pill { background: #f1f5f9; color: #334155; } .status-active { background: #ecfdf5; color: #059669; } .status-inactive { background: #fee2e2; color: #dc2626; }
+    .provider-action { width: 42px; height: 42px; display: inline-flex; align-items: center; justify-content: center; border-radius: 9px; background: #fff; margin-left: 4px; }
+    .action-edit { color: #f06800; border: 1px solid #fb923c; } .action-power { color: #dc2626; border: 1px solid #fecaca; } .action-power-on { color: #059669; border: 1px solid #bbf7d0; }
+    .proveedores-empty { display: grid; place-items: center; padding: 44px 16px; text-align: center; color: #64748b; }
+    .proveedores-empty i { width: 58px; height: 58px; display: inline-flex; align-items: center; justify-content: center; border-radius: 16px; background: #fff3ea; color: #f06800; font-size: 26px; margin-bottom: 12px; }
+    .dataTables_wrapper { padding: 0 18px 18px; } .dataTables_filter { display: none; } .dataTables_filter input, .dataTables_length select { border: 1px solid #dbe3ee; border-radius: 9px; padding: 6px 10px; }
+    @@media (max-width: 1199.98px) { .proveedores-metrics { grid-template-columns: 1fr 1fr; } }
+    @@media (max-width: 767.98px) { .proveedores-metrics { grid-template-columns: 1fr; } .proveedores-head { align-items: flex-start; flex-direction: column; } .btn-proveedores-primary { width: 100%; } .export-actions { margin-left: 0; width: 100%; } }
+</style>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            if ($.fn.DataTable.isDataTable('#tablaProveedores')) $('#tablaProveedores').DataTable().destroy();
+            let filtroRapido = 'todos';
+            $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) { if (settings.nTable.id !== 'tablaProveedores' || filtroRapido === 'todos') return true; const row = settings.aoData[dataIndex].nTr; return row ? row.dataset[filtroRapido] === 'true' : true; });
+            const tabla = $('#tablaProveedores').DataTable({ dom: PetmorTables.dom, buttons: PetmorTables.exportButtons('Proveedores'), order: [[2, 'asc']] });
+            $('#buscarProveedor').on('input', function() { tabla.search(this.value).draw(); });
+            $('.quick-chip').on('click', function() { $('.quick-chip').removeClass('active'); $(this).addClass('active'); filtroRapido = $(this).data('filter'); tabla.draw(); });
+            $('#btnExportExcel').on('click', () => tabla.button('.buttons-excel').trigger()); $('#btnExportPdf').on('click', () => tabla.button('.buttons-pdf').trigger()); $('#btnExportPrint').on('click', () => tabla.button('.buttons-print').trigger());
+        });
+    </script>
+}

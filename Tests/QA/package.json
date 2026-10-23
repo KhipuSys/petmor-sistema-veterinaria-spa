@@ -1,0 +1,5 @@
+{
+  "private": true,
+  "scripts": { "test": "node audit.cjs" },
+  "devDependencies": { "playwright": "^1.55.0", "axe-core": "^4.10.3" }
+}

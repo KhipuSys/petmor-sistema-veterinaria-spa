@@ -1,0 +1,145 @@
+@model IEnumerable<MiniMarket.Web.Models.AperturaCaja>
+
+@{
+    ViewData["Title"] = "Historial de Caja";
+    var arqueos = Model.ToList();
+    var totalVentas = arqueos.Sum(x => x.TotalVentas);
+    var totalGastos = arqueos.Sum(x => x.TotalGastos);
+    var totalDeclarado = arqueos.Sum(x => x.MontoCierre ?? 0);
+    var diferencias = arqueos.Select(x => (x.MontoCierre ?? 0) - (x.MontoInicial + (x.VentasEfectivo ?? x.TotalVentas) - x.TotalGastos)).ToList();
+    var diferenciaTotal = diferencias.Sum();
+    var cierresConDiferencia = diferencias.Count(x => x != 0);
+}
+
+<section class="caja-history-metrics">
+    <article class="metric-card metric-count"><div class="metric-icon"><i class="fas fa-cash-register"></i></div><div><span>Cierres</span><strong>@arqueos.Count</strong><small>Turnos finalizados</small></div></article>
+    <article class="metric-card metric-sales"><div class="metric-icon"><i class="fas fa-coins"></i></div><div><span>Ventas</span><strong>S/. @totalVentas.ToString("N2")</strong><small>Total del sistema</small></div></article>
+    <article class="metric-card metric-expense"><div class="metric-icon"><i class="fas fa-hand-holding-usd"></i></div><div><span>Gastos</span><strong>S/. @totalGastos.ToString("N2")</strong><small>Salidas registradas</small></div></article>
+    <article class="metric-card metric-diff"><div class="metric-icon"><i class="fas fa-scale-balanced"></i></div><div><span>Diferencia</span><strong>S/. @diferenciaTotal.ToString("N2")</strong><small>@cierresConDiferencia cierre@(cierresConDiferencia == 1 ? "" : "s") con variación</small></div></article>
+</section>
+
+<section class="caja-history-card">
+    <div class="caja-history-head">
+        <div class="caja-history-title"><div class="caja-history-icon"><i class="fas fa-history"></i></div><div><h2>Historial de Caja</h2><p>@(User.IsInRole("Administrador") ? "Registro de todos los cierres de caja" : "Registro de tus cierres de caja")</p></div></div>
+        <a asp-action="Index" class="btn btn-caja-primary"><i class="fas fa-arrow-left me-2"></i>Volver a caja</a>
+    </div>
+
+    <div class="caja-date-row">
+        @{ ViewData["DateFilterController"] = "Caja"; ViewData["DateFilterAction"] = "Historial"; ViewData["DateFilterMode"] = "range"; ViewData["DateFilterFrom"] = ViewBag.Desde; ViewData["DateFilterTo"] = ViewBag.Hasta; ViewData["DateFilterClearLabel"] = "Limpiar"; }
+        <partial name="_DateFilter" />
+    </div>
+
+    <div class="caja-tools">
+        <span>Filtros rápidos:</span>
+        <button type="button" class="quick-chip active" data-filter="todos"><i class="fas fa-list"></i>Todos</button>
+        <button type="button" class="quick-chip" data-filter="cuadrado"><i class="fas fa-check"></i>Cuadrados</button>
+        <button type="button" class="quick-chip" data-filter="sobrante"><i class="fas fa-arrow-up"></i>Sobrantes</button>
+        <button type="button" class="quick-chip" data-filter="faltante"><i class="fas fa-arrow-down"></i>Faltantes</button>
+        <div class="export-actions">
+            <button type="button" class="export-btn" id="btnExportExcel"><i class="fas fa-file-excel"></i>Excel</button>
+            <button type="button" class="export-btn" id="btnExportPdf"><i class="fas fa-file-pdf"></i>PDF</button>
+            <button type="button" class="export-btn" id="btnExportPrint"><i class="fas fa-print"></i>Imprimir</button>
+        </div>
+    </div>
+
+    <div class="table-responsive caja-table-wrap">
+        <table class="table caja-history-table align-middle" id="tablaArqueos">
+            <thead><tr><th>ID</th><th>Cajero</th><th>Apertura</th><th>Cierre</th><th class="text-end">Inicial</th><th class="text-end">Ventas</th><th class="text-end">Gastos</th><th class="text-end">Declarado</th><th>Diferencia</th><th class="text-end">Anulaciones</th></tr></thead>
+            <tbody>
+            @foreach (var item in arqueos)
+            {
+                var esperado = item.MontoInicial + (item.VentasEfectivo ?? item.TotalVentas) - item.TotalGastos;
+                var diferencia = (item.MontoCierre ?? 0) - esperado;
+                var estado = diferencia == 0 ? "cuadrado" : diferencia > 0 ? "sobrante" : "faltante";
+                var estadoTexto = diferencia == 0 ? "Cuadrado" : diferencia > 0 ? "Sobrante" : "Faltante";
+                var estadoIcono = diferencia == 0 ? "fa-check" : diferencia > 0 ? "fa-arrow-up" : "fa-arrow-down";
+                <tr data-estado="@estado">
+                    <td><strong>#@item.Id.ToString("D5")</strong></td>
+                    <td><span class="cashier-pill"><i class="fas fa-user"></i>@(item.UsuarioId?.Split('@')[0] ?? "Sistema")</span></td>
+                    <td><strong>@item.FechaApertura.ToString("dd/MM/yyyy")</strong><small>@item.FechaApertura.ToString("HH:mm")</small></td>
+                    <td>@if (item.FechaCierre.HasValue) { <strong>@item.FechaCierre.Value.ToString("dd/MM/yyyy")</strong><small>@item.FechaCierre.Value.ToString("HH:mm")</small> } else { <span class="muted-text">Sin cierre</span> }</td>
+                    <td class="text-end"><strong>S/. @item.MontoInicial.ToString("N2")</strong></td>
+                    <td class="text-end"><strong class="sales-text">S/. @item.TotalVentas.ToString("N2")</strong>@if ((item.VentasEfectivo ?? 0) != item.TotalVentas) { <small>Efectivo S/. @((item.VentasEfectivo ?? 0).ToString("N2"))</small> }</td>
+                    <td class="text-end"><strong class="expense-text">- S/. @item.TotalGastos.ToString("N2")</strong></td>
+                    <td class="text-end"><strong>S/. @((item.MontoCierre ?? 0).ToString("N2"))</strong><small>Esperado S/. @esperado.ToString("N2")</small></td>
+                    <td><span class="diff-pill diff-@estado"><i class="fas @estadoIcono"></i>@estadoTexto</span><small class="diff-amount diff-text-@estado">S/. @diferencia.ToString("N2")</small></td>
+                    <td class="text-end"><strong class="adjust-text">S/. @item.AjustesAnulaciones.ToString("N2")</strong></td>
+                </tr>
+            }
+            </tbody>
+            <tfoot><tr><th colspan="5" class="text-end">Totales</th><th class="text-end">S/. @totalVentas.ToString("N2")</th><th class="text-end">- S/. @totalGastos.ToString("N2")</th><th class="text-end">S/. @totalDeclarado.ToString("N2")</th><th>S/. @diferenciaTotal.ToString("N2")</th><th class="text-end">S/. @arqueos.Sum(x => x.AjustesAnulaciones).ToString("N2")</th></tr></tfoot>
+        </table>
+    </div>
+
+    @if (!arqueos.Any())
+    {
+        <div class="caja-empty"><i class="fas fa-cash-register"></i><h3>Sin cierres registrados</h3><p>Cuando cierres caja, los arqueos aparecerán aquí.</p><a asp-action="Index" class="btn btn-caja-primary">Volver a caja</a></div>
+    }
+</section>
+
+<style>
+    .caja-history-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; margin-bottom: 22px; }
+    .metric-card { min-height: 112px; display: flex; align-items: center; gap: 16px; padding: 20px; border: 1px solid #e5e7eb; border-radius: 14px; background: linear-gradient(135deg, #fff, #fbfdff); }
+    .metric-icon { width: 58px; height: 58px; border-radius: 16px; display: inline-flex; align-items: center; justify-content: center; font-size: 25px; flex: 0 0 auto; }
+    .metric-card span { color: #64748b; font-weight: 900; font-size: .82rem; text-transform: uppercase; letter-spacing: .05em; }
+    .metric-card strong { display: block; margin-top: 2px; color: #0f172a; font-size: 1.5rem; line-height: 1; font-weight: 900; }
+    .metric-card small { display: block; margin-top: 8px; color: #64748b; font-weight: 600; }
+    .metric-count .metric-icon { background: #fff3ea; color: #f06800; } .metric-sales .metric-icon { background: #ecfdf5; color: #059669; } .metric-expense .metric-icon { background: #fee2e2; color: #dc2626; } .metric-diff .metric-icon { background: #eff6ff; color: #2563eb; }
+    .caja-history-card { border: 1px solid #e5e7eb; border-radius: 14px; background: #fff; overflow: hidden; }
+    .caja-history-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px 20px; border-bottom: 1px solid #e5e7eb; background: linear-gradient(135deg, #fff, #f8fafc); }
+    .caja-history-title { display: flex; align-items: center; gap: 12px; } .caja-history-icon { width: 42px; height: 42px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; background: #fff3ea; color: #f06800; }
+    .caja-history-title h2 { margin: 0; color: #0f172a; font-size: 1.1rem; font-weight: 900; } .caja-history-title p { margin: 3px 0 0; color: #64748b; font-size: .92rem; }
+    .btn-caja-primary { min-height: 46px; border-radius: 10px; padding: 11px 18px; background: #f06800; border: 1px solid #f06800; color: #fff !important; font-weight: 900; } .btn-caja-primary:hover { background: #d95f00; color: #fff !important; }
+    .caja-date-row { padding: 14px 20px 0; }
+    .caja-tools { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 14px 20px 0; color: #475569; font-weight: 900; font-size: .86rem; }
+    .quick-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 6px 12px; border-radius: 999px; border: 1px solid #fed7aa; background: #fff; color: #f06800; font-size: .82rem; font-weight: 900; }
+    .quick-chip.active, .quick-chip:hover { background: #f06800; color: #fff; border-color: #f06800; }
+    .export-actions { display: inline-flex; gap: 8px; flex-wrap: wrap; margin-left: auto; }
+    .export-btn { min-height: 34px; display: inline-flex; align-items: center; gap: 6px; border-radius: 9px; border: 1px solid #fed7aa; background: #fff; color: #f06800; padding: 6px 12px; font-size: .82rem; font-weight: 900; }
+    .export-btn:hover { background: #fff7ed; color: #c2410c; }
+    .caja-table-wrap { margin: 18px; border: 1px solid #e5e7eb; border-radius: 12px; }
+    .caja-history-table { margin: 0; min-width: 1280px; }
+    .caja-history-table thead th, .caja-history-table tfoot th { background: #f8fafc !important; color: #0f172a; font-weight: 900; padding: 16px 18px; border-bottom: 1px solid #e2e8f0; font-size: .88rem; }
+    .caja-history-table tbody td { padding: 18px; border-bottom: 1px solid #e2e8f0; color: #334155; vertical-align: middle; }
+    .caja-history-table tbody tr:last-child td { border-bottom: 0; } .caja-history-table strong { display: block; color: #0f172a; font-weight: 900; } .caja-history-table small { display: block; color: #64748b; margin-top: 3px; }
+    .cashier-pill, .diff-pill { display: inline-flex; align-items: center; gap: 7px; border-radius: 999px; padding: 8px 13px; font-weight: 900; font-size: .8rem; }
+    .cashier-pill { background: #f1f5f9; color: #334155; } .diff-cuadrado { background: #ecfdf5; color: #059669; } .diff-sobrante { background: #eff6ff; color: #2563eb; } .diff-faltante { background: #fee2e2; color: #dc2626; }
+    .sales-text { color: #059669 !important; } .expense-text { color: #dc2626 !important; } .adjust-text { color: #d97706 !important; } .muted-text { color: #64748b; font-weight: 800; }
+    .diff-amount { font-weight: 900; } .diff-text-cuadrado { color: #059669 !important; } .diff-text-sobrante { color: #2563eb !important; } .diff-text-faltante { color: #dc2626 !important; }
+    .caja-empty { display: grid; place-items: center; padding: 44px 16px; text-align: center; color: #64748b; }
+    .caja-empty i { width: 58px; height: 58px; display: inline-flex; align-items: center; justify-content: center; border-radius: 16px; background: #fff3ea; color: #f06800; font-size: 26px; margin-bottom: 12px; }
+    .caja-empty h3 { color: #0f172a; font-size: 1.2rem; font-weight: 900; margin: 0; }
+    .caja-empty p { margin: 6px 0 14px; }
+    .dataTables_wrapper { padding: 0 18px 18px; } .dataTables_wrapper .dt-buttons .btn { border-radius: 9px; font-weight: 900; margin-right: 6px; border: 1px solid #fed7aa !important; background: #fff !important; color: #f06800 !important; } .dataTables_wrapper .dt-buttons .btn:hover { background: #fff7ed !important; color: #c2410c !important; } .dataTables_filter input, .dataTables_length select { border: 1px solid #dbe3ee; border-radius: 9px; padding: 6px 10px; }
+    @@media (max-width: 1199.98px) { .caja-history-metrics { grid-template-columns: 1fr 1fr; } }
+    @@media (max-width: 767.98px) { .caja-history-metrics { grid-template-columns: 1fr; } .caja-history-head { align-items: flex-start; flex-direction: column; } .btn-caja-primary { width: 100%; } .export-actions { margin-left: 0; width: 100%; } }
+</style>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            if ($.fn.DataTable.isDataTable('#tablaArqueos')) $('#tablaArqueos').DataTable().destroy();
+            let filtroRapido = 'todos';
+            $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
+                if (settings.nTable.id !== 'tablaArqueos' || filtroRapido === 'todos') return true;
+                const row = settings.aoData[dataIndex].nTr;
+                if (!row) return true;
+                return row.dataset.estado === filtroRapido;
+            });
+            const tabla = $('#tablaArqueos').DataTable({
+                dom: PetmorTables.dom,
+                buttons: PetmorTables.exportButtons('Historial de caja'),
+                order: [[0, 'desc']],
+            });
+            $('.quick-chip').on('click', function() {
+                $('.quick-chip').removeClass('active');
+                $(this).addClass('active');
+                filtroRapido = $(this).data('filter');
+                tabla.draw();
+            });
+            $('#btnExportExcel').on('click', () => tabla.button('.buttons-excel').trigger());
+            $('#btnExportPdf').on('click', () => tabla.button('.buttons-pdf').trigger());
+            $('#btnExportPrint').on('click', () => tabla.button('.buttons-print').trigger());
+        });
+    </script>
+}

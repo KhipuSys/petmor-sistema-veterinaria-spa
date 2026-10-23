@@ -1,0 +1,61 @@
+@model MiniMarket.Web.Models.ViewModels.ServicioForm
+@using MiniMarket.Web.Models
+@{ ViewData["Title"] = Model.Id == 0 ? "Nuevo servicio" : "Editar servicio"; }
+
+<form method="post" class="servicio-form-card">
+    <header class="servicio-form-head">
+        <div class="servicio-title"><div class="servicio-title-icon"><i class="fas fa-stethoscope"></i></div><div><h2>@(Model.Id == 0 ? "Nuevo servicio" : "Editar servicio")</h2><p>Define tarifa, duración y disponibilidad para agenda y cobro</p></div></div>
+        <span class="servicio-mode">@(Model.Area == AreaAtencion.Spa ? "Spa" : "Veterinaria")</span>
+    </header>
+    <div class="servicio-form-body">
+        <div asp-validation-summary="All" class="text-danger"></div>
+        <input asp-for="Id" type="hidden" />
+        <div class="row g-4">
+            <div class="col-lg-8"><label asp-for="Nombre" class="form-label servicio-label">Nombre del servicio <span>*</span></label><input asp-for="Nombre" class="form-control servicio-control" placeholder="Ej. Consulta general, baño completo" /></div>
+            <div class="col-lg-4"><label asp-for="Area" class="form-label servicio-label">Área <span>*</span></label><select asp-for="Area" asp-items="Html.GetEnumSelectList<AreaAtencion>()" class="form-select servicio-control"></select></div>
+            <div class="col-md-6"><label asp-for="Precio" class="form-label servicio-label">Precio final (S/.) <span>*</span></label><div class="input-icon"><i class="fas fa-coins"></i><input asp-for="Precio" type="number" step="0.01" class="form-control servicio-control" /></div></div>
+            <div class="col-md-6"><label asp-for="Duracion" class="form-label servicio-label">Duración (minutos) <span>*</span></label><div class="input-icon"><i class="far fa-clock"></i><input asp-for="Duracion" type="number" min="10" max="480" class="form-control servicio-control" /></div></div>
+            <div class="col-12"><label asp-for="Descripcion" class="form-label servicio-label">Descripción / condiciones</label><textarea asp-for="Descripcion" class="form-control servicio-control" rows="4" placeholder="Tamaño de mascota, condiciones, qué incluye el servicio"></textarea></div>
+            <div class="col-12 servicio-activo">
+                <label class="petmor-switch" for="Estado"><input asp-for="Estado" /><span class="petmor-switch__track"><span class="petmor-switch__thumb"></span></span></label>
+                <div><label asp-for="Estado" class="form-check-label fw-bold">Disponible</label><div class="text-muted small">El servicio estará disponible para citas, atenciones y cobros.</div></div>
+            </div>
+        </div>
+        <div class="servicio-actions"><a asp-action="Servicios" class="btn btn-servicio-outline"><i class="fas fa-arrow-left me-2"></i>Volver</a><button class="btn btn-servicio-primary"><i class="fas fa-check me-2"></i>Guardar servicio</button></div>
+    </div>
+</form>
+
+<style>
+    .servicio-form-card { border: 1px solid #e5e7eb; border-radius: 16px; background: #fff; overflow: hidden; }
+    .servicio-form-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 22px 24px; border-bottom: 1px solid #e5e7eb; background: linear-gradient(135deg, #fff, #f8fafc); }
+    .servicio-title { display: flex; align-items: center; gap: 14px; }
+    .servicio-title-icon { width: 52px; height: 52px; border-radius: 13px; display: inline-flex; align-items: center; justify-content: center; background: #fff3ea; color: #f06800; font-size: 24px; }
+    .servicio-title h2 { margin: 0; color: #0f172a; font-size: 1.35rem; font-weight: 900; }
+    .servicio-title p { margin: 4px 0 0; color: #64748b; }
+    .servicio-mode { display: inline-flex; align-items: center; border-radius: 999px; background: #fff3ea; color: #f06800; padding: 9px 14px; font-weight: 900; }
+    .servicio-form-body { padding: 24px; }
+    .servicio-label { color: #0f172a; font-weight: 900; margin-bottom: 8px; }
+    .servicio-label span { color: #f06800; }
+    .servicio-control { min-height: 52px; border-radius: 10px; border-color: #dbe3ee; color: #334155; font-weight: 700; }
+    textarea.servicio-control { min-height: 118px; }
+    .servicio-control:focus { border-color: #f06800; box-shadow: 0 0 0 3px rgba(240,104,0,.12); }
+    .input-icon { position: relative; }
+    .input-icon i { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #64748b; z-index: 2; }
+    .input-icon .servicio-control { padding-left: 42px; }
+    .servicio-activo { display: flex; align-items: center; gap: 14px; padding-top: 4px; }
+    .petmor-switch { position: relative; display: inline-flex; align-items: center; cursor: pointer; margin: 0; }
+    .petmor-switch input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+    .petmor-switch__track { width: 54px; height: 26px; border-radius: 999px; background: #cbd5e1; display: inline-flex; align-items: center; padding: 3px; transition: background .2s ease; }
+    .petmor-switch__thumb { width: 20px; height: 20px; border-radius: 50%; background: #fff; display: inline-flex; align-items: center; justify-content: center; transform: translateX(0); transition: transform .2s ease; }
+    .petmor-switch input:checked + .petmor-switch__track { background: #f06800; }
+    .petmor-switch input:checked + .petmor-switch__track .petmor-switch__thumb { transform: translateX(28px); }
+    .petmor-switch input:focus-visible + .petmor-switch__track { outline: 3px solid rgba(240, 104, 0, .25); outline-offset: 3px; }
+    .servicio-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; flex-wrap: wrap; }
+    .btn-servicio-primary { min-height: 50px; border-radius: 10px; padding: 12px 22px; background: #f06800; border: 1px solid #f06800; color: #fff !important; font-weight: 900; }
+    .btn-servicio-primary:hover { background: #d95f00; color: #fff !important; }
+    .btn-servicio-outline { min-height: 50px; border-radius: 10px; padding: 12px 20px; border: 1px solid #f06800; background: #fff; color: #f06800; font-weight: 900; }
+    .btn-servicio-outline:hover { background: #fff7ed; color: #c2410c; }
+    @@media (max-width: 767.98px) { .servicio-form-head { align-items: flex-start; flex-direction: column; } .servicio-actions .btn { width: 100%; } }
+</style>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

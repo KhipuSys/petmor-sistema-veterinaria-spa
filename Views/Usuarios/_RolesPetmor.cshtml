@@ -1,0 +1,6 @@
+@model MiniMarket.Web.Models.UsuarioDatosModel
+<fieldset class="roles-extra"><legend>Funciones adicionales</legend><p class="small text-muted">El usuario conserva su rol principal y puede desempeñar estas funciones.</p>
+@foreach(var rol in new[]{"Recepcionista", "Veterinario", "Groomer"}) {
+    <label class="role-check"><input type="checkbox" name="RolesAdicionales" value="@rol" checked="@(Model.RolesAdicionales.Contains(rol))" /> <span>@rol</span></label>
+}
+</fieldset>

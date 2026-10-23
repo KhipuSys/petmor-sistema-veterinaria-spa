@@ -1,0 +1,135 @@
+/* Scoped administrative components. Clientes and Mascotas retain their own design. */
+.petmor-admin {
+    --pm-orange: #f06800;
+    --pm-ink: #0f172a;
+    --pm-muted: #64748b;
+    --pm-line: #e2e8f0;
+    --pm-soft: #fff3ea;
+    color: var(--pm-ink);
+    min-width: 0;
+    padding-bottom: 24px !important;
+}
+.petmor-admin > .container, .petmor-admin > .container-fluid { padding-inline: 0; }
+.petmor-admin .pm-heading,
+.petmor-admin .petmor-page-title,
+.petmor-admin .d-flex.justify-content-between.mb-4 {
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 18px; padding: 26px 30px;
+    border: 1px solid var(--pm-line); border-radius: 22px; background: #fff;
+    margin-bottom: 24px;
+}
+.petmor-admin .pm-heading :is(h1,h2,h3),
+.petmor-admin .d-flex.justify-content-between.mb-4 :is(h2,h3) {
+    color: var(--pm-ink) !important; font-size: clamp(1.4rem, 2.4vw, 2rem);
+    font-weight: 800; margin: 0;
+}
+.petmor-admin .pm-heading p { color: var(--pm-muted); margin: 6px 0 0; }
+.petmor-admin .pm-heading :is(h1,h2,h3) > i,
+.petmor-admin .d-flex.justify-content-between.mb-4 :is(h2,h3) > i {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 52px; height: 52px; border-radius: 14px;
+    background: var(--pm-soft); color: var(--pm-orange) !important; font-size: 24px;
+    vertical-align: middle;
+}
+.petmor-admin .card {
+    border: 1px solid var(--pm-line) !important; border-radius: 18px;
+    box-shadow: none !important;
+}
+.petmor-admin .card-body { padding: 26px; }
+.petmor-admin .card-header { padding: 20px 26px; }
+.petmor-admin .card-header :is(h4,h5,h6) { margin-bottom: 0; font-weight: 800; }
+.petmor-admin .card-footer { background: #fff; border-top: 1px solid var(--pm-line); padding: 20px 26px; }
+.petmor-admin .pm-form-card { max-width: 1120px; margin-inline: auto; }
+.petmor-admin .pm-form-heading {
+    display: flex; align-items: center; gap: 16px; padding: 28px 32px;
+    background: linear-gradient(135deg, #ff7a00, #f06800); color: #fff;
+    border-radius: 18px 18px 0 0;
+}
+.petmor-admin .pm-form-heading h2 { color: #fff !important; font-weight: 800; font-size: 1.8rem; margin: 0; }
+.petmor-admin .pm-form-heading > i {
+    display: grid; place-items: center; width: 60px; height: 60px;
+    border-radius: 50%; background: #fff; color: var(--pm-orange); font-size: 26px;
+    flex: 0 0 auto;
+}
+.petmor-admin .pm-form-body { padding: 30px 32px; }
+.petmor-form-page > .container > .row > :is(.col-md-6,.col-md-8,.col-lg-6),
+.petmor-form-page > .row.justify-content-center > :is(.col-md-6,.col-md-8,.col-lg-6) {
+    width: 100%; max-width: 1120px;
+}
+.petmor-form-page .card-header:is(.bg-primary,.bg-warning,.bg-info,.bg-danger,.bg-dark) {
+    padding: 28px 32px !important;
+}
+.petmor-form-page .card-header :is(h4,h5) { font-size: 1.65rem; }
+.petmor-admin .pm-actions {
+    display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 12px;
+    border-top: 1px solid var(--pm-line); margin-top: 26px; padding-top: 22px;
+}
+.petmor-admin .form-control, .petmor-admin .form-select {
+    min-height: 50px; border: 1px solid #cbd5e1; border-radius: 10px;
+    color: var(--pm-ink); font-size: 1rem;
+}
+.petmor-admin .form-control:not(.form-control-sm), .petmor-admin .form-select:not(.form-select-sm) { padding-block: 11px; }
+.petmor-admin .form-control-sm, .petmor-admin .form-select-sm { min-height: 38px; }
+.petmor-admin .form-control:disabled, .petmor-admin .form-control[readonly] { background: #f8fafc; }
+.petmor-admin .form-label { margin-bottom: 9px; font-weight: 700; }
+.petmor-admin .form-check-input { accent-color: var(--pm-orange); }
+.petmor-admin .form-check-input:checked { background-color: var(--pm-orange); border-color: var(--pm-orange); }
+.petmor-admin .input-group .form-control { min-width: 0; }
+.petmor-admin .select2-container--bootstrap-5 .select2-selection,
+.petmor-admin .select2-container--default .select2-selection--single {
+    min-height: 50px; border: 1px solid #cbd5e1; border-radius: 10px; padding: 10px;
+}
+.petmor-admin .btn { min-height: 46px; padding: 10px 18px; border-radius: 10px; font-weight: 700; }
+.petmor-admin .btn-sm { min-height: 38px; padding: 8px 12px; }
+.petmor-admin .btn > :is(i,span) { color: inherit !important; }
+.petmor-admin .btn:is(.btn-primary,.btn-warning,.btn-info,.btn-dark) {
+    background: var(--pm-orange) !important; border-color: var(--pm-orange) !important; color: #fff !important;
+}
+.petmor-admin .btn:is(.btn-primary,.btn-warning,.btn-info,.btn-dark):hover { background: #d95f00 !important; }
+.petmor-admin .btn:is(.btn-outline-primary,.btn-outline-info,.btn-outline-warning,.btn-outline-secondary) {
+    background: #fff !important; border-color: var(--pm-orange) !important; color: var(--pm-orange) !important;
+}
+.petmor-admin .btn:is(.btn-outline-primary,.btn-outline-info,.btn-outline-warning,.btn-outline-secondary):hover {
+    background: #fff7ed !important; color: #c2410c !important;
+}
+.petmor-admin .btn:is(.btn-light,.btn-secondary) { background: #fff !important; color: #334155 !important; border-color: #cbd5e1 !important; }
+.petmor-admin .btn.btn-success { background: #15803d !important; border-color: #15803d !important; color: #fff !important; }
+.petmor-admin .btn.btn-outline-success { background: #fff !important; border-color: #15803d !important; color: #15803d !important; }
+.petmor-admin .btn.btn-danger { background: #dc2626 !important; border-color: #dc2626 !important; color: #fff !important; }
+.petmor-admin .btn.btn-outline-danger { background: #fff !important; color: #dc2626 !important; border-color: #f87171 !important; }
+.petmor-admin .btn.btn-outline-danger:hover { background: #fef2f2 !important; }
+.petmor-admin .btn:focus-visible { outline: 3px solid #fdba74; outline-offset: 3px; }
+.petmor-admin .text-success { color: #15803d !important; }
+.petmor-admin .text-danger { color: #dc2626 !important; }
+.petmor-admin .text-warning { color: #a16207 !important; }
+.petmor-admin .table { --bs-table-striped-bg: #fff; --bs-table-hover-bg: #fff7ed; margin-bottom: 0; }
+.petmor-admin .table th { padding: 16px 14px; font-size: .95rem; white-space: nowrap; }
+.petmor-admin .table td { padding: 16px 14px; vertical-align: middle; }
+.petmor-admin .table td .btn { border-radius: 9px !important; }
+.petmor-admin .table .btn-group { gap: 6px; }
+.petmor-admin .table .btn-group > .btn { margin-left: 0; }
+.petmor-admin .table .form-control { min-height: 38px; }
+.petmor-admin .badge { padding: 7px 12px; font-weight: 700; line-height: 1.25; }
+.petmor-admin .dataTables_wrapper .row { row-gap: 14px; align-items: center; }
+.petmor-admin .dataTables_wrapper :is(.dataTables_filter,.dataTables_length) { padding-block: 8px 16px; }
+.petmor-admin .dataTables_wrapper :is(input,select) { min-height: 42px; }
+.petmor-admin .pagination { gap: 6px; flex-wrap: wrap; }
+.petmor-admin .page-link { border-radius: 10px !important; min-width: 40px; text-align: center; border-color: var(--pm-line); }
+.petmor-admin .page-item.active .page-link { color: #fff !important; }
+.petmor-admin .modal-content { border-radius: 18px; border: 1px solid var(--pm-line); }
+.petmor-admin .modal-header, .petmor-admin .modal-body, .petmor-admin .modal-footer { padding: 22px; }
+.petmor-admin .modal-header { background: #fff7ed; }
+.petmor-admin .modal-title { color: var(--pm-ink); font-weight: 800; }
+.petmor-admin .card > h5 { color: var(--pm-ink); font-weight: 800; margin-bottom: 18px; }
+@media (max-width: 767.98px) {
+    .petmor-admin .pm-heading, .petmor-admin .d-flex.justify-content-between.mb-4 { padding: 20px; align-items: flex-start; }
+    .petmor-admin .pm-heading > .btn { width: 100%; }
+    .petmor-admin .card-body, .petmor-admin .pm-form-body { padding: 20px !important; }
+    .petmor-admin .pm-form-heading { padding: 22px 20px; }
+    .petmor-admin .pm-actions > .btn { width: 100%; }
+    .petmor-admin .dataTables_wrapper .dataTables_filter input { max-width: 100%; }
+}
+@media print {
+    .petmor-admin .pm-heading, .petmor-admin .card { border-color: #ccc; background: #fff; }
+    .petmor-admin .pm-actions { display: none; }
+}

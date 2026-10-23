@@ -1,0 +1,138 @@
+/* Only opt-in accessibility themes. Normal mode does not match any rule.
+   Important declarations in this layer precede legacy unlayered !important
+   styles, including view-specific CSS. Colors are always paired with surfaces. */
+@layer petmor-contrast {
+    body[data-contrast="dark"] {
+        --hc-page: #101010;
+        --hc-surface: #1c1c1c;
+        --hc-text: #fafafa;
+        --hc-muted: #d4d4d4;
+        --hc-border: #a3a3a3;
+        --hc-accent: #fdba74;
+        --hc-on-accent: #171717;
+        --hc-error: #fca5a5;
+        color-scheme: dark;
+    }
+    body[data-contrast="light"] {
+        --hc-page: #ffffff;
+        --hc-surface: #f4f4f4;
+        --hc-text: #171717;
+        --hc-muted: #404040;
+        --hc-border: #595959;
+        --hc-accent: #9a3412;
+        --hc-on-accent: #ffffff;
+        --hc-error: #991b1b;
+        color-scheme: light;
+    }
+    body[data-contrast] {
+        background: var(--hc-page) !important;
+        color: var(--hc-text) !important;
+        filter: none !important;
+    }
+    /* Neutralize legacy foreground/background pairs together. Exclude image
+       content: photos, SVG artwork and charts keep their original pixels. */
+    body[data-contrast] :where(*):not(img, svg, svg *, canvas, video) {
+        color: inherit !important;
+        background-color: transparent !important;
+        background-image: none !important;
+        border-color: var(--hc-border) !important;
+        text-shadow: none !important;
+        box-shadow: none !important;
+    }
+    body[data-contrast] :is(section, article, header, .card, .modal-content,
+        .dropdown-menu, .navbar-top, .sidebar, .swal2-popup,
+        .select2-dropdown, .select2-selection, #accessibility-panel) {
+        background-color: var(--hc-surface) !important;
+        color: var(--hc-text) !important;
+    }
+    body[data-contrast] :is(small, .text-muted, .form-text) {
+        color: var(--hc-muted) !important;
+    }
+    body[data-contrast] a:not(.btn) {
+        color: var(--hc-accent) !important;
+        text-decoration: none !important;
+    }
+    body[data-contrast] :is(input, select, textarea, .input-group-text) {
+        background-color: var(--hc-page) !important;
+        color: var(--hc-text) !important;
+        border-color: var(--hc-border) !important;
+        accent-color: var(--hc-accent);
+    }
+    body[data-contrast] :is(input, textarea)::placeholder {
+        color: var(--hc-muted) !important;
+        opacity: 1 !important;
+    }
+    body[data-contrast] :is(button, .btn, [role="button"], .page-link) {
+        background-color: var(--hc-surface) !important;
+        color: var(--hc-text) !important;
+        border: 1px solid var(--hc-border) !important;
+    }
+    body[data-contrast] :is(button, .btn, [role="button"], .page-link):is(:hover, :active),
+    body[data-contrast] :is(button, .btn, [role="button"]):is(.active, [aria-pressed="true"]),
+    body[data-contrast] .sidebar a.active,
+    body[data-contrast] .page-item.active .page-link,
+    body[data-contrast] .select2-results__option--highlighted,
+    body[data-contrast] .select2-results__option[aria-selected="true"] {
+        background-color: var(--hc-accent) !important;
+        color: var(--hc-on-accent) !important;
+    }
+    body[data-contrast] :is(button[type="submit"], .btn-primary) {
+        background-color: var(--hc-accent) !important;
+        color: var(--hc-on-accent) !important;
+    }
+    body[data-contrast] .payment-options label {
+        background-color: var(--hc-surface) !important;
+        color: var(--hc-text) !important;
+        border: 1px solid var(--hc-border) !important;
+    }
+    body[data-contrast] .payment-options input:checked + label {
+        background-color: var(--hc-accent) !important;
+        color: var(--hc-on-accent) !important;
+        text-decoration: none !important;
+    }
+    body[data-contrast] .payment-options input:focus-visible + label {
+        outline: 3px solid var(--hc-accent) !important;
+        outline-offset: 3px !important;
+    }
+    body[data-contrast] :is(button, .btn, input, select, textarea):is(:disabled, [aria-disabled="true"]),
+    body[data-contrast] .btn.disabled {
+        background-color: var(--hc-surface) !important;
+        color: var(--hc-muted) !important;
+        border-style: dashed !important;
+        opacity: 1 !important;
+        filter: none !important;
+    }
+    body[data-contrast] :focus-visible {
+        outline: 3px solid var(--hc-accent) !important;
+        outline-offset: 3px !important;
+    }
+    body[data-contrast] :is(table, .table) {
+        --bs-table-bg: var(--hc-surface);
+        --bs-table-color: var(--hc-text);
+        --bs-table-striped-bg: var(--hc-page);
+        --bs-table-hover-bg: var(--hc-page);
+        color: var(--hc-text) !important;
+        background-color: var(--hc-surface) !important;
+    }
+    body[data-contrast] th {
+        background-color: var(--hc-page) !important;
+        border-bottom: 2px solid var(--hc-border) !important;
+    }
+    body[data-contrast] :is(.badge, .estado-pill, .status-pill, .role-pill, .area-pill) {
+        border: 1px solid var(--hc-border) !important;
+        color: var(--hc-text) !important;
+    }
+    body[data-contrast] :is(.field-validation-error, .validation-summary-errors, .text-danger) {
+        color: var(--hc-error) !important;
+    }
+    body[data-contrast] .bar-c {
+        background-color: var(--hc-border) !important;
+    }
+    body[data-contrast] .bar-c[data-selected="true"] {
+        background-color: var(--hc-accent) !important;
+        outline: 1px solid var(--hc-text);
+    }
+    body[data-contrast] .select2-selection__arrow b {
+        border-color: var(--hc-text) transparent transparent transparent !important;
+    }
+}

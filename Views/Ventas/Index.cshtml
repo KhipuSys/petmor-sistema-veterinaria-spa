@@ -1,0 +1,166 @@
+@model IEnumerable<MiniMarket.Web.Models.Venta>
+
+@{
+    ViewData["Title"] = "Historial de Ventas";
+    var ventas = Model.ToList();
+    var activas = ventas.Where(x => x.Estado == "Activa").ToList();
+    var anuladas = ventas.Count(x => x.Estado == "Anulada");
+    var total = activas.Sum(x => x.Total);
+    var tarjeta = activas.Count(x => x.MetodoPago == "Tarjeta");
+}
+
+<section class="ventas-metrics">
+    <article class="metric-card metric-total"><div class="metric-icon"><i class="fas fa-receipt"></i></div><div><span>Ventas</span><strong>@ventas.Count</strong><small>Registros encontrados</small></div></article>
+    <article class="metric-card metric-money"><div class="metric-icon"><i class="fas fa-coins"></i></div><div><span>Total activo</span><strong>S/. @total.ToString("N2")</strong><small>Ventas no anuladas</small></div></article>
+    <article class="metric-card metric-cardpay"><div class="metric-icon"><i class="fas fa-credit-card"></i></div><div><span>Tarjeta</span><strong>@tarjeta</strong><small>Con recargo si aplica</small></div></article>
+    <article class="metric-card metric-cancel"><div class="metric-icon"><i class="fas fa-ban"></i></div><div><span>Anuladas</span><strong>@anuladas</strong><small>Stock restituido</small></div></article>
+</section>
+
+<section class="ventas-card">
+    <div class="ventas-head">
+        <div class="ventas-title"><div class="ventas-icon"><i class="fas fa-cart-shopping"></i></div><div><h2>Historial de Ventas</h2><p>Consulta ventas, tickets, métodos de pago y anulaciones</p></div></div>
+        <a asp-action="Create" class="btn btn-ventas-primary"><i class="fas fa-cash-register me-2"></i>Nueva venta</a>
+    </div>
+    <div class="ventas-date-row">
+        @{ ViewData["DateFilterController"] = "Ventas"; ViewData["DateFilterAction"] = "Index"; ViewData["DateFilterMode"] = "range"; ViewData["DateFilterFrom"] = ViewBag.Desde; ViewData["DateFilterTo"] = ViewBag.Hasta; ViewData["DateFilterClearLabel"] = "Limpiar"; }
+        <partial name="_DateFilter" />
+    </div>
+    <div class="ventas-tools">
+        <span>Filtros rápidos:</span>
+        <button type="button" class="quick-chip active" data-filter="todos"><i class="fas fa-list"></i>Todos</button>
+        <button type="button" class="quick-chip" data-filter="activa"><i class="fas fa-check"></i>Activas</button>
+        <button type="button" class="quick-chip" data-filter="anulada"><i class="fas fa-ban"></i>Anuladas</button>
+        <button type="button" class="quick-chip" data-filter="tarjeta"><i class="fas fa-credit-card"></i>Tarjeta</button>
+        <button type="button" class="quick-chip" data-filter="efectivo"><i class="fas fa-money-bill-wave"></i>Efectivo</button>
+        <div class="export-actions">
+            <button type="button" class="export-btn" id="btnExportExcel"><i class="fas fa-file-excel"></i>Excel</button>
+            <button type="button" class="export-btn" id="btnExportPdf"><i class="fas fa-file-pdf"></i>PDF</button>
+            <button type="button" class="export-btn" id="btnExportPrint"><i class="fas fa-print"></i>Imprimir</button>
+        </div>
+    </div>
+    <div class="table-responsive ventas-table-wrap">
+        <table class="table ventas-table align-middle" id="tablaVentas">
+            <thead><tr><th>ID</th><th>Fecha</th><th>Cliente</th><th>Vendedor</th><th>Método</th><th class="text-end">Total</th><th>Estado</th><th>Comprobante</th><th class="text-end">Acciones</th></tr></thead>
+            <tbody>
+            @foreach (var item in ventas)
+            {
+                var metodoPago = item.MetodoPago ?? "Efectivo";
+                var iconoPago = metodoPago switch { "Tarjeta" => "fa-credit-card", "Yape" => "fa-mobile-alt", "Plin" => "fa-mobile-alt", "QR" => "fa-qrcode", _ => "fa-money-bill-wave" };
+                var pagoClase = metodoPago switch { "Tarjeta" => "pay-card", "Yape" => "pay-yape", "Plin" => "pay-plin", "QR" => "pay-qr", _ => "pay-cash" };
+                var textoEmision = item.EstadoEmision switch { "En proceso" => "Resultado pendiente de conciliar", "Requiere revisión" => "Comprobante por revisar", _ => item.EstadoEmision };
+                <tr class="@(item.Estado == "Anulada" ? "venta-anulada" : "")" data-estado="@item.Estado.ToLowerInvariant()" data-metodo="@metodoPago.ToLowerInvariant()">
+                    <td><strong>#@item.Id.ToString("D5")</strong></td>
+                    <td><strong>@item.Fecha.ToString("dd/MM/yyyy")</strong><small>@item.Fecha.ToString("HH:mm")</small></td>
+                    <td>@if (item.Cliente != null) { <strong>@item.Cliente.Nombre</strong><small>@item.Cliente.Documento</small> } else { <strong>Público General</strong><small>Venta sin cliente</small> }</td>
+                    <td><span class="seller-text">@(item.Usuario != null ? item.Usuario.UserName?.Split('@')[0] : "Sistema")</span></td>
+                    <td><span class="pay-pill @pagoClase"><i class="fas @iconoPago"></i>@metodoPago</span></td>
+                    <td class="text-end"><strong class="price-text @(item.Estado == "Anulada" ? "text-decoration-line-through text-danger" : "")">S/. @item.Total.ToString("N2")</strong>@if(item.Recargo > 0){<small>Recargo S/. @item.Recargo.ToString("N2")</small>}</td>
+                    <td>@if (item.Estado == "Anulada") { <div class="status-cell"><span class="status-pill status-cancel"><i class="fas fa-ban"></i>Anulada</span><button type="button" class="btn reason-eye js-ver-motivo" data-title="Motivo de anulación" data-audit="@(item.FechaAnulacion.HasValue ? $"{item.FechaAnulacion.Value:dd/MM/yyyy HH:mm} · {item.AnuladaPor}" : item.AnuladaPor)" data-reason="@(string.IsNullOrWhiteSpace(item.MotivoAnulacion) ? "Sin motivo registrado." : item.MotivoAnulacion)" title="Ver motivo" aria-label="Ver motivo de anulación"><i class="fas fa-eye"></i></button></div> } else { <span class="status-pill status-active"><i class="fas fa-check"></i>Activa</span> }</td>
+                    <td><span class="audit-text">@textoEmision</span>@if (!string.IsNullOrWhiteSpace(item.RespuestaEmision)) { <button type="button" class="btn reason-eye js-ver-motivo" data-title="Detalle de emisión" data-reason="@item.RespuestaEmision" data-audit="@item.FechaIntentoEmision?.ToString("dd/MM/yyyy HH:mm")" title="Ver detalle de emisión" aria-label="Ver detalle de emisión"><i class="fas fa-eye"></i></button> }@if (item.FechaAnulacion.HasValue) { <small>@item.FechaAnulacion.Value.ToString("dd/MM/yyyy HH:mm") · @item.AnuladaPor</small> }</td>
+                    <td><div class="acciones-cell"><a asp-action="Ticket" asp-route-id="@item.Id" class="btn btn-sale-action" title="Ver ticket" target="_blank"><i class="fas fa-print"></i></a>@if (User.IsInRole("Administrador") && item.Estado == "Activa") { <button class="btn btn-sale-action btn-sale-danger btn-anular" data-id="@item.Id" data-total="@item.Total.ToString("N2")" title="Anular venta"><i class="fas fa-ban"></i></button> }</div></td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+    @if (!ventas.Any())
+    {
+        <div class="ventas-empty"><i class="fas fa-receipt"></i><h3>Sin ventas registradas</h3><p>Cuando proceses ventas, aparecerán aquí con sus tickets, pagos y estados.</p></div>
+    }
+</section>
+
+<style>
+    .ventas-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; margin-bottom: 22px; }
+    .metric-card { min-height: 112px; display: flex; align-items: center; gap: 16px; padding: 20px; border: 1px solid #e5e7eb; border-radius: 12px; background: linear-gradient(135deg, #fff, #fbfdff); }
+    .metric-icon { width: 58px; height: 58px; border-radius: 16px; display: inline-flex; align-items: center; justify-content: center; font-size: 25px; flex: 0 0 auto; }
+    .metric-card span { color: #64748b; font-weight: 900; font-size: .82rem; text-transform: uppercase; letter-spacing: .05em; }
+    .metric-card strong { display: block; margin-top: 2px; color: #0f172a; font-size: 1.65rem; line-height: 1; font-weight: 900; }
+    .metric-card small { display: block; margin-top: 8px; color: #64748b; font-weight: 600; }
+    .metric-total .metric-icon { background: #fff3ea; color: #f06800; } .metric-money .metric-icon { background: #fef3c7; color: #d97706; } .metric-cardpay .metric-icon { background: #eff6ff; color: #2563eb; } .metric-cancel .metric-icon { background: #fee2e2; color: #dc2626; }
+    .ventas-card { border: 1px solid #e5e7eb; border-radius: 14px; background: #fff; overflow: hidden; }
+    .ventas-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px 20px; border-bottom: 1px solid #e5e7eb; background: linear-gradient(135deg, #fff, #f8fafc); }
+    .ventas-title { display: flex; align-items: center; gap: 12px; } .ventas-icon { width: 42px; height: 42px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; background: #fff3ea; color: #f06800; }
+    .ventas-title h2 { margin: 0; color: #0f172a; font-size: 1.1rem; font-weight: 900; } .ventas-title p { margin: 3px 0 0; color: #64748b; font-size: .92rem; }
+    .btn-ventas-primary { min-height: 46px; border-radius: 10px; padding: 11px 18px; background: #f06800; border: 1px solid #f06800; color: #fff !important; font-weight: 900; } .btn-ventas-primary:hover { background: #d95f00; color: #fff !important; }
+    .ventas-date-row { padding: 14px 20px 0; }
+    .ventas-tools { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 14px 20px 0; color: #475569; font-weight: 900; font-size: .86rem; }
+    .quick-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 6px 12px; border-radius: 999px; border: 1px solid #fed7aa; background: #fff; color: #f06800; font-size: .82rem; font-weight: 900; }
+    .quick-chip.active, .quick-chip:hover { background: #f06800; color: #fff; border-color: #f06800; }
+    .export-actions { display: inline-flex; gap: 8px; flex-wrap: wrap; margin-left: auto; }
+    .export-btn { min-height: 34px; display: inline-flex; align-items: center; gap: 6px; border-radius: 9px; border: 1px solid #fed7aa; background: #fff; color: #f06800; padding: 6px 12px; font-size: .82rem; font-weight: 900; }
+    .export-btn:hover { background: #fff7ed; color: #c2410c; }
+    .ventas-table-wrap { margin: 18px; border: 1px solid #e5e7eb; border-radius: 12px; }
+    .ventas-table { margin: 0; min-width: 1180px; }
+    .ventas-table thead th { background: #f8fafc; color: #0f172a; font-weight: 900; padding: 16px 18px; border-bottom: 1px solid #e2e8f0; font-size: .88rem; }
+    .ventas-table tbody td { padding: 18px; border-bottom: 1px solid #e2e8f0; color: #334155; vertical-align: middle; }
+    .ventas-table tbody tr:last-child td { border-bottom: 0; } .ventas-table strong { display: block; color: #0f172a; font-weight: 900; } .ventas-table small { display: block; color: #64748b; margin-top: 3px; }
+    .venta-anulada { opacity: .72; background: #fffafa; }
+    .seller-text, .audit-text { color: #334155; font-weight: 800; }
+    .pay-pill, .status-pill { display: inline-flex; align-items: center; gap: 7px; border-radius: 999px; padding: 8px 13px; font-weight: 900; font-size: .8rem; }
+    .status-cell { display: inline-flex; align-items: center; gap: 8px; }
+    .reason-eye { width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; border: 1px solid #fecaca; background: #fff; color: #dc2626; padding: 0; }
+    .reason-eye:hover { background: #fef2f2; color: #b91c1c; border-color: #fca5a5; }
+    .pay-cash { background: #ecfdf5; color: #059669; } .pay-card { background: #eff6ff; color: #2563eb; } .pay-yape { background: #f0f9ff; color: #0284c7; } .pay-plin { background: #fff7ed; color: #f06800; } .pay-qr { background: #f1f5f9; color: #475569; }
+    .status-active { background: #ecfdf5; color: #059669; } .status-cancel { background: #fee2e2; color: #dc2626; }
+    .price-text { font-size: 1.02rem; }
+    .acciones-cell { display: flex; justify-content: flex-end; gap: 8px; }
+    .btn-sale-action { width: 42px; height: 42px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #fb923c; border-radius: 9px; color: #f06800; background: #fff; } .btn-sale-action:hover { background: #fff7ed; color: #c2410c; }
+    .btn-sale-danger { border-color: #fecaca; color: #dc2626; } .btn-sale-danger:hover { background: #fef2f2; color: #b91c1c; }
+    .ventas-empty { display: grid; place-items: center; padding: 44px 16px; text-align: center; color: #64748b; }
+    .ventas-empty i { width: 58px; height: 58px; display: inline-flex; align-items: center; justify-content: center; border-radius: 16px; background: #fff3ea; color: #f06800; font-size: 26px; margin-bottom: 12px; }
+    .ventas-empty h3 { color: #0f172a; font-size: 1.2rem; font-weight: 900; margin: 0; }
+    .ventas-empty p { margin: 6px 0 14px; }
+    .dataTables_wrapper { padding: 0 18px 18px; } .dataTables_wrapper .dt-buttons .btn { border-radius: 9px; font-weight: 900; margin-right: 6px; border: 1px solid #fed7aa !important; background: #fff !important; color: #f06800 !important; } .dataTables_wrapper .dt-buttons .btn:hover { background: #fff7ed !important; color: #c2410c !important; } .dataTables_filter input, .dataTables_length select { border: 1px solid #dbe3ee; border-radius: 9px; padding: 6px 10px; }
+    @@media (max-width: 1199.98px) { .ventas-metrics { grid-template-columns: 1fr 1fr; } }
+    @@media (max-width: 767.98px) { .ventas-metrics { grid-template-columns: 1fr; } .ventas-head { align-items: flex-start; flex-direction: column; } .btn-ventas-primary { width: 100%; } }
+</style>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        $(document).ready(function() {
+            if ($.fn.DataTable.isDataTable('#tablaVentas')) $('#tablaVentas').DataTable().destroy();
+            let filtroRapido = 'todos';
+            $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
+                if (settings.nTable.id !== 'tablaVentas' || filtroRapido === 'todos') return true;
+                const row = settings.aoData[dataIndex].nTr;
+                if (!row) return true;
+                return row.dataset.estado === filtroRapido || row.dataset.metodo === filtroRapido;
+            });
+            const tabla = $('#tablaVentas').DataTable({
+                dom: PetmorTables.dom,
+                buttons: PetmorTables.exportButtons('Historial de ventas'),
+                order: [[0, 'desc']],
+            });
+            $('.quick-chip').on('click', function() {
+                $('.quick-chip').removeClass('active');
+                $(this).addClass('active');
+                filtroRapido = $(this).data('filter');
+                tabla.draw();
+            });
+            $('#btnExportExcel').on('click', () => tabla.button('.buttons-excel').trigger());
+            $('#btnExportPdf').on('click', () => tabla.button('.buttons-pdf').trigger());
+            $('#btnExportPrint').on('click', () => tabla.button('.buttons-print').trigger());
+            $(document).on('click', '.btn-anular', function() {
+                const id = $(this).data('id');
+                const total = $(this).data('total');
+                Swal.fire({
+                    customClass: { popup: 'petmor-alert-popup' },
+                    title: 'Anular venta #' + String(id).padStart(5, '0'),
+                    html: `<div style="text-align:center">Total: <strong>S/. ${total}</strong><br><small class="text-danger">Esta acción revertirá el stock vendido.</small></div>`,
+                    icon: 'warning', input: 'text', inputPlaceholder: 'Motivo de anulación', inputAttributes: { maxlength: '300' },
+                    inputValidator: value => !value || !value.trim() ? 'Indica el motivo.' : undefined,
+                    showCancelButton: true, confirmButtonText: 'Sí, anular', confirmButtonColor: '#dc2626', cancelButtonText: 'Cancelar'
+                }).then(result => {
+                    if (!result.isConfirmed) return;
+                    $.ajax({
+                        url: '@Url.Action("Anular", "Ventas")', type: 'POST',
+                        data: { id, motivo: result.value, __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').first().val() },
+                        success: resp => resp.exito ? PetmorUI.alert('Anulada', resp.mensaje, 'success').then(() => location.reload()) : PetmorUI.alert('Error', resp.mensaje, 'error'),
+                        error: () => PetmorUI.alert('Error', 'Error de conexión', 'error')
+                    });
+                });
+            });
+        });
+    </script>
+}

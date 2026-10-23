@@ -1,0 +1,221 @@
+@model IEnumerable<MiniMarket.Web.Models.Producto>
+
+@{
+    ViewData["Title"] = "Productos";
+    var productos = Model.ToList();
+    var activos = productos.Count(p => p.Estado);
+    var hoy = MiniMarket.Web.Infrastructure.HoraPeru.Hoy;
+    var limiteVencimiento = hoy.AddDays(30);
+    var proximos = productos.Count(p => p.ConCaducidad && p.FechaVencimiento >= hoy && p.FechaVencimiento < limiteVencimiento.AddDays(1));
+    var vencidos = productos.Count(p => p.Vencido);
+    var inactivos = productos.Count(p => !p.Estado);
+    var stockBajo = productos.Count(p => p.Stock <= p.StockMinimo);
+    var valorizado = productos.Sum(p => p.Stock * p.Costo);
+    var categorias = productos.Where(p => p.Categoria != null).Select(p => p.Categoria).DistinctBy(c => c.Id).OrderBy(c => c.Nombre).ToList();
+}
+
+<section class="productos-metrics">
+    <article class="metric-card metric-total"><div class="metric-icon"><i class="fas fa-boxes-stacked"></i></div><div><span>Productos</span><strong>@productos.Count</strong><small>Catálogo inventariable</small></div></article>
+    <article class="metric-card metric-low"><div class="metric-icon"><i class="fas fa-calendar-times"></i></div><div><span>Próximos a vencer</span><strong>@proximos</strong><small>Próximos 30 días · @vencidos vencidos</small></div></article>
+    <article class="metric-card metric-low"><div class="metric-icon"><i class="fas fa-triangle-exclamation"></i></div><div><span>Stock bajo</span><strong>@stockBajo</strong><small>En mínimo o menos</small></div></article>
+    <article class="metric-card metric-value"><div class="metric-icon"><i class="fas fa-coins"></i></div><div><span>Valorizado</span><strong>S/. @valorizado.ToString("N2")</strong><small>Stock por costo</small></div></article>
+</section>
+
+<section class="productos-card">
+    <div class="productos-head">
+        <div class="productos-title"><div class="productos-icon"><i class="fas fa-boxes"></i></div><div><h2>Catálogo de Productos</h2><p>Administra productos, precios, stock y estado operativo</p></div></div>
+        <a asp-action="Create" class="btn btn-productos-primary"><i class="fas fa-plus me-2"></i>Nuevo producto</a>
+    </div>
+
+    <div class="productos-filter-row">
+        <div class="catalog-search"><i class="fas fa-search"></i><input id="buscarProducto" type="search" placeholder="Buscar por nombre, código o categoría" autocomplete="off" /></div>
+        <select id="filtroCategoria" class="form-select catalog-control">
+            <option value="">Todas las categorías</option>
+            @foreach (var categoria in categorias)
+            {
+                <option value="@categoria.Id">@categoria.Nombre</option>
+            }
+        </select>
+        <select id="filtroEstado" class="form-select catalog-control">
+            <option value="">Todos los estados</option>
+            <option value="activo">Activos</option>
+            <option value="inactivo">Inactivos</option>
+        </select>
+    </div>
+
+    <div class="productos-tools">
+        <span>Filtros rápidos:</span>
+        <button type="button" class="quick-chip active" data-filter="todos"><i class="fas fa-list"></i>Todos</button>
+        <button type="button" class="quick-chip" data-filter="activo"><i class="fas fa-check"></i>Activos</button>
+        <button type="button" class="quick-chip" data-filter="inactivo"><i class="fas fa-power-off"></i>Inactivos</button>
+        <button type="button" class="quick-chip" data-filter="bajo"><i class="fas fa-triangle-exclamation"></i>Stock bajo</button>
+        <button type="button" class="quick-chip" data-filter="interno"><i class="fas fa-shield-dog"></i>Uso interno</button>
+        <button type="button" class="quick-chip" data-filter="proximo"><i class="fas fa-calendar"></i>Próximos a vencer</button>
+        <button type="button" class="quick-chip" data-filter="vencido"><i class="fas fa-calendar-times"></i>Vencidos</button>
+        <div class="export-actions">
+            <button type="button" class="export-btn" id="btnExportExcel"><i class="fas fa-file-excel"></i>Excel</button>
+            <button type="button" class="export-btn" id="btnExportPdf"><i class="fas fa-file-pdf"></i>PDF</button>
+            <button type="button" class="export-btn" id="btnExportPrint"><i class="fas fa-print"></i>Imprimir</button>
+        </div>
+    </div>
+
+    <div class="table-responsive productos-table-wrap">
+        <table class="table productos-table align-middle" id="tablaProductosCatalogo">
+            <thead><tr><th class="text-start">Producto</th><th>Categoría</th><th class="text-end">Precio</th><th class="text-end">Costo</th><th class="text-center">Stock</th><th>Estado</th><th class="text-end">Acciones</th></tr></thead>
+            <tbody>
+            @foreach (var item in productos)
+            {
+                var categoria = item.Categoria?.Nombre ?? "Sin categoría";
+                var stockEstaBajo = item.Stock <= item.StockMinimo;
+                <tr data-proximo="@(item.ConCaducidad && item.FechaVencimiento >= hoy && item.FechaVencimiento < limiteVencimiento.AddDays(1) ? "true" : "false")" data-vencido="@(item.Vencido ? "true" : "false")" data-nombre="@item.Nombre" data-codigo="@item.CodigoBarras" data-categoria="@item.CategoriaId" data-estado="@(item.Estado ? "activo" : "inactivo")" data-activo="@(item.Estado ? "true" : "false")" data-inactivo="@(!item.Estado ? "true" : "false")" data-bajo="@(stockEstaBajo ? "true" : "false")" data-interno="@(item.UsoInterno ? "true" : "false")">
+                    <td class="text-start">
+                        <div class="product-cell">
+                            @if (!string.IsNullOrEmpty(item.ImagenUrl))
+                            {
+                                <img src="@item.ImagenUrl" class="product-thumb" alt="@item.Nombre" />
+                            }
+                            else
+                            {
+                                <span class="product-thumb-empty"><i class="fas fa-image"></i></span>
+                            }
+                            <div class="product-copy"><strong>@item.Nombre</strong><small class="product-meta"><span><i class="fas fa-barcode me-1"></i>@(string.IsNullOrWhiteSpace(item.CodigoBarras) ? "Sin código" : item.CodigoBarras)</span>@if (item.ConCaducidad) { <span class="meta-separator">│</span><span class="@(item.Vencido ? "text-danger" : item.FechaVencimiento < limiteVencimiento.AddDays(1) ? "text-warning" : "text-muted")">@(item.Vencido ? "Vencido" : "Vence"): @item.FechaVencimiento?.ToString("dd/MM/yyyy")</span> }</small>@if (item.UsoInterno) { <span class="internal-note">Uso interno</span> }</div>
+                        </div>
+                    </td>
+                    <td><span class="catalog-pill pill-category"><i class="fas fa-tags"></i>@categoria</span></td>
+                    <td class="text-end"><strong class="price-text">S/. @item.Precio.ToString("N2")</strong></td>
+                    <td class="text-end"><strong class="cost-text">S/. @item.Costo.ToString("N2")</strong></td>
+                    <td class="text-center"><span class="petmor-cell-stack"><span class="catalog-pill @(stockEstaBajo ? "pill-stock-low" : "pill-stock")"><i class="fas @(stockEstaBajo ? "fa-triangle-exclamation" : "fa-box")"></i>@item.Stock</span><small class="stock-min">Mín. @item.StockMinimo</small></span></td>
+                    <td>@if (item.Estado) { <span class="catalog-pill pill-active"><i class="fas fa-circle"></i>Activo</span> } else { <span class="catalog-pill pill-inactive"><i class="fas fa-circle"></i>Inactivo</span> }</td>
+                    <td class="text-end text-nowrap">
+                        <a asp-action="Edit" asp-route-id="@item.Id" class="btn product-action action-edit" title="Editar"><i class="fas fa-pen"></i></a>
+                        @if (item.Estado)
+                        {
+                            <form asp-action="CambiarEstado" asp-route-id="@item.Id" method="post" class="d-inline form-toggle" data-title="Desactivar producto" data-text="Ya no aparecerá en el punto de venta."><button type="submit" class="btn product-action action-power" title="Desactivar"><i class="fas fa-power-off"></i></button></form>
+                        }
+                        else
+                        {
+                            <form asp-action="CambiarEstado" asp-route-id="@item.Id" method="post" class="d-inline form-toggle" data-title="Activar producto" data-text="Volverá a estar disponible para la operación."><button type="submit" class="btn product-action action-power-on" title="Activar"><i class="fas fa-power-off"></i></button></form>
+                        }
+                        <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline form-delete"><button type="submit" class="btn product-action action-delete" title="Eliminar"><i class="fas fa-trash-alt"></i></button></form>
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+
+    @if (!productos.Any())
+    {
+        <div class="productos-empty"><i class="fas fa-box-open"></i><h3>Sin productos registrados</h3><p>Agrega productos para comenzar a vender y controlar stock.</p><a asp-action="Create" class="btn btn-productos-primary">Nuevo producto</a></div>
+    }
+</section>
+
+<style>
+    .productos-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; margin-bottom: 22px; }
+    .metric-card { min-height: 112px; display: flex; align-items: center; gap: 16px; padding: 20px; border: 1px solid #e5e7eb; border-radius: 14px; background: linear-gradient(135deg, #fff, #fbfdff); }
+    .metric-icon { width: 58px; height: 58px; border-radius: 16px; display: inline-flex; align-items: center; justify-content: center; font-size: 25px; flex: 0 0 auto; }
+    .metric-card span { color: #64748b; font-weight: 900; font-size: .82rem; text-transform: uppercase; letter-spacing: .05em; }
+    .metric-card strong { display: block; margin-top: 2px; color: #0f172a; font-size: 1.5rem; line-height: 1; font-weight: 900; }
+    .metric-card small { display: block; margin-top: 8px; color: #64748b; font-weight: 600; }
+    .metric-total .metric-icon { background: #fff3ea; color: #f06800; } .metric-active .metric-icon { background: #ecfdf5; color: #059669; } .metric-low .metric-icon { background: #fee2e2; color: #dc2626; } .metric-value .metric-icon { background: #fef3c7; color: #d97706; }
+    .productos-card { border: 1px solid #e5e7eb; border-radius: 14px; background: #fff; overflow: hidden; }
+    .productos-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px 20px; border-bottom: 1px solid #e5e7eb; background: linear-gradient(135deg, #fff, #f8fafc); }
+    .productos-title { display: flex; align-items: center; gap: 12px; } .productos-icon { width: 42px; height: 42px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; background: #fff3ea; color: #f06800; }
+    .productos-title h2 { margin: 0; color: #0f172a; font-size: 1.1rem; font-weight: 900; } .productos-title p { margin: 3px 0 0; color: #64748b; font-size: .92rem; }
+    .btn-productos-primary { min-height: 46px; border-radius: 10px; padding: 11px 18px; background: #f06800; border: 1px solid #f06800; color: #fff !important; font-weight: 900; } .btn-productos-primary:hover { background: #d95f00; color: #fff !important; }
+    .productos-filter-row { display: grid; grid-template-columns: minmax(280px, 1fr) 230px 190px; gap: 10px; padding: 14px 20px 0; }
+    .catalog-search { min-height: 46px; display: flex; align-items: center; gap: 10px; border: 1px solid #dbe3ee; border-radius: 10px; padding: 0 13px; color: #64748b; }
+    .catalog-search input { width: 100%; border: 0; outline: 0; color: #0f172a; font-weight: 700; background: transparent; }
+    .catalog-control { min-height: 46px; border: 1px solid #dbe3ee; border-radius: 10px; color: #334155; font-weight: 800; }
+    .productos-tools { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 14px 20px 0; color: #475569; font-weight: 900; font-size: .86rem; }
+    .quick-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 6px 12px; border-radius: 999px; border: 1px solid #fed7aa; background: #fff; color: #f06800; font-size: .82rem; font-weight: 900; }
+    .quick-chip.active, .quick-chip:hover { background: #f06800; color: #fff; border-color: #f06800; }
+    .export-actions { display: inline-flex; gap: 8px; flex-wrap: wrap; margin-left: auto; }
+    .export-btn { min-height: 34px; display: inline-flex; align-items: center; gap: 6px; border-radius: 9px; border: 1px solid #fed7aa; background: #fff; color: #f06800; padding: 6px 12px; font-size: .82rem; font-weight: 900; }
+    .export-btn:hover { background: #fff7ed; color: #c2410c; }
+    .productos-table-wrap { margin: 18px; border: 1px solid #e5e7eb; border-radius: 12px; }
+    .productos-table { margin: 0; min-width: 1180px; table-layout: fixed; }
+    .productos-table th:nth-child(1) { width: 32%; }
+    .productos-table th:nth-child(2) { width: 16%; }
+    .productos-table th:nth-child(3), .productos-table th:nth-child(4) { width: 11%; }
+    .productos-table th:nth-child(5) { width: 10%; }
+    .productos-table th:nth-child(6) { width: 10%; }
+    .productos-table th:nth-child(7) { width: 10%; }
+    .productos-table thead th { background: #f8fafc !important; color: #0f172a; font-weight: 900; padding: 16px 18px; border-bottom: 1px solid #e2e8f0; font-size: .88rem; }
+    .productos-table tbody td { padding: 18px; border-bottom: 1px solid #e2e8f0; color: #334155; vertical-align: middle; }
+    .productos-table tbody tr:last-child td { border-bottom: 0; } .productos-table strong { display: block; color: #0f172a; font-weight: 900; } .productos-table small { display: block; color: #64748b; margin-top: 3px; }
+    .product-cell { display: flex; align-items: center; justify-content: flex-start; gap: 12px; min-width: 0; text-align: left; }
+    .product-thumb, .product-thumb-empty { width: 58px; height: 58px; border-radius: 12px; border: 1px solid #e5e7eb; flex: 0 0 auto; }
+    .product-thumb { object-fit: cover; background: #f8fafc; } .product-thumb-empty { display: inline-flex; align-items: center; justify-content: center; color: #94a3b8; background: #f8fafc; }
+    .product-copy { min-width: 0; } .product-copy strong, .product-copy small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 360px; }
+    .product-meta { display: flex !important; align-items: center; gap: 4px; }
+    .meta-separator { color: #cbd5e1; font-weight: 900; }
+    .internal-note { display: inline-flex; margin-top: 6px; border-radius: 999px; padding: 5px 9px; background: #eff6ff; color: #2563eb; font-size: .72rem; font-weight: 900; }
+    .catalog-pill { display: inline-flex; align-items: center; gap: 7px; border-radius: 999px; padding: 8px 13px; font-weight: 900; font-size: .8rem; }
+    .pill-category { background: #fff7ed; color: #f06800; } .pill-stock { background: #f1f5f9; color: #334155; } .pill-stock-low { background: #fee2e2; color: #dc2626; } .pill-active { background: #ecfdf5; color: #059669; } .pill-inactive { background: #f1f5f9; color: #64748b; }
+    .price-text { color: #f06800 !important; } .cost-text { color: #64748b !important; }
+    .product-action { width: 42px; height: 42px; display: inline-flex; align-items: center; justify-content: center; border-radius: 9px; background: #fff; margin-left: 4px; }
+    .action-edit { color: #f06800; border: 1px solid #fb923c; } .action-edit:hover { background: #fff7ed; color: #c2410c; }
+    .action-view { color: #334155; border: 1px solid #cbd5e1; } .action-view:hover { background: #f8fafc; color: #0f172a; }
+    .action-power { color: #dc2626; border: 1px solid #fecaca; } .action-power:hover, .action-delete:hover { background: #fef2f2; color: #b91c1c; }
+    .action-power-on { color: #059669; border: 1px solid #bbf7d0; } .action-power-on:hover { background: #ecfdf5; color: #047857; }
+    .action-delete { color: #dc2626; border: 1px solid #fecaca; }
+    .productos-empty { display: grid; place-items: center; padding: 44px 16px; text-align: center; color: #64748b; }
+    .productos-empty i { width: 58px; height: 58px; display: inline-flex; align-items: center; justify-content: center; border-radius: 16px; background: #fff3ea; color: #f06800; font-size: 26px; margin-bottom: 12px; }
+    .productos-empty h3 { color: #0f172a; font-size: 1.2rem; font-weight: 900; margin: 0; }
+    .productos-empty p { margin: 6px 0 14px; }
+    .dataTables_wrapper { padding: 0 18px 18px; } .dataTables_wrapper .dt-buttons .btn { border-radius: 9px; font-weight: 900; margin-right: 6px; border: 1px solid #fed7aa !important; background: #fff !important; color: #f06800 !important; } .dataTables_wrapper .dt-buttons .btn:hover { background: #fff7ed !important; color: #c2410c !important; } .dataTables_filter { display: none; }
+    @@media (max-width: 1199.98px) { .productos-metrics { grid-template-columns: 1fr 1fr; } .productos-filter-row { grid-template-columns: 1fr 1fr; } .catalog-search { grid-column: 1 / -1; } }
+    @@media (max-width: 767.98px) { .productos-metrics, .productos-filter-row { grid-template-columns: 1fr; } .productos-head { align-items: flex-start; flex-direction: column; } .btn-productos-primary { width: 100%; } .export-actions { margin-left: 0; width: 100%; } }
+</style>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            if ($.fn.DataTable.isDataTable('#tablaProductosCatalogo')) $('#tablaProductosCatalogo').DataTable().destroy();
+            let filtroRapido = 'todos';
+            $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
+                if (settings.nTable.id !== 'tablaProductosCatalogo') return true;
+                const row = settings.aoData[dataIndex].nTr;
+                if (!row) return true;
+                const categoria = ($('#filtroCategoria').val() || '').toLowerCase();
+                const estado = $('#filtroEstado').val();
+                if (categoria && (row.dataset.categoria || '').toLowerCase() !== categoria) return false;
+                if (estado && row.dataset.estado !== estado) return false;
+                return filtroRapido === 'todos' || row.dataset[filtroRapido] === 'true';
+            });
+            const tabla = $('#tablaProductosCatalogo').DataTable({
+                dom: PetmorTables.dom,
+                buttons: PetmorTables.exportButtons('Catálogo de productos'),
+                ordering: false,
+                order: [],
+            });
+            $('#buscarProducto').on('input', function() { tabla.search(this.value).draw(); });
+            $('#filtroCategoria').on('change', () => tabla.draw());
+            $('#filtroEstado').on('change', function() {
+                if (['activo', 'inactivo'].includes(filtroRapido)) {
+                    filtroRapido = 'todos';
+                    $('.quick-chip').removeClass('active').filter('[data-filter="todos"]').addClass('active');
+                }
+                tabla.draw();
+            });
+            $('.quick-chip').on('click', function() {
+                $('.quick-chip').removeClass('active');
+                $(this).addClass('active');
+                filtroRapido = $(this).data('filter');
+                if (['activo', 'inactivo', 'todos'].includes(filtroRapido)) $('#filtroEstado').val('');
+                if (filtroRapido === 'todos') { $('#filtroCategoria').val(''); $('#buscarProducto').val(''); tabla.search(''); }
+                tabla.draw();
+            });
+            $('#btnExportExcel').on('click', () => tabla.button('.buttons-excel').trigger());
+            $('#btnExportPdf').on('click', () => tabla.button('.buttons-pdf').trigger());
+            $('#btnExportPrint').on('click', () => tabla.button('.buttons-print').trigger());
+            $('.form-delete').on('submit', function(e) {
+                if (this.dataset.confirmed === 'true') return;
+                e.preventDefault();
+                const form = this;
+                PetmorUI.confirmDanger({ title: 'Eliminar producto', text: 'Solo se eliminará si no tiene historial. Si ya tuvo movimientos, desactívalo.', confirmButtonText: 'Eliminar' }).then(r => { if (r.isConfirmed) { form.dataset.confirmed = 'true'; form.requestSubmit(); } });
+            });
+        });
+    </script>
+}

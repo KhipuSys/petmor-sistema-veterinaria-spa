@@ -1,0 +1,200 @@
+@model MiniMarket.Web.Models.Mascota
+@{
+    ViewData["Title"] = Model.Id == 0 ? "Registrar mascota" : "Editar mascota";
+    int? fotoId = ViewBag.FotoId as int?;
+    var especiesBase = new[] { "Canino", "Felino", "Ave", "Conejo", "Roedor" };
+    var especieEsOtra = !string.IsNullOrWhiteSpace(Model.Especie) && !especiesBase.Contains(Model.Especie);
+    var especieSeleccionada = especieEsOtra ? "Otro" : (string.IsNullOrWhiteSpace(Model.Especie) ? "Canino" : Model.Especie);
+}
+
+<div class="mascota-form-page py-4">
+    <form method="post" enctype="multipart/form-data" class="mascota-card mx-auto">
+        <div class="mascota-card__header">
+            <div class="mascota-card__icon"><i class="fas fa-paw"></i></div>
+            <h1>@ViewData["Title"]</h1>
+        </div>
+
+        <div class="mascota-card__body">
+            <div asp-validation-summary="All" class="text-danger mb-3"></div>
+            <input asp-for="Id" type="hidden" />
+
+            <div class="row g-4">
+                <div class="col-lg-7">
+                    <label asp-for="ClienteId" class="form-label mascota-label"><i class="far fa-user me-2"></i>Propietario <span>*</span></label>
+                    <select asp-for="ClienteId" asp-items="ViewBag.Clientes" class="form-select mascota-control"><option value="">Seleccione un cliente</option></select>
+                </div>
+                <div class="col-lg-5">
+                    <label asp-for="Nombre" class="form-label mascota-label"><i class="fas fa-paw me-2"></i>Nombre <span>*</span></label>
+                    <input asp-for="Nombre" class="form-control mascota-control" placeholder="Ingresa el nombre de la mascota" />
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="Especie" class="form-label mascota-label"><i class="fas fa-paw me-2"></i>Especie <span>*</span></label>
+                    <select id="Especie" name="Especie" class="form-select mascota-control">
+                        @foreach (var especie in especiesBase)
+                        {
+                            <option value="@especie" selected="@(especieSeleccionada == especie)">@especie</option>
+                        }
+                        <option value="Otro" selected="@(especieSeleccionada == "Otro")">Otro</option>
+                    </select>
+                    <input id="EspecieOtro" name="especieOtro" class="form-control mascota-control mt-2 @(especieEsOtra ? "" : "d-none")" maxlength="40" value="@(especieEsOtra ? Model.Especie : "")" placeholder="Escribe la especie" />
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="Raza" class="form-label mascota-label"><i class="fas fa-tag me-2"></i>Raza</label>
+                    <input asp-for="Raza" class="form-control mascota-control" list="razasMascota" placeholder="Escribe para buscar la raza" autocomplete="off" />
+                    <datalist id="razasMascota"></datalist>
+                    <small id="ayudaRaza" class="text-muted d-block mt-2">Sugerencias disponibles para caninos y felinos.</small>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="Sexo" class="form-label mascota-label"><i class="fas fa-venus-mars me-2"></i>Sexo <span>*</span></label>
+                    <select asp-for="Sexo" class="form-select mascota-control"><option>Macho</option><option>Hembra</option><option>No determinado</option></select>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="FechaNacimiento" class="form-label mascota-label"><i class="far fa-calendar me-2"></i>Nacimiento (si se conoce)</label>
+                    <input asp-for="FechaNacimiento" type="date" class="form-control mascota-control" />
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="Peso" class="form-label mascota-label"><i class="fas fa-weight-scale me-2"></i>Peso (kg)</label>
+                    <input asp-for="Peso" type="number" step="0.01" class="form-control mascota-control" placeholder="Ej. 10.5" />
+                </div>
+            </div>
+
+            <section class="mascota-foto mt-4">
+                <div class="foto-preview" id="fotoMascotaPreview">
+                    @if (fotoId.HasValue)
+                    {
+                        <img src="@Url.Action("Archivo", new { id = fotoId.Value })" alt="Foto de @Model.Nombre" />
+                    }
+                    else
+                    {
+                        <i class="fas fa-camera"></i>
+                    }
+                </div>
+                <div class="foto-content">
+                    <label for="fotoMascota" class="form-label mascota-label mb-2"><i class="far fa-image me-2"></i>Foto de la mascota</label>
+                    <input id="fotoMascota" name="fotoMascota" type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/avif,image/bmp" class="form-control mascota-control" />
+                    <small class="text-muted d-block mt-2">Formatos permitidos: PNG, JPEG, WebP, GIF, AVIF o BMP. Tamaño máximo: 5 MB.</small>
+                </div>
+            </section>
+
+            <section class="mascota-clinica mt-4">
+                <div class="mascota-section-title">
+                    <div class="mascota-section-icon"><i class="far fa-file-lines"></i></div>
+                    <h2>Información clínica</h2>
+                </div>
+                <div class="row g-4 mt-1">
+                    <div class="col-md-6">
+                        <label asp-for="Alergias" class="form-label mascota-label"><i class="fas fa-triangle-exclamation me-2"></i>Alergias / alertas</label>
+                        <textarea asp-for="Alergias" class="form-control mascota-control" rows="3" maxlength="500" placeholder="Indica alergias, condiciones médicas o alertas importantes"></textarea>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Observaciones" class="form-label mascota-label"><i class="far fa-clipboard me-2"></i>Observaciones</label>
+                        <textarea asp-for="Observaciones" class="form-control mascota-control" rows="3" maxlength="500" placeholder="Agrega información adicional"></textarea>
+                    </div>
+                </div>
+            </section>
+
+            <div class="mascota-activa mt-4">
+                <label class="petmor-switch" for="Activa">
+                    <input asp-for="Activa" />
+                    <span class="petmor-switch__track"><span class="petmor-switch__thumb"></span></span>
+                </label>
+                <div>
+                    <label asp-for="Activa" class="form-check-label fw-bold">Mascota activa</label>
+                    <div class="text-muted small">Disponible para citas y atención</div>
+                </div>
+            </div>
+
+            <div class="mascota-actions">
+                <a class="btn btn-volver" asp-action="Mascotas"><i class="fas fa-arrow-left me-2"></i>Volver</a>
+                <button class="btn btn-guardar-ficha"><i class="fas fa-check me-2"></i>Guardar ficha</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<style>
+    .mascota-form-page { background: linear-gradient(180deg, #f8fafc 0%, #eef4fb 100%); border-radius: 24px; }
+    .mascota-card { max-width: 1200px; background: #fff; border: 1px solid #e5e7eb; border-radius: 18px; overflow: hidden; }
+    .mascota-card__header { display: flex; align-items: center; gap: 18px; padding: 28px 34px; background: linear-gradient(135deg, #ff7a00 0%, #f06800 100%); color: #fff; }
+    .mascota-card__icon { width: 64px; height: 64px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: #fff; color: #f06800; font-size: 30px; flex: 0 0 auto; }
+    .mascota-card__header h1 { margin: 0; font-size: clamp(1.75rem, 3vw, 2.35rem); font-weight: 800; }
+    .mascota-card__body { padding: 32px 34px; }
+    .mascota-label { color: #111827; font-weight: 800; margin-bottom: 10px; }
+    .mascota-label span { color: #f06800; }
+    .mascota-label i { color: #111827; width: 22px; text-align: center; }
+    .mascota-control { min-height: 52px; border: 1px solid #cbd5e1; border-radius: 10px; color: #111827; padding: 12px 16px; }
+    textarea.mascota-control { min-height: 98px; }
+    .mascota-control:focus { border-color: #f06800; box-shadow: 0 0 0 .18rem rgba(240, 104, 0, .14) !important; }
+    .mascota-link { display: inline-block; margin-top: 10px; color: #f06800; font-weight: 700; text-decoration: none; }
+    .mascota-link:hover { color: #c2410c; }
+    .mascota-foto { display: flex; align-items: center; gap: 18px; padding: 18px; border: 1px dashed #fb923c; border-radius: 14px; background: #fffaf5; }
+    .foto-preview { width: 96px; height: 96px; border-radius: 16px; display: inline-flex; align-items: center; justify-content: center; overflow: hidden; background: #fff3ea; color: #f06800; font-size: 2rem; flex: 0 0 auto; }
+    .foto-preview img { width: 100%; height: 100%; object-fit: cover; }
+    .foto-content { flex: 1; min-width: 0; }
+    .mascota-clinica { padding: 18px; border-radius: 14px; background: #fff7f0; border: 1px solid #ffedd5; }
+    .mascota-section-title { display: flex; align-items: center; gap: 14px; }
+    .mascota-section-title h2 { margin: 0; color: #111827; font-size: 1.35rem; font-weight: 800; }
+    .mascota-section-icon { width: 44px; height: 44px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; background: #f06800; color: #fff; font-size: 20px; }
+    .mascota-activa { display: flex; align-items: center; gap: 14px; }
+    .petmor-switch { position: relative; display: inline-flex; align-items: center; cursor: pointer; margin: 0; }
+    .petmor-switch input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+    .petmor-switch__track { width: 54px; height: 26px; border-radius: 999px; background: #cbd5e1; display: inline-flex; align-items: center; padding: 3px; transition: background .2s ease; }
+    .petmor-switch__thumb { width: 20px; height: 20px; border-radius: 50%; background: #fff; display: inline-flex; align-items: center; justify-content: center; transform: translateX(0); transition: transform .2s ease; }
+    .petmor-switch input:checked + .petmor-switch__track { background: #f06800; }
+    .petmor-switch input:checked + .petmor-switch__track .petmor-switch__thumb { transform: translateX(28px); }
+    .petmor-switch input:focus-visible + .petmor-switch__track { outline: 3px solid rgba(240, 104, 0, .25); outline-offset: 3px; }
+    .mascota-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 26px; padding-top: 22px; border-top: 1px solid #e5e7eb; flex-wrap: wrap; }
+    .mascota-actions .btn { min-height: 52px; border-radius: 10px; padding: 12px 28px; font-weight: 800; }
+    .btn-volver { border: 1px solid #cbd5e1; background: #fff; color: #f06800; }
+    .btn-volver:hover { background: #fff7ed; border-color: #f06800; color: #c2410c; }
+    .btn-guardar-ficha { border: 1px solid #f06800; background: #f06800; color: #fff; }
+    .btn-guardar-ficha:hover { border-color: #d95f00; background: #d95f00; color: #fff; }
+    @@media (max-width: 767.98px) { .mascota-form-page { padding: 0 !important; background: transparent; } .mascota-card__header, .mascota-card__body { padding-left: 20px; padding-right: 20px; } .mascota-foto { align-items: flex-start; flex-direction: column; } .mascota-actions { display: grid; } .mascota-actions .btn { width: 100%; } }
+</style>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        document.getElementById('fotoMascota')?.addEventListener('change', function () {
+            const archivo = this.files?.[0];
+            const preview = document.getElementById('fotoMascotaPreview');
+            if (!archivo || !preview) return;
+
+            if (!archivo.type.startsWith('image/')) {
+                this.value = '';
+                Swal.fire({ title: 'Archivo no válido', text: 'Selecciona una imagen PNG, JPEG, WebP, GIF, AVIF o BMP.', icon: 'warning', confirmButtonColor: '#f06800' });
+                return;
+            }
+
+            const url = URL.createObjectURL(archivo);
+            preview.innerHTML = '';
+            const imagen = document.createElement('img');
+            imagen.src = url;
+            imagen.alt = 'Vista previa de la mascota';
+            imagen.onload = () => URL.revokeObjectURL(url);
+            preview.appendChild(imagen);
+        });
+
+        const razasCaninas = [
+            'Affenpinscher','Afgano','Airedale Terrier','Akita Inu','Akita Americano','Alaskan Malamute','American Bully','American Staffordshire Terrier','Basenji','Basset Hound','Beagle','Bearded Collie','Beauceron','Bichón Frisé','Bichón Habanero','Bichón Maltés','Bloodhound','Bobtail','Border Collie','Border Terrier','Boston Terrier','Boxer','Boyero de Berna','Braco Alemán','Braco de Weimar','Bretón Español','Bull Terrier','Bulldog Francés','Bulldog Inglés','Bullmastiff','Cairn Terrier','Cane Corso','Caniche Toy','Caniche Miniatura','Caniche Mediano','Caniche Estándar','Carlino / Pug','Cavalier King Charles Spaniel','Chihuahua','Chow Chow','Cocker Spaniel Americano','Cocker Spaniel Inglés','Collie','Corgi Galés Cardigan','Corgi Galés Pembroke','Dálmata','Doberman','Dogo Argentino','Dogo de Burdeos','Fox Terrier','Galgo Español','Golden Retriever','Gran Danés','Husky Siberiano','Jack Russell Terrier','Labrador Retriever','Lhasa Apso','Mastín Español','Mastín Napolitano','Pastor Alemán','Pastor Australiano','Pastor Belga Malinois','Pastor Belga Tervueren','Pastor de Shetland','Pekinés','Pinscher Miniatura','Pitbull Terrier','Pomerania','Rottweiler','Samoyedo','San Bernardo','Schnauzer Miniatura','Schnauzer Mediano','Schnauzer Gigante','Scottish Terrier','Setter Irlandés','Shar Pei','Shiba Inu','Shih Tzu','Teckel / Dachshund','Terranova','West Highland White Terrier','Whippet','Yorkshire Terrier','Mestizo'
+        ];
+        const razasFelinas = [
+            'Abisinio','American Curl','American Shorthair','American Wirehair','Angora Turco','Azul Ruso','Balinés','Bengalí','Birmano','Bobtail Japonés','Bombay','Bosque de Noruega','British Longhair','British Shorthair','Burmés','Burmilla','Chartreux','Cornish Rex','Devon Rex','Europeo Común','Exótico de Pelo Corto','Fold Escocés','Himalayo','Korat','Maine Coon','Manx','Mau Egipcio','Munchkin','Neva Masquerade','Ocicat','Oriental','Persa','Ragdoll','Sagrado de Birmania','Savannah','Selkirk Rex','Siamés','Siberiano','Singapura','Somalí','Sphynx','Thai','Tonkinés','Toyger','Van Turco','Mestizo'
+        ];
+        const especie = document.getElementById('Especie');
+        const especieOtro = document.getElementById('EspecieOtro');
+        const datalist = document.getElementById('razasMascota');
+        const ayudaRaza = document.getElementById('ayudaRaza');
+
+        function cargarRazas() {
+            const valor = especie?.value;
+            const razas = valor === 'Canino' ? razasCaninas : valor === 'Felino' ? razasFelinas : [];
+            if (datalist) datalist.innerHTML = razas.map(raza => `<option value="${raza}"></option>`).join('');
+            if (ayudaRaza) ayudaRaza.textContent = razas.length ? 'Escribe para buscar entre razas frecuentes.' : 'Para esta especie escribe la raza manualmente.';
+            especieOtro?.classList.toggle('d-none', valor !== 'Otro');
+            if (valor !== 'Otro' && especieOtro) especieOtro.value = '';
+        }
+
+        especie?.addEventListener('change', cargarRazas);
+        cargarRazas();
+    </script>
+}

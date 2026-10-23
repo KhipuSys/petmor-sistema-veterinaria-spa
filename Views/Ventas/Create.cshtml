@@ -1,0 +1,403 @@
+@model MiniMarket.Web.Models.Venta
+
+@{
+    ViewData["Title"] = "Punto de Venta";
+}
+
+@Html.AntiForgeryToken()
+
+<section class="pos-hero">
+    <div class="pos-title"><div class="pos-title-icon"><i class="fas fa-cart-shopping"></i></div><div><h1>Punto de Venta</h1><p>Venta rápida de productos, servicios y conceptos de tienda</p></div></div>
+    <div class="pos-total-card"><i class="fas fa-coins"></i><div><span>Total</span><strong id="lblTotalGrande">S/. 0.00</strong></div></div>
+</section>
+
+<section class="pos-layout">
+    <div class="pos-panel product-panel">
+        <div class="panel-head"><div class="panel-title"><div class="panel-icon"><i class="fas fa-barcode"></i></div><div><h2>Buscar producto</h2><p>Escanea, busca por nombre o código</p></div></div></div>
+        <div class="panel-body">
+            <partial name="_LecturasCarrito" />
+            <div class="field-group">
+                <label>Producto</label>
+                <div class="select-shell"><i class="fas fa-search"></i><select id="cboProducto" class="form-select"></select></div>
+                <small>Los productos sin stock no se pueden seleccionar.</small>
+            </div>
+            <div class="product-info-grid">
+                <div class="info-box"><span>Precio unitario</span><strong>S/. <input type="text" id="txtPrecio" readonly /></strong></div>
+                <div class="info-box"><span>Stock disponible</span><strong><input type="text" id="txtStock" readonly /></strong></div>
+            </div>
+            <p class="text-muted">Escanee cada unidad para agregarla al carrito. La cantidad se calcula desde las lecturas.</p>
+        </div>
+    </div>
+
+    <div class="pos-panel cart-panel">
+        <div class="panel-head"><div class="panel-title"><div class="panel-icon cart-icon"><i class="fas fa-basket-shopping"></i></div><div><h2>Carrito</h2><p>Detalle de la venta actual</p></div></div><span class="cart-count" id="badgeCount">0 items</span></div>
+        <div class="table-responsive cart-table-wrap">
+            <table class="table cart-table align-middle">
+                <thead><tr><th>Producto</th><th class="text-center">Cant.</th><th class="text-end">Precio</th><th class="text-end">Subtotal</th><th></th></tr></thead>
+                <tbody id="tablaDetalle"></tbody>
+            </table>
+            <div id="emptyState" class="empty-cart"><i class="fas fa-shopping-basket"></i><h5>El carrito está vacío</h5><p>Agrega productos para procesar la venta.</p></div>
+        </div>
+    </div>
+
+    <div class="pos-panel checkout-panel">
+        <div class="panel-head"><div class="panel-title"><div class="panel-icon checkout-icon"><i class="fas fa-cash-register"></i></div><div><h2>Cobro</h2><p>Cliente, método de pago y descuento</p></div></div></div>
+        <div class="panel-body checkout-body">
+            <div class="field-group"><label>Cliente</label><div class="select-shell"><i class="fas fa-user"></i><select id="cboCliente" class="form-select"></select></div></div>
+            <div class="field-group"><label>Método de pago</label><div class="payment-options">
+                <input type="radio" name="metodoPago" id="pagoEfectivo" value="Efectivo" checked><label for="pagoEfectivo"><i class="fas fa-money-bill-wave"></i>Efectivo</label>
+                <input type="radio" name="metodoPago" id="pagoTarjeta" value="Tarjeta"><label for="pagoTarjeta"><i class="fas fa-credit-card"></i>Tarjeta</label>
+                <input type="radio" name="metodoPago" id="pagoYape" value="Yape"><label for="pagoYape"><i class="fas fa-mobile-alt"></i>Yape</label>
+                <input type="radio" name="metodoPago" id="pagoPlin" value="Plin"><label for="pagoPlin"><i class="fas fa-mobile-alt"></i>Plin</label>
+            </div></div>
+            <div id="panelEfectivo" class="cash-grid">
+                <div class="field-group"><label>Recibido (S/.)</label><input type="number" id="txtMontoRecibido" class="pos-control text-end" step="0.50" min="0" placeholder="0.00" /></div>
+                <div class="field-group"><label>Vuelto (S/.)</label><input type="text" id="txtVuelto" class="pos-control text-end" readonly value="0.00" /></div>
+            </div>
+            <div class="field-group discount-group"><label>Descuento (S/.)</label><input type="number" id="txtDescuento" class="pos-control text-end discount-control" value="0.00" step="0.50" min="0" /></div>
+            <button class="btn btn-pos-primary process-button" id="btnTerminar"><i class="fas fa-check me-2"></i>Procesar venta</button>
+        </div>
+    </div>
+</section>
+
+<style>
+    .pos-hero { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 24px 28px; border: 1px solid #e5e7eb; border-radius: 16px; background: #fff; margin-bottom: 22px; }
+    .pos-title { display: flex; align-items: center; gap: 14px; } .pos-title-icon { width: 58px; height: 58px; border-radius: 15px; display: inline-flex; align-items: center; justify-content: center; background: #fff3ea; color: #f06800; font-size: 26px; }
+    .pos-title h1 { margin: 0; color: #0f172a; font-size: 1.8rem; font-weight: 900; } .pos-title p { margin: 4px 0 0; color: #64748b; }
+    .pos-total-card { min-width: 240px; display: flex; align-items: center; justify-content: center; gap: 12px; padding: 14px 20px; border-radius: 14px; background: #fff; border: 1px solid #fed7aa; } .pos-total-card i { width: 42px; height: 42px; display: inline-flex; align-items: center; justify-content: center; border-radius: 10px; background: #fff3ea; color: #f06800; flex: 0 0 auto; } .pos-total-card div { display: grid; justify-items: start; } .pos-total-card span { display: block; color: #64748b; font-size: .78rem; font-weight: 900; text-transform: uppercase; letter-spacing: .05em; } .pos-total-card strong { display: block; margin-top: 2px; color: #0f172a; font-size: 1.65rem; font-weight: 900; line-height: 1; }
+    .pos-layout { display: grid; grid-template-columns: minmax(300px, .85fr) minmax(420px, 1.25fr); gap: 18px; align-items: start; }
+    .checkout-panel { grid-column: 1 / -1; }
+    .pos-panel { border: 1px solid #e5e7eb; border-radius: 14px; background: #fff; overflow: hidden; }
+    .panel-head { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 18px 20px; border-bottom: 1px solid #e5e7eb; background: linear-gradient(135deg, #fff, #f8fafc); }
+    .panel-title { display: flex; align-items: center; gap: 12px; } .panel-icon { width: 42px; height: 42px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; background: #fff3ea; color: #f06800; } .cart-icon { background: #eff6ff; color: #2563eb; } .checkout-icon { background: #dcfce7; color: #16a34a; }
+    .panel-title h2 { margin: 0; color: #0f172a; font-size: 1.1rem; font-weight: 900; } .panel-title p { margin: 3px 0 0; color: #64748b; font-size: .92rem; }
+    .panel-body { padding: 20px; }
+    .field-group { margin-bottom: 16px; } .field-group label { display: block; margin-bottom: 8px; color: #0f172a; font-weight: 900; } .field-group small { display: block; margin-top: 7px; color: #64748b; }
+    .select-shell { position: relative; } .select-shell > i { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); z-index: 3; color: #64748b; } .select-shell .select2-container .select2-selection--single { min-height: 52px; border: 1px solid #dbe3ee; border-radius: 10px; padding-left: 34px; display: flex; align-items: center; } .select-shell .select2-container--bootstrap-5 .select2-selection--single .select2-selection__rendered { color: #334155; font-weight: 700; }
+    .pos-control { min-height: 52px; border: 1px solid #dbe3ee; border-radius: 10px; padding: 10px 14px; color: #0f172a; font-weight: 900; width: 100%; } .quantity-control { text-align: center; font-size: 1.25rem; color: #f06800; }
+    .product-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; } .info-box { padding: 14px; border: 1px solid #e5e7eb; border-radius: 12px; background: #fbfdff; } .info-box span { color: #64748b; font-size: .78rem; font-weight: 900; text-transform: uppercase; } .info-box strong { display: flex; align-items: baseline; gap: 4px; margin-top: 4px; color: #0f172a; font-size: 1.2rem; } .info-box input { width: 100%; border: 0; background: transparent; font-weight: 900; color: inherit; outline: 0; }
+    .btn-pos-primary { min-height: 52px; border-radius: 10px; padding: 13px 22px; background: #f06800; border: 1px solid #f06800; color: #fff !important; font-weight: 900; } .btn-pos-primary:hover { background: #d95f00; color: #fff !important; }
+    .cart-count { display: inline-flex; align-items: center; min-height: 34px; padding: 6px 12px; border-radius: 999px; background: #fff3ea; color: #f06800; font-weight: 900; }
+    .cart-table-wrap { min-height: 420px; max-height: 520px; overflow-y: auto; margin: 18px; border: 1px solid #e5e7eb; border-radius: 12px; position: relative; } .cart-table { margin: 0; } .cart-table thead th { position: sticky; top: 0; background: #f8fafc; color: #0f172a; font-weight: 900; padding: 15px; border-bottom: 1px solid #e2e8f0; z-index: 1; } .cart-table tbody td { padding: 15px; border-bottom: 1px solid #e2e8f0; }
+    .empty-cart { text-align: center; padding: 72px 20px; color: #64748b; } .empty-cart i { font-size: 3rem; color: #fed7aa; margin-bottom: 12px; } .empty-cart h5 { color: #0f172a; font-weight: 900; }
+    .checkout-body { display: grid; grid-template-columns: minmax(240px, 1.2fr) minmax(330px, 1.2fr) minmax(280px, 1fr) minmax(180px, .7fr) 190px; gap: 14px; align-items: end; } .checkout-body .field-group { margin-bottom: 0; }
+    .payment-options { min-height: 52px; display: flex; flex-wrap: nowrap; gap: 8px; align-items: center; overflow-x: auto; } .payment-options input { position: absolute; opacity: 0; } .payment-options label { min-height: 42px; display: inline-flex; align-items: center; gap: 7px; border: 1px solid #fed7aa; border-radius: 999px; padding: 8px 13px; color: #f06800; background: #fff; cursor: pointer; font-size: .86rem; white-space: nowrap; margin: 0; } .payment-options input:checked + label { background: #f06800; border-color: #f06800; color: #fff; }
+    .cash-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; } .cash-grid.cash-disabled { opacity: .58; } .cash-grid.cash-disabled .pos-control { background: #f1f5f9; color: #94a3b8; cursor: not-allowed; } .discount-control { color: #dc2626; } .process-button { align-self: end; min-width: 190px; width: 100%; }
+    @@media (max-width: 1399.98px) { .checkout-body { grid-template-columns: 1fr 1fr; } .process-button { min-height: 52px; } }
+    @@media (max-width: 1199.98px) { .pos-layout, .checkout-body { grid-template-columns: 1fr; } .checkout-panel { grid-column: auto; } }
+    @@media (max-width: 767.98px) { .pos-hero { align-items: flex-start; flex-direction: column; } .pos-total-card { width: 100%; text-align: left; } .product-info-grid, .cash-grid { grid-template-columns: 1fr; } }
+</style>
+
+@section Scripts {
+    <script src="~/js/lecturas.js" asp-append-version="true"></script>
+    <script src="~/js/lecturas-carrito.js" asp-append-version="true"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        <script>
+        // Variables globales
+        const esAdministrador = @Html.Raw(Json.Serialize(User.IsInRole("Administrador")));
+        const descuentoMaximoCajeroPct = 30;
+        const recargoTarjetaPct = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(PagoReglas.RecargoTarjetaPct));
+        let _productosLista = [];
+        let _subtotal = 0;
+        let _descuento = 0;
+        let _recargo = 0;
+        let _total = 0;
+        let avisoPendienteMostrado = false;
+        const claveAnterior = 'ventaPendiente:' + @Html.Raw(Json.Serialize(User.Identity.Name));
+        const sedeOperacion = @(Context.RequestServices.GetRequiredService<MiniMarket.Web.Services.SedeActual>().Id);
+        const claveOperacion = claveAnterior + ':sede:' + sedeOperacion;
+        if (sedeOperacion === 1 && sessionStorage.getItem(claveAnterior) && !sessionStorage.getItem(claveOperacion)) {
+            sessionStorage.setItem(claveOperacion, sessionStorage.getItem(claveAnterior));
+            sessionStorage.removeItem(claveAnterior);
+        }
+        let ventaPendiente = JSON.parse(sessionStorage.getItem(claveOperacion) || 'null');
+        let procesando = false;
+        function nuevoIdOperacion() {
+            const bytes = crypto.getRandomValues(new Uint8Array(16));
+            bytes[6] = (bytes[6] & 15) | 64; bytes[8] = (bytes[8] & 63) | 128;
+            const h = [...bytes].map(b => b.toString(16).padStart(2, '0')).join('');
+            return `${h.slice(0,8)}-${h.slice(8,12)}-${h.slice(12,16)}-${h.slice(16,20)}-${h.slice(20)}`;
+        }
+
+        $(document).ready(function() {
+            const lector = conectarLecturasCarrito(() => _productosLista, renderizarCarrito, false, () => procesando || !!ventaPendiente, mostrarProductoEscaneado);
+            mostrarAvisoOperacionPendiente();
+            
+            // 1. SELECT2 PRODUCTOS
+            PetmorUI.initSelect(document.getElementById('cboProducto'), {
+                kind: 'producto',
+                ajax: {
+                    url: '@Url.Action("BuscarProductos", "Ventas")',
+                    dataType: 'json',
+                    delay: 250,
+                    data: function (params) { return { term: params.term || '', page: params.page || 1 }; },
+                    processResults: function (data) {
+                        data.results = (data.results || []).map(p => {
+                            const disponible = stockDisponibleVisual(p.id, p.stock);
+                            return { ...p, text: p.nombre, disabled: disponible <= 0 };
+                        });
+                        return data;
+                    }
+                }
+            });
+
+            // 2. SELECT2 CLIENTES
+            PetmorUI.initSelect(document.getElementById('cboCliente'), {
+                kind: 'cliente',
+                ajax: {
+                    url: '@Url.Action("BuscarClientes", "Ventas")',
+                    dataType: 'json',
+                    delay: 250,
+                    data: function (params) { return { term: params.term || '', page: params.page || 1 }; },
+                    processResults: function (data) { return data; }
+                },
+                placeholder: 'Público General',
+                allowClear: true
+            });
+
+            // 3. EVENTO AL SELECCIONAR PRODUCTO
+            $('#cboProducto').on('select2:select', function (e) {
+                var data = e.params.data;
+                var disponible = stockDisponibleVisual(data.id, data.stock);
+                $('#txtPrecio').val(data.precio.toFixed(2));
+                $('#txtStock').val(disponible);
+                $('#cboProducto').find(':selected').text(data.nombre);
+                $('#txtCantidad').focus();
+            });
+
+            // 4. BOTÓN AGREGAR
+            // COMPOSICIÓN DINÁMICA DE DESCUENTO
+            $('#txtDescuento').on('input', function() {
+                let valor = parseFloat($(this).val());
+                if(isNaN(valor) || valor < 0) {
+                    _descuento = 0;
+                } else {
+                    _descuento = valor;
+                }
+                renderizarCarrito();
+            });
+
+            // LÓGICA VUELTO DE EFECTIVO
+            function actualizarPanelEfectivo() {
+                const esEfectivo = ($('input[name="metodoPago"]:checked').val() || 'Efectivo') === 'Efectivo';
+                $('#panelEfectivo').toggleClass('cash-disabled', !esEfectivo);
+                $('#txtMontoRecibido').prop('disabled', !esEfectivo);
+                if (!esEfectivo) {
+                    $('#txtMontoRecibido').val('');
+                    $('#txtVuelto').val('0.00');
+                }
+            }
+
+            $('input[name="metodoPago"]').change(actualizarPanelEfectivo);
+            actualizarPanelEfectivo();
+            $('input[name="metodoPago"]').change(renderizarCarrito);
+
+            $('#txtMontoRecibido').on('input', function() {
+                calcularVuelto();
+            });
+
+
+            // 5. BOTÓN PROCESAR VENTA (MODIFICADO PARA TICKET)
+            $('#btnTerminar').click(function() {
+                if (lector.pendiente()) { Swal.fire('Lecturas pendientes', 'Espere a que termine la lectura.', 'warning'); return; }
+                if (procesando) return;
+                if (ventaPendiente) { enviarVenta(ventaPendiente); return; }
+                if (_descuento > _subtotal) { Swal.fire('Descuento inválido', 'El descuento no puede superar el subtotal.', 'warning'); return; }
+                if (_total <= 0) { Swal.fire('Descuento inválido', 'El total de la venta debe ser mayor a S/. 0.00.', 'warning'); return; }
+                const descuentoMaximoCajero = PetmorImportes.porcentaje(_subtotal, descuentoMaximoCajeroPct);
+                if (!esAdministrador && _descuento > descuentoMaximoCajero) {
+                    Swal.fire('Descuento requiere autorización', `Recepción solo puede descontar hasta ${descuentoMaximoCajeroPct}%: S/. ${descuentoMaximoCajero.toFixed(2)}.`, 'warning');
+                    return;
+                }
+                if (_productosLista.length === 0) {
+                    Swal.fire('Carrito Vacío', 'Agregue productos antes de vender', 'warning');
+                    return;
+                }
+
+                var metodoPagoSelected = $('input[name="metodoPago"]:checked').val() || 'Efectivo';
+                
+                if (metodoPagoSelected === 'Efectivo') {
+                    let recibido = parseFloat($('#txtMontoRecibido').val());
+                    if (isNaN(recibido) || recibido < _total) {
+                        Swal.fire('Efectivo Insuficiente', 'El monto recibido debe ser mayor o igual al total a cobrar.', 'warning');
+                        return;
+                    }
+                }
+
+                var venta = {
+                    OperacionId: nuevoIdOperacion(),
+                    ClienteId: $('#cboCliente').val(),
+                    Total: Number(_total.toFixed(2)),
+                    Descuento: Number(_descuento.toFixed(2)),
+                    Recargo: Number(_recargo.toFixed(2)),
+                    MetodoPago: metodoPagoSelected,
+                    Detalles: _productosLista
+                };
+
+                procesando = true;
+                $('#btnTerminar').prop('disabled', true);
+                const descuentoAltoAdmin = esAdministrador && _descuento > descuentoMaximoCajero;
+                Swal.fire({
+                    title: '¿Procesar Venta?',
+                    text: descuentoAltoAdmin
+                        ? `Descuento mayor al ${descuentoMaximoCajeroPct}%: S/. ${_descuento.toFixed(2)}. Total a cobrar: S/. ${_total.toFixed(2)}`
+                        : `${metodoPagoSelected === 'Tarjeta' ? `Recargo tarjeta 5%: S/. ${_recargo.toFixed(2)}. ` : ''}Total a cobrar: S/. ${_total.toFixed(2)}`,
+                    icon: descuentoAltoAdmin ? 'warning' : 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'Sí, Cobrar',
+                    confirmButtonColor: '#198754',
+                    cancelButtonText: 'Cancelar'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        enviarVenta(venta);
+                    } else {
+                        procesando = false;
+                        $('#btnTerminar').prop('disabled', false);
+                    }
+                });
+            });
+
+            function enviarVenta(venta) {
+                        procesando = true;
+                        $('#btnTerminar').prop('disabled', true);
+                        ventaPendiente = venta;
+                        try { sessionStorage.setItem(claveOperacion, JSON.stringify(venta)); }
+                        catch {
+                            procesando = false;
+                            $('#btnTerminar').prop('disabled', false);
+                            Swal.fire('Error', 'No se pudo guardar la operación en este navegador. No se envió la venta.', 'error');
+                            return;
+                        }
+                        $.ajax({
+                            url: '@Url.Action("Registrar", "Ventas")',
+                            type: 'POST',
+                            contentType: 'application/json',
+                            headers: { 'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').first().val() },
+                            data: JSON.stringify(venta),
+                            success: function(resp) {
+                                ventaPendiente = null;
+                                sessionStorage.removeItem(claveOperacion);
+                                if (resp.exito) {
+                                    // --- LÓGICA DE TICKET ---
+                                    // Limpiamos todo primero
+                                    _productosLista = [];
+                                    _descuento = 0;
+                                    _recargo = 0;
+                                    $('#txtDescuento').val('0.00');
+                                    $('#txtMontoRecibido').val('');
+                                    $('#txtVuelto').val('0.00');
+                                    renderizarCarrito();
+                                    $('#cboCliente').val(null).trigger('change');
+
+                                    // Preguntamos si quiere imprimir
+                                    Swal.fire({
+                                        title: '¡Venta Exitosa!',
+                                        text: "¿Deseas imprimir el ticket?",
+                                        icon: 'success',
+                                        showCancelButton: true,
+                                        confirmButtonText: '<i class="fas fa-print"></i> Imprimir Ticket',
+                                        cancelButtonText: 'Nueva Venta',
+                                        confirmButtonColor: '#0d6efd',
+                                        cancelButtonColor: '#6c757d'
+                                    }).then((printResult) => {
+                                        if (printResult.isConfirmed) {
+                                            // Redirigimos al ticket en otra pestaña usando el string devuelto con la ruta
+                                            window.open('@Url.Action("Ticket", "Ventas")/' + resp.idVenta, '_blank');
+                                        }
+                                    });
+
+                                } else {
+                                    Swal.fire('Error', resp.mensaje, 'error');
+                                }
+                            },
+                            error: function() {
+                                Swal.fire('Resultado pendiente', 'La respuesta no llegó. Pulsa Procesar venta para reintentar la misma operación sin duplicarla.', 'warning');
+                            },
+                            complete: function() {
+                                procesando = false;
+                                $('#btnTerminar').prop('disabled', false);
+                            }
+                        });
+            }
+
+            function mostrarAvisoOperacionPendiente() {
+                if (!ventaPendiente || avisoPendienteMostrado) return;
+                avisoPendienteMostrado = true;
+                Swal.fire('Resultado pendiente', 'Hay una venta pendiente de confirmar. Pulsa Procesar venta para recuperar su resultado antes de iniciar otra venta.', 'warning');
+            }
+
+            function stockDisponibleVisual(productoId, stockOriginal) {
+                const cantidad = _productosLista.filter(x => String(x.ProductoId) === String(productoId)).reduce((n, x) => n + x.Cantidad, 0);
+                return Math.max(0, Number(stockOriginal || 0) - cantidad);
+            }
+
+            function mostrarProductoEscaneado(producto, item) {
+                if (!producto) return;
+                const stockOriginal = Number(producto.stock ?? item?.StockOriginal ?? 0);
+                const disponible = stockDisponibleVisual(producto.id, stockOriginal);
+                const precio = Number(producto.precio ?? item?.Precio ?? 0);
+                const texto = producto.nombre;
+                const select = $('#cboProducto');
+                select.find(`option[value="${producto.id}"]`).remove();
+                select.append(new Option(texto, producto.id, true, true));
+                select.trigger('change.select2');
+                $('#txtPrecio').val(precio.toFixed(2));
+                $('#txtStock').val(disponible);
+            }
+
+        });
+
+        // FUNCIONES AUXILIARES
+        function renderizarCarrito() {
+            $('#tablaDetalle').html('');
+            _subtotal = 0;
+
+            if (_productosLista.length > 0) {
+                $('#emptyState').hide();
+                
+                $.each(_productosLista, function(i, item) {
+                    _subtotal += item.Total;
+                    
+                    var fila = `
+                        <tr>
+                            <td class="ps-3 fw-bold small">${$('<div>').text(item.Nombre).html()}</td>
+                            <td class="text-center">${item.Cantidad}</td>
+                            <td class="text-end">${item.Precio.toFixed(2)}</td>
+                            <td class="text-end fw-bold">${item.Total.toFixed(2)}</td>
+                            <td class="text-center">
+                                <button class="btn btn-sm text-danger" onclick="eliminarProducto(${i})">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                    $('#tablaDetalle').append(fila);
+                });
+            } else {
+                $('#emptyState').show();
+            }
+
+            _subtotal = Number(_subtotal.toFixed(2));
+            const baseCobro = Math.max(0, Number((_subtotal - _descuento).toFixed(2)));
+            const metodoPagoSelected = $('input[name="metodoPago"]:checked').val() || 'Efectivo';
+            _recargo = metodoPagoSelected === 'Tarjeta' ? PetmorImportes.porcentaje(baseCobro, recargoTarjetaPct * 100) : 0;
+            _total = Number((baseCobro + _recargo).toFixed(2));
+
+            $('#lblTotalGrande').text('S/. ' + _total.toFixed(2));
+            $('#badgeCount').text(_productosLista.length + ' items');
+            
+            if(typeof calcularVuelto === "function") {
+                calcularVuelto();
+            }
+        }
+
+        function eliminarProducto(index) {
+            _productosLista.splice(index, 1);
+            renderizarCarrito();
+        }
+        function calcularVuelto() {
+            const recibido = Number($('#txtMontoRecibido').val()) || 0;
+            $('#txtVuelto').val(Math.max(0, recibido - _total).toFixed(2));
+        }
+    </script>
+}

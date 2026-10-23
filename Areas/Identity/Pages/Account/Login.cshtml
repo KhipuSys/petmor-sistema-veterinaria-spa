@@ -1,0 +1,84 @@
+@page
+@model MiniMarket.Web.Areas.Identity.Pages.Account.LoginModel
+@{ Layout = null; }
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Petmor - Iniciar sesión</title>
+    <link rel="icon" type="image/png" href="~/petmor-logo-blanco.png" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <style>
+        * { box-sizing: border-box; box-shadow: none !important; }
+        body { margin: 0; min-height: 100vh; min-height: 100dvh; padding: 32px 24px; display: grid; place-items: center; background: #fff; color: #382f29; font-family: 'Outfit', sans-serif; }
+        .login-layout { width: 100%; max-width: 900px; min-height: 540px; display: grid; grid-template-columns: 1fr 1fr; border-radius: 18px; overflow: hidden; border: 1px solid #f0e1d4; }
+        .login-form { padding: 62px 54px; background: #fff; }
+        .paw { display: grid; place-items: center; width: 54px; height: 54px; border-radius: 11px; background: #f06800; color: #fff; font-size: 27px; margin-bottom: 26px; }
+        h1 { font-size: 27px; font-weight: 600; line-height: 1.2; margin: 0 0 8px; }
+        .intro { margin: 0 0 33px; color: #786c62; font-size: 15px; font-weight: 300; }
+        .field { margin-bottom: 14px; }
+        label, .label-row { font-size: 14px; }
+        .label-row { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+        .field > label { display: block; margin-bottom: 8px; }
+        .input-wrap { display: flex; border: 1px solid #ecd9c9; border-radius: 6px; overflow: hidden; background: #fffaf5; }
+        .input-wrap:focus-within { border-color: #f06800; outline: 2px solid rgba(240,104,0,.35); outline-offset: 1px; }
+        .input-wrap i { display: grid; place-items: center; width: 33px; flex-shrink: 0; font-size: 14px; color: #80705f; }
+        input { min-width: 0; width: 100%; height: 44px; padding: 10px 9px; border: 0; outline: 0; font: inherit; font-size: 15px; color: #382f29; background: #f5f8fc; }
+        .domain-suffix { display: inline-flex; align-items: center; padding: 0 12px; background: #fff1e6; color: #c65300; font-weight: 600; border-left: 1px solid #ecd9c9; white-space: nowrap; }
+        .submit { width: 100%; margin-top: 7px; border: 0; border-radius: 6px; background: #f06800; color: #fff; min-height: 44px; font: inherit; font-size: 15px; cursor: pointer; }
+        .submit:hover { background: #d85d00; }
+        .submit:focus-visible, a:focus-visible { outline: 3px solid #ae4700; outline-offset: 3px; }
+        .brand-panel { background: radial-gradient(ellipse at center, #f58b30 0%, #f06800 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 48px; color: #fff; }
+        .brand-panel img { width: min(390px, 92%); max-height: 330px; object-fit: contain; }
+        .validation-summary-valid, .field-validation-valid { display: none; }
+        .validation-summary-errors, .field-validation-error { color: #ad2828; font-size: 13px; }
+        .validation-summary-errors ul { padding-left: 18px; }
+        @@media (max-width: 700px) {
+            body { padding: 20px 16px; }
+            .login-layout { max-width: 450px; grid-template-columns: 1fr; }
+            .login-form { padding: 36px 28px; }
+            .brand-panel { padding: 28px; }
+            .brand-panel img { width: min(300px, 92%); max-height: 240px; }
+        }
+    </style>
+</head>
+<body>
+    <main class="login-layout">
+        <section class="login-form" aria-labelledby="welcome">
+            <div class="paw"><i class="fas fa-paw" aria-hidden="true"></i></div>
+            <h1 id="welcome">Bienvenido de nuevo</h1>
+            <p class="intro">Ingresa a tu cuenta para continuar al sistema</p>
+            <form id="account" method="post">
+                <div asp-validation-summary="ModelOnly" role="alert"></div>
+                <div class="field">
+                    <label asp-for="Input.Email">Usuario</label>
+                    <div class="input-wrap">
+                        <i class="far fa-user" aria-hidden="true"></i>
+                        <input asp-for="Input.Email" type="text" autocomplete="username" autofocus required placeholder="admin" />
+                        <span class="domain-suffix">@@petmor.pe</span>
+                    </div>
+                    <span asp-validation-for="Input.Email"></span>
+                </div>
+                <div class="field">
+                    <div class="label-row">
+                        <label asp-for="Input.Password">Contraseña</label>
+                    </div>
+                    <div class="input-wrap">
+                        <i class="fas fa-lock" aria-hidden="true"></i>
+                        <input asp-for="Input.Password" autocomplete="current-password" required />
+                    </div>
+                    <span asp-validation-for="Input.Password"></span>
+                </div>
+                <button class="submit" type="submit">Iniciar Sesión</button>
+            </form>
+        </section>
+        <section class="brand-panel" aria-label="Veterinaria Petmor">
+            <img src="~/petmor-logo-principal-blanco.png" asp-append-version="true" alt="Logo Petmor" />
+        </section>
+    </main>
+</body>
+</html>

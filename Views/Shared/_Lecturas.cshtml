@@ -1,0 +1,20 @@
+@{
+    var modoLecturas = (ViewData["LecturasModo"] as string) ?? "operacion";
+    var asociarCodigos = modoLecturas == "asociar";
+    var ajusteProducto = modoLecturas == "producto-ajuste";
+}
+<div class="scan-box" data-lecturas-form data-modo="@modoLecturas" data-cantidad="@(ViewData["LecturasCantidad"] ?? "[name='cantidad']")" data-producto="@(ViewData["LecturasProducto"] ?? "[name='productoId']")">
+    <label class="scan-label">@(asociarCodigos ? "Asociar códigos de barras" : ajusteProducto ? "Lecturas para ajustar stock" : "Lecturas de códigos (una unidad por lectura)")</label>
+    <div class="scan-row">
+        <input class="form-control scan-input" data-codigo autocomplete="off" aria-label="Código a escanear" placeholder="Escanee y pulse Enter" />
+        <button type="button" class="btn scan-btn scan-btn-read" data-agregar>@(asociarCodigos ? "Asociar código" : "Registrar lectura")</button>
+        <button type="button" class="btn scan-btn scan-btn-undo" data-deshacer>@(asociarCodigos ? "Deshacer asociación" : "Deshacer lectura")</button>
+    </div>
+    <small class="scan-help" data-mensaje role="status" aria-live="polite">@(asociarCodigos ? "Asociar códigos no modifica existencias; solo guarda identificadores alternativos." : ajusteProducto ? "En Entrada, códigos nuevos se asocian y suman stock. En Salida, el código debe pertenecer al producto." : "Las lecturas se aplican únicamente al guardar.")</small>
+    <div data-lista class="mt-2"></div>
+    @if (ViewData["PermitirExcepcionManual"] is true)
+    {
+        <label class="d-block mt-2"><input type="checkbox" name="excepcionManual" value="true" data-excepcion-manual checked="@(ViewBag.ExcepcionManual == true)" /> Excepción administrativa: corrección, pérdida o merma sin lectura (motivo obligatorio)</label>
+    }
+    <script type="application/json" data-inicial>@Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.Lecturas ?? new List<string>()))</script>
+</div>

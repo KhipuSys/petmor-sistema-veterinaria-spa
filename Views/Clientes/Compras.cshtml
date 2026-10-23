@@ -1,0 +1,126 @@
+@model IEnumerable<MiniMarket.Web.Models.Venta>
+
+@{
+    var cliente = ViewBag.Cliente as MiniMarket.Web.Models.Cliente;
+    var compras = Model.ToList();
+    var comprasActivas = compras.Where(v => v.Estado == "Activa").ToList();
+    ViewData["Title"] = $"Historial de Compras - {cliente?.Nombre}";
+}
+
+<div class="historial-page">
+    <section class="historial-hero">
+        <div class="d-flex align-items-center gap-3">
+            <div class="historial-hero__icon"><i class="fas fa-receipt"></i></div>
+            <div>
+                <h1>Historial de compras</h1>
+                @if (cliente != null)
+                {
+                    <p>@cliente.Nombre · @(cliente.Documento?.Length == 11 ? "RUC" : "DNI"): @cliente.Documento</p>
+                }
+            </div>
+        </div>
+        <a asp-controller="Clientes" asp-action="Index" class="btn btn-volver-clientes"><i class="fas fa-arrow-left me-2"></i>Volver a clientes</a>
+    </section>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="metric-card">
+                <span>Total compras</span>
+                <strong>@compras.Count</strong>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="metric-card">
+                <span>Monto total gastado</span>
+                <strong>S/. @comprasActivas.Sum(v => v.Total).ToString("N2")</strong>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="metric-card">
+                <span>Última compra</span>
+                <strong>@(compras.Count == 0 ? "-" : compras.Max(v => v.Fecha).ToString("dd/MM/yyyy"))</strong>
+            </div>
+        </div>
+    </div>
+
+    <section class="historial-panel">
+        <div class="historial-count">Mostrando <strong>@compras.Count</strong> compras</div>
+        <div class="table-responsive">
+            <table class="table historial-table align-middle" data-petmor-list>
+                <thead>
+                    <tr>
+                        <th>Ticket</th>
+                        <th>Fecha</th>
+                        <th>Productos</th>
+                        <th>Método pago</th>
+                        <th class="text-end">Total</th>
+                        <th>Estado</th>
+                        <th class="text-end">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in compras.OrderByDescending(v => v.Id))
+                    {
+                        var anulada = item.Estado == "Anulada";
+                        <tr class="@(anulada ? "venta-anulada" : "")">
+                            <td>
+                                <div class="ticket-cell">
+                                    <div class="ticket-icon"><i class="fas fa-receipt"></i></div>
+                                    <strong>#@item.Id.ToString("D5")</strong>
+                                </div>
+                            </td>
+                            <td>@item.Fecha.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td><span class="items-badge">@item.Detalles.Count item(s)</span></td>
+                            <td>@(item.MetodoPago ?? "Efectivo")</td>
+                            <td class="text-end fw-bold @(anulada ? "text-danger text-decoration-line-through" : "text-success")">S/. @item.Total.ToString("N2")</td>
+                            <td>@if (anulada) { <div class="estado-cell"><span class="estado-badge estado-anulada"><i class="fas fa-circle"></i>Anulada</span><button type="button" class="btn reason-eye js-ver-motivo" data-title="Motivo de anulación" data-audit="@(item.FechaAnulacion.HasValue ? $"{item.FechaAnulacion.Value:dd/MM/yyyy HH:mm} · {item.AnuladaPor}" : item.AnuladaPor)" data-reason="@(string.IsNullOrWhiteSpace(item.MotivoAnulacion) ? "Sin motivo registrado." : item.MotivoAnulacion)" title="Ver motivo" aria-label="Ver motivo de anulación"><i class="fas fa-eye"></i></button></div> } else { <span class="estado-badge estado-activa"><i class="fas fa-circle"></i>Activa</span> }</td>
+                            <td>
+                                <div class="acciones-cell">
+                                    <a asp-controller="Ventas" asp-action="Ticket" asp-route-id="@item.Id" target="_blank" class="btn btn-action" title="Ver ticket"><i class="fas fa-print"></i></a>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                    @if (compras.Count == 0)
+                    {
+                        <tr><td colspan="7" class="text-center py-5 text-muted">Este cliente no tiene compras registradas.</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+
+<style>
+    .historial-page { padding: 8px 0 28px; }
+    .historial-hero { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 28px 32px; border: 1px solid #e5e7eb; border-radius: 22px; background: #fff; margin-bottom: 24px; }
+    .historial-hero__icon { width: 64px; height: 64px; border-radius: 14px; display: inline-flex; align-items: center; justify-content: center; background: #fff3ea; color: #f06800; font-size: 30px; }
+    .historial-hero h1 { margin: 0; color: #0f172a; font-size: 2rem; font-weight: 800; }
+    .historial-hero p { margin: 4px 0 0; color: #64748b; font-size: 1.05rem; }
+    .btn-volver-clientes { min-height: 52px; border-radius: 10px; padding: 13px 22px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #f06800; color: #f06800; background: #fff; font-weight: 800; text-decoration: none; }
+    .btn-volver-clientes:hover { background: #fff7ed; color: #c2410c; }
+    .metric-card { height: 100%; padding: 22px; border: 1px solid #e5e7eb; border-radius: 16px; background: #fff; }
+    .metric-card span { display: block; color: #64748b; font-weight: 800; text-transform: uppercase; font-size: .78rem; letter-spacing: .04em; }
+    .metric-card strong { display: block; margin-top: 8px; color: #0f172a; font-size: 1.8rem; font-weight: 900; }
+    .historial-panel { padding: 26px 32px; border: 1px solid #e5e7eb; border-radius: 18px; background: #fff; }
+    .historial-count { color: #334155; font-size: 1rem; margin-bottom: 18px; }
+    .historial-table { margin: 0; }
+    .historial-table thead th { color: #0f172a; font-size: .98rem; font-weight: 800; padding: 16px 14px; border-bottom: 1px solid #e2e8f0; }
+    .historial-table tbody td { padding: 18px 14px; border-bottom: 1px solid #e2e8f0; }
+    .historial-table tbody tr:last-child td { border-bottom: 0; }
+    .venta-anulada { opacity: .75; }
+    .ticket-cell { display: flex; align-items: center; gap: 12px; }
+    .ticket-icon { width: 46px; height: 46px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; background: #fff3ea; color: #f06800; }
+    .items-badge { display: inline-flex; align-items: center; border-radius: 999px; padding: 7px 12px; background: #f1f5f9; color: #334155; font-weight: 800; }
+    .estado-badge { display: inline-flex; align-items: center; gap: 8px; border-radius: 999px; padding: 8px 14px; font-weight: 800; }
+    .estado-badge i { font-size: .65rem; }
+    .estado-activa { background: #dcfce7; color: #059669; }
+    .estado-anulada { background: #fee2e2; color: #dc2626; }
+    .estado-cell { display: inline-flex; align-items: center; gap: 8px; }
+    .reason-eye { width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; border: 1px solid #fecaca; background: #fff; color: #dc2626; padding: 0; }
+    .reason-eye:hover { background: #fef2f2; color: #b91c1c; border-color: #fca5a5; }
+    .acciones-cell { display: flex; justify-content: flex-end; }
+    .btn-action { width: 42px; height: 42px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #fb923c; border-radius: 9px; color: #f06800; background: #fff; }
+    .btn-action:hover { background: #fff7ed; border-color: #f06800; color: #c2410c; }
+    @@media (max-width: 767.98px) { .historial-hero { align-items: flex-start; flex-direction: column; padding: 22px; } .btn-volver-clientes { width: 100%; } .historial-panel { padding: 18px; } .acciones-cell { justify-content: flex-start; } }
+</style>

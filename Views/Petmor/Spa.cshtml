@@ -1,0 +1,11 @@
+@model List<MiniMarket.Web.Models.Atencion>
+@using MiniMarket.Web.Models
+@{ ViewData["Title"] = "Órdenes spa"; }
+<header class="pm-heading"><h2><i class="fas fa-bath me-3" aria-hidden="true"></i>Órdenes de spa</h2><a asp-action="Agendar" asp-route-areaAtencion="Spa" class="btn btn-primary"><i class="fas fa-plus me-2"></i>Recibir mascota</a></header>
+<div class="row g-3">
+@foreach(var estado in new[]{EstadoAtencion.Programada, EstadoAtencion.Confirmada, EstadoAtencion.EnEspera, EstadoAtencion.EnAtencion, EstadoAtencion.Lista}) {
+<div class="col-md-6 col-xl"><h6>@estado.Texto() (@Model.Count(x => x.Estado == estado))</h6>
+@foreach(var a in Model.Where(x => x.Estado == estado)) { <div class="card p-3 mb-3"><strong>@a.Mascota.Nombre</strong><small class="text-muted">@a.Mascota.Cliente.Nombre</small><p class="mt-2">@a.Motivo</p><small>Previsto: @a.Inicio.ToString("dd/MM HH:mm")</small></div> }
+</div>
+}
+</div>

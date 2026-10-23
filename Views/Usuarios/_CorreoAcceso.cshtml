@@ -1,0 +1,19 @@
+@model MiniMarket.Web.Models.UsuarioDatosModel
+<div class="mb-3">
+    <label asp-for="SucursalId" class="form-label fw-bold">Sede asignada</label>
+    <select asp-for="SucursalId" asp-items="ViewBag.Sedes" class="form-select" required>
+        <option value="">Seleccionar sede</option>
+    </select>
+    <span asp-validation-for="SucursalId" class="text-danger"></span>
+    <small class="text-muted d-block">Elige una sede fija o "Ambas sedes" para administradores y personal rotativo.</small>
+</div>
+<div class="mb-3">
+    <label asp-for="UsuarioAcceso" class="form-label fw-bold">Usuario de acceso</label>
+    <div class="input-group">
+        <input asp-for="UsuarioAcceso" class="form-control" placeholder="nombre.apellido" autocomplete="off" required />
+        <span class="input-group-text fw-bold text-primary">@@petmor.pe</span>
+    </div>
+    <input asp-for="Email" type="hidden" />
+    <span asp-validation-for="UsuarioAcceso" class="text-danger"></span>
+    <small class="text-muted">El correo completo se guardará con el dominio fijo @@petmor.pe.</small>
+</div>

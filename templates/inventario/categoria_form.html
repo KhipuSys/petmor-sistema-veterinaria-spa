@@ -1,3 +1,0 @@
-{% extends 'base.html' %}{% load crispy_forms_tags %}
-{% block page_title %}Nueva categoría{% endblock %}
-{% block content %}<form method="post" class="panel-card">{% csrf_token %}{{ form|crispy }}<button class="btn btn-primary">Guardar</button> <a href="{% url 'categoria_lista' %}" class="btn btn-light">Volver</a></form>{% endblock %}

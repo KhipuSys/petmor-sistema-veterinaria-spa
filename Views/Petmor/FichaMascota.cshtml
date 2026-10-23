@@ -1,0 +1,230 @@
+@model MiniMarket.Web.Models.Mascota
+@using MiniMarket.Web.Models
+@{
+    ViewData["Title"] = Model.Nombre;
+    var archivos = (List<ArchivoClinico>)ViewBag.Archivos;
+    var historial = (List<Atencion>)ViewBag.Historial;
+    var preventivos = (List<PreventivoMascota>)ViewBag.Preventivos;
+    var foto = archivos.FirstOrDefault(x => x.EsFoto);
+    var sexoClase = Model.Sexo == "Hembra" ? "sexo-hembra" : Model.Sexo == "Macho" ? "sexo-macho" : "sexo-neutral";
+}
+
+<partial name="_Avisos" />
+
+<div class="ficha-page py-4">
+    <section class="ficha-card mx-auto">
+        <div class="ficha-header">
+            <div class="ficha-photo">
+                @if (foto != null)
+                {
+                    <img src="@Url.Action("Archivo", new { id = foto.Id })" alt="Fotografía de @Model.Nombre" />
+                }
+                else
+                {
+                    <i class="fas fa-paw"></i>
+                }
+            </div>
+            <div class="ficha-title">
+                <h1>@Model.Nombre</h1>
+                <p>@Model.Especie · @Model.Raza</p>
+                <span class="sexo-chip @sexoClase"><i class="fas @(Model.Sexo == "Hembra" ? "fa-venus" : Model.Sexo == "Macho" ? "fa-mars" : "fa-venus-mars") me-1"></i>@Model.Sexo</span>
+            </div>
+        </div>
+
+        <div class="ficha-body">
+            <div class="row g-4">
+                <div class="col-lg-8">
+                    <section class="ficha-section">
+                        <div class="section-heading">
+                            <div class="section-icon"><i class="fas fa-paw"></i></div>
+                            <h2>Datos de la mascota</h2>
+                        </div>
+                        <div class="info-grid">
+                            <div class="info-item"><span>Especie</span><strong>@Model.Especie</strong></div>
+                            <div class="info-item"><span>Raza</span><strong>@Model.Raza</strong></div>
+                            <div class="info-item"><span>Peso</span><strong>@(Model.Peso?.ToString("0.##") ?? "-") kg</strong></div>
+                            <div class="info-item"><span>Nacimiento</span><strong>@(Model.FechaNacimiento?.ToString("dd/MM/yyyy") ?? "No registrado")</strong></div>
+                            <div class="info-item"><span>Estado</span><strong class="@(Model.Activa ? "text-success" : "text-danger")">@(Model.Activa ? "Activa" : "Inactiva")</strong></div>
+                        </div>
+                    </section>
+
+                    <section class="ficha-section ficha-clinica">
+                        <div class="section-heading">
+                            <div class="section-icon"><i class="far fa-file-lines"></i></div>
+                            <h2>Información clínica</h2>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="clinical-box">
+                                    <span><i class="fas fa-triangle-exclamation me-2"></i>Alergias / alertas</span>
+                                    <p>@(string.IsNullOrWhiteSpace(Model.Alergias) ? "Sin alertas registradas." : Model.Alergias)</p>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="clinical-box">
+                                    <span><i class="far fa-clipboard me-2"></i>Observaciones</span>
+                                    <p>@(string.IsNullOrWhiteSpace(Model.Observaciones) ? "Sin observaciones registradas." : Model.Observaciones)</p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <div class="col-lg-4">
+                    <section class="ficha-section h-100">
+                        <div class="section-heading">
+                            <div class="section-icon"><i class="far fa-user"></i></div>
+                            <h2>Propietario</h2>
+                        </div>
+                        <div class="owner-card">
+                            <div class="owner-icon"><i class="far fa-user"></i></div>
+                            <div>
+                                <strong>@Model.Cliente.Nombre</strong>
+                                <span>@(Model.Cliente.Documento?.Length == 11 ? "RUC" : "DNI"): @Model.Cliente.Documento</span>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-lg-7">
+                    <section class="ficha-section h-100">
+                        <div class="section-heading">
+                            <div class="section-icon"><i class="fas fa-notes-medical"></i></div>
+                            <h2>Historia de atenciones</h2>
+                        </div>
+                        <div class="timeline-list">
+                            @foreach (var a in historial)
+                            {
+                                <div class="timeline-item">
+                                    <strong>@a.Inicio.ToString("dd/MM/yyyy") · @a.Area · @(((Dictionary<int, string>)ViewBag.SedesHistorial).GetValueOrDefault(a.Id))</strong>
+                                    <span>@a.Motivo</span>
+                                    <small>@a.Estado.Texto() · @a.Diagnostico</small>
+                                    <partial name="_MotivoAtencion" model="a" />
+                                </div>
+                            }
+                            @if (historial.Count == 0)
+                            {
+                                <div class="empty-state">Sin atenciones registradas.</div>
+                            }
+                        </div>
+                    </section>
+                </div>
+                <div class="col-lg-5">
+                    <section class="ficha-section h-100">
+                        <div class="section-heading">
+                            <div class="section-icon"><i class="fas fa-syringe"></i></div>
+                            <h2>Vacunas</h2>
+                        </div>
+                        <div class="preventivo-list">
+                            @foreach (var p in preventivos)
+                            {
+                                <div class="preventivo-item">
+                                    <div class="d-flex justify-content-between gap-2 align-items-start">
+                                        <div>
+                                            <strong>@p.Tipo · @p.Nombre</strong>
+                                            <span>Aplicación: @p.Fecha.ToString("dd/MM/yyyy")</span>
+                                            <small>Próxima dosis: @(p.Proxima?.ToString("dd/MM/yyyy") ?? "-")</small>
+                                        </div>
+                                        @if (User.IsInRole("Administrador") || User.IsInRole("Veterinario"))
+                                        {
+                                            <form method="post" asp-action="EliminarPreventivo" asp-route-id="@p.Id" data-petmor-confirm="danger" data-title="Eliminar preventivo" data-text="¿Eliminar este preventivo?">
+                                                <button class="btn btn-sm btn-ficha-outline btn-preventivo-delete" type="submit">Eliminar</button>
+                                            </form>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                            @if (preventivos.Count == 0)
+                            {
+                                <div class="empty-state">Sin preventivos registrados.</div>
+                            }
+                        </div>
+                    </section>
+                </div>
+            </div>
+
+            @if (User.IsInRole("Administrador") || User.IsInRole("Veterinario"))
+            {
+                <form method="post" asp-action="Preventivo" class="ficha-section preventivo-form">
+                    <div class="section-heading">
+                        <div class="section-icon"><i class="fas fa-plus"></i></div>
+                        <h2>Registrar preventivo aplicado</h2>
+                    </div>
+                    <input name="MascotaId" value="@Model.Id" type="hidden" />
+                    <div class="row g-3">
+                        <div class="col-md-3"><label class="form-label fw-bold" for="tipo">Tipo</label><select id="tipo" name="Tipo" class="form-select ficha-control"><option>Vacuna</option></select></div>
+                        <div class="col-md-5"><label class="form-label fw-bold" for="preventivo">Nombre</label><input id="preventivo" name="Nombre" required maxlength="150" class="form-control ficha-control" /></div>
+                        <div class="col-md-4"><label class="form-label fw-bold" for="fecha">Aplicación</label><input id="fecha" name="Fecha" type="date" value="@HoraPeru.Hoy.ToString("yyyy-MM-dd")" required class="form-control ficha-control" /></div>
+                        <div class="col-md-4"><label class="form-label fw-bold" for="proxima">Próxima dosis</label><input id="proxima" name="Proxima" type="date" class="form-control ficha-control" /></div>
+                        <div class="col-md-4"><label class="form-label fw-bold" for="observaciones">Observaciones</label><input id="observaciones" name="Observaciones" maxlength="1000" class="form-control ficha-control" /></div>
+                        <div class="col-md-4 d-flex align-items-end"><button class="btn btn-ficha-primary w-100">Guardar preventivo</button></div>
+                    </div>
+                </form>
+            }
+
+            <div class="ficha-bottom-actions">
+                <a class="btn btn-ficha-outline" asp-action="Mascotas"><i class="fas fa-arrow-left me-2"></i>Volver</a>
+                <a class="btn btn-ficha-outline" asp-action="Mascota" asp-route-id="@Model.Id"><i class="fas fa-pen me-2"></i>Editar ficha</a>
+                <a class="btn btn-ficha-primary" asp-action="Agendar" asp-route-mascotaId="@Model.Id"><i class="far fa-calendar-plus me-2"></i>Agendar atención</a>
+            </div>
+        </div>
+    </section>
+</div>
+
+<style>
+    .ficha-page { background: linear-gradient(180deg, #f8fafc 0%, #eef4fb 100%); border-radius: 24px; }
+    .ficha-card { max-width: 1220px; background: #fff; border: 1px solid #e5e7eb; border-radius: 18px; overflow: hidden; }
+    .ficha-header { display: flex; align-items: center; gap: 20px; padding: 28px 34px; background: linear-gradient(135deg, #ff7a00 0%, #f06800 100%); color: #fff; }
+    .ficha-photo { width: 108px; height: 108px; border-radius: 18px; display: inline-flex; align-items: center; justify-content: center; overflow: hidden; background: #fff3ea; color: #f06800; font-size: 42px; flex: 0 0 auto; }
+    .ficha-photo img { width: 100%; height: 100%; object-fit: cover; }
+    .ficha-title { flex: 1; min-width: 0; }
+    .ficha-title h1 { margin: 0; font-size: clamp(2rem, 4vw, 3rem); font-weight: 900; }
+    .ficha-title p { margin: 6px 0 10px; font-size: 1.08rem; opacity: .95; }
+    .sexo-chip { display: inline-flex; align-items: center; border-radius: 999px; padding: 6px 12px; background: #fff; font-weight: 800; }
+    .sexo-hembra { color: #ec4899; }
+    .sexo-macho { color: #2563eb; }
+    .sexo-neutral { color: #64748b; }
+    .btn-ficha-primary, .btn-ficha-outline { min-height: 52px; border-radius: 10px; padding: 12px 22px; display: inline-flex; align-items: center; justify-content: center; font-weight: 800; white-space: nowrap; text-decoration: none; }
+    .btn-header-secondary { background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.55); color: #fff; }
+    .btn-header-secondary:hover { background: rgba(255,255,255,.24); border-color: #fff; color: #fff; }
+    .btn-ficha-primary { min-width: 180px; background: #f06800; border: 1px solid #f06800; color: #fff !important; }
+    .btn-ficha-primary i { color: #fff !important; }
+    .btn-ficha-primary:hover, .btn-ficha-primary:focus { background: #d95f00; border-color: #d95f00; color: #fff !important; }
+    .btn-ficha-primary:hover i, .btn-ficha-primary:focus i { color: #fff !important; }
+    .btn-ficha-outline { background: #fff; border: 1px solid #fed7aa; color: #f06800; }
+    .btn-ficha-outline:hover { background: #fff7ed; border-color: #f06800; color: #c2410c; }
+    .ficha-body { padding: 32px 34px; }
+    .ficha-section { padding: 20px; border: 1px solid #e5e7eb; border-radius: 16px; background: #fff; margin-bottom: 22px; }
+    .ficha-clinica { background: #fff7f0; border-color: #ffedd5; }
+    .section-heading { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
+    .section-heading--between { justify-content: space-between; }
+    .section-heading h2 { margin: 0; color: #111827; font-size: 1.28rem; font-weight: 900; }
+    .section-icon { width: 44px; height: 44px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; background: #f06800; color: #fff; font-size: 19px; }
+    .info-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
+    .info-item { padding: 14px; border: 1px solid #e5e7eb; border-radius: 12px; background: #f8fafc; }
+    .info-item span, .clinical-box span { display: block; color: #64748b; font-weight: 800; margin-bottom: 5px; }
+    .info-item strong { color: #0f172a; }
+    .clinical-box { height: 100%; padding: 16px; border: 1px solid #fed7aa; border-radius: 12px; background: #fff; }
+    .clinical-box p { margin: 0; color: #334155; white-space: pre-wrap; }
+    .owner-card { display: flex; align-items: center; gap: 14px; padding: 16px; border-radius: 12px; background: #fff7f0; border: 1px solid #ffedd5; }
+    .owner-icon { width: 54px; height: 54px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: #fff; color: #f06800; font-size: 22px; }
+    .owner-card strong, .owner-card span { display: block; }
+    .owner-card span { color: #64748b; margin-top: 3px; }
+    .timeline-list, .preventivo-list { display: grid; gap: 10px; }
+    .timeline-item, .preventivo-item { display: block; padding: 14px 16px; border: 1px solid #e5e7eb; border-radius: 12px; color: #0f172a; text-decoration: none; background: #fff; }
+    .timeline-item small, .preventivo-item small { color: #64748b; }
+    .timeline-item:hover { border-color: #f06800; background: #fff7ed; }
+    .timeline-item strong, .timeline-item span, .preventivo-item strong, .preventivo-item span { display: block; }
+    .timeline-item span, .preventivo-item span { color: #334155; margin-top: 3px; }
+    .btn-preventivo-delete { min-height: 38px; padding: 8px 12px; border-color: #f87171; color: #dc2626; }
+    .btn-preventivo-delete:hover { background: #fef2f2; border-color: #dc2626; color: #b91c1c; }
+    .empty-state { padding: 18px; border: 1px dashed #cbd5e1; border-radius: 12px; color: #64748b; text-align: center; }
+    .ficha-control { min-height: 48px; border: 1px solid #cbd5e1; border-radius: 10px; }
+    .ficha-control:focus { border-color: #f06800; box-shadow: 0 0 0 .18rem rgba(240, 104, 0, .14) !important; }
+    .preventivo-form { background: #fffaf5; border-color: #ffedd5; margin-bottom: 0; }
+    .ficha-bottom-actions { display: flex; justify-content: flex-end; gap: 12px; padding-top: 22px; border-top: 1px solid #e5e7eb; flex-wrap: wrap; }
+    @@media (max-width: 991.98px) { .info-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @@media (max-width: 767.98px) { .ficha-page { padding: 0 !important; background: transparent; } .ficha-header, .ficha-body { padding-left: 20px; padding-right: 20px; } .ficha-header { align-items: flex-start; flex-direction: column; } .info-grid { grid-template-columns: 1fr; } .ficha-bottom-actions { display: grid; } .ficha-bottom-actions .btn { width: 100%; } }
+</style>

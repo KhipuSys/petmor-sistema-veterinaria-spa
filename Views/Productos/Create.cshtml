@@ -1,0 +1,11 @@
+@model MiniMarket.Web.Models.Producto
+
+@{
+    ViewData["Title"] = "Nuevo Producto";
+}
+
+<partial name="_FormularioProducto" model="Model" />
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

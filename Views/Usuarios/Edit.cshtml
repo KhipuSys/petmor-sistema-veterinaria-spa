@@ -1,0 +1,32 @@
+@model MiniMarket.Web.Models.UsuarioEditModel
+
+@{
+    ViewData["Title"] = "Editar Usuario";
+}
+
+<section class="form-shell">
+    <div class="form-head">
+        <div class="form-title"><div class="form-icon"><i class="fas fa-user-pen"></i></div><div><h2>Editar Usuario</h2><p>Actualiza datos personales, acceso, contraseña y permisos</p></div></div>
+        <a asp-action="Index" class="btn btn-form-secondary"><i class="fas fa-arrow-left"></i>Volver</a>
+    </div>
+    <form asp-action="Edit" method="post" class="user-form-card">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="Id" value="@Model.Id" />
+        <div asp-validation-summary="All" class="form-errors"></div>
+        <div class="form-grid">
+            <section class="form-panel"><div class="panel-title"><i class="fas fa-id-card"></i><div><h3>Datos personales</h3><span>DNI, nombres y apellidos</span></div></div><partial name="_DatosPersonales" model="Model" /></section>
+            <section class="form-panel"><div class="panel-title"><i class="fas fa-shield-halved"></i><div><h3>Acceso y permisos</h3><span>Rol actual: @Model.RolActual</span></div></div><partial name="_CorreoAcceso" model="Model" /><div class="mb-3"><label for="NuevoRol" class="form-label fw-bold">Rol principal</label>@Html.DropDownList("NuevoRol", ViewBag.Roles as IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>, new { @class = "form-select", required = "required" })</div><div class="mb-3"><label for="NuevaPassword" class="form-label fw-bold">Nueva contraseña</label><input type="password" id="NuevaPassword" name="NuevaPassword" class="form-control" placeholder="Dejar vacío para no cambiar" minlength="6" /><small class="text-muted">Si se deja en blanco, la contraseña no cambia.</small></div><partial name="_RolesPetmor" model="Model" /></section>
+        </div>
+        <div class="form-actions"><a asp-action="Index" class="btn btn-form-secondary">Cancelar</a><button type="submit" class="btn btn-form-primary"><i class="fas fa-check"></i>Guardar cambios</button></div>
+    </form>
+</section>
+
+<style>
+    .form-shell { border: 1px solid #e5e7eb; border-radius: 14px; background: #fff; overflow: hidden; } .form-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px 20px; border-bottom: 1px solid #e5e7eb; background: linear-gradient(135deg, #fff, #f8fafc); } .form-title { display: flex; align-items: center; gap: 12px; } .form-icon { width: 46px; height: 46px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; background: #fff3ea; color: #f06800; font-size: 20px; } .form-title h2 { margin: 0; color: #0f172a; font-size: 1.15rem; font-weight: 900; } .form-title p { margin: 3px 0 0; color: #64748b; }
+    .user-form-card { padding: 20px; } .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; } .form-panel { border: 1px solid #e5e7eb; border-radius: 14px; padding: 18px; background: #fff; } .panel-title { display: flex; gap: 10px; align-items: center; margin-bottom: 16px; color: #f06800; } .panel-title i { width: 38px; height: 38px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; background: #fff3ea; } .panel-title h3 { margin: 0; color: #0f172a; font-size: 1rem; font-weight: 900; } .panel-title span { color: #64748b; font-size: .85rem; font-weight: 700; }
+    .form-control, .form-select, .input-group-text { min-height: 46px; border-color: #dbe3ee; border-radius: 10px; font-weight: 700; } .input-group .form-control { border-top-right-radius: 0; border-bottom-right-radius: 0; } .input-group .input-group-text, .input-group .btn { border-top-right-radius: 10px; border-bottom-right-radius: 10px; } .btn-outline-primary { border-color: #fed7aa; color: #f06800; font-weight: 900; } .btn-outline-primary:hover { background: #f06800; border-color: #f06800; color: #fff; }
+    fieldset { border: 0 !important; padding: 0 !important; margin-bottom: 0 !important; } legend { display: none; } .form-actions { display: flex; justify-content: flex-end; gap: 10px; padding-top: 18px; } .btn-form-primary, .btn-form-secondary { min-height: 46px; border-radius: 10px; padding: 11px 18px; font-weight: 900; display: inline-flex; align-items: center; justify-content: center; gap: 7px; } .btn-form-primary { background: #f06800; border: 1px solid #f06800; color: #fff !important; } .btn-form-secondary { background: #fff; border: 1px solid #fed7aa; color: #f06800 !important; } .form-errors:empty { display: none; }
+    @@media (max-width: 991.98px) { .form-grid { grid-template-columns: 1fr; } } @@media (max-width: 767.98px) { .form-head { flex-direction: column; align-items: flex-start; } .form-actions { flex-direction: column; } .btn-form-primary, .btn-form-secondary { width: 100%; } }
+</style>
+
+@section Scripts { <script src="~/js/usuarios.js" asp-append-version="true"></script> }

@@ -1,0 +1,258 @@
+/* Shared presentation for all operational tables, with or without DataTables. */
+.main-content .dataTables_wrapper {
+    padding: 0 !important;
+    color: #334155;
+    font-size: .9rem;
+}
+.main-content .petmor-table-toolbar,
+.main-content .petmor-table-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px 20px;
+    padding: 16px 18px;
+}
+.main-content .petmor-table-footer { border-top: 0; }
+.main-content .dataTables_wrapper .petmor-table-toolbar { padding-top: 0; }
+/* Frame the scroll area itself so both sides remain visible on narrow screens. */
+.main-content .petmor-table-scroll,
+.main-content .table-responsive:has(> table.table:not(.dataTable)) {
+    overflow-x: auto;
+    max-width: 100%;
+    border: 1px solid #dbe3ee;
+    border-radius: 12px;
+    background: #fff;
+}
+.main-content .petmor-table-scroll { width: 100%; }
+/* Older views supplied an outer border; the shared inner frame now owns it. */
+.main-content .table-responsive:has(> .dataTables_wrapper) {
+    border: 0;
+    border-radius: 0;
+}
+.main-content .dataTables_wrapper .dataTables_info,
+.main-content .petmor-table-info {
+    padding: 0;
+    color: #64748b;
+    font-size: .85rem;
+}
+.main-content .dataTables_wrapper .dataTables_paginate { margin-left: auto; }
+.main-content .dataTables_wrapper .dataTables_filter { margin: 0; }
+.main-content .dataTables_wrapper .dataTables_length label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+}
+.main-content .dataTables_wrapper .dataTables_length select {
+    width: auto;
+    min-width: 96px;
+    min-height: 38px;
+    padding: 6px 32px 6px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    background-color: #fff;
+    color: #0f172a;
+    font-size: .86rem;
+    font-weight: 800;
+    line-height: 1.2;
+    text-align: left;
+    box-shadow: none;
+}
+.main-content .dataTables_wrapper .dataTables_length select:focus {
+    border-color: #94a3b8;
+    outline: 0;
+    box-shadow: 0 0 0 3px rgba(148, 163, 184, .18);
+}
+.main-content .dataTables_wrapper label { font-size: .85rem; font-weight: 600; }
+.main-content .clientes-panel--hydrating .table-responsive {
+    visibility: hidden;
+    min-height: 260px;
+}
+.main-content .clientes-panel--hydrating .clientes-fallback {
+    visibility: hidden;
+}
+.main-content table.table:not(.ticket-table) {
+    width: 100% !important;
+    margin: 0 !important;
+    border-collapse: collapse !important;
+    table-layout: auto;
+    --bs-table-striped-bg: transparent;
+    --bs-table-hover-bg: #fff7ed;
+}
+.main-content table.table:not(.ticket-table) > :is(thead, tbody, tfoot) > tr > :is(th, td) {
+    text-align: left !important;
+    vertical-align: middle;
+    padding: 16px 18px !important;
+    font-size: .9rem;
+    line-height: 1.5;
+    border-bottom: 1px solid #e2e8f0;
+}
+.main-content table.table:not(.ticket-table) > thead > tr > th,
+.main-content table.table:not(.ticket-table) > tfoot > tr > th {
+    background: #f8fafc !important;
+    color: #334155;
+    font-size: .82rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+.main-content table.table:not(.ticket-table) tbody strong { font-size: .9rem; font-weight: 600; }
+.main-content table.table:not(.ticket-table) tbody small,
+.main-content table.table:not(.ticket-table) :is(.cliente-cell, .documento-cell, .tipo-cell, .propietario-cell) span {
+    display: block;
+    margin-top: 4px;
+    font-size: .8rem;
+    line-height: 1.4;
+    color: #64748b;
+}
+.main-content table.table:not(.ticket-table) :is(.acciones-cell, .cliente-cell, .documento-cell, .mascota-cell, .tipo-cell, .propietario-cell, .pet-cell, .time-cell, .responsable-cell) {
+    justify-content: flex-start;
+    gap: 10px;
+}
+.main-content table.table:not(.ticket-table) .petmor-cell-stack {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    min-width: 58px;
+    text-align: center;
+}
+.main-content table.table:not(.ticket-table) .petmor-cell-stack > :is(.badge, [class*="-pill"], .estado-badge) {
+    margin: 0 !important;
+}
+.main-content table.table:not(.ticket-table) .petmor-cell-stack > small {
+    display: block;
+    width: auto;
+    margin: 0 !important;
+    line-height: 1.2;
+    text-align: center;
+    white-space: nowrap;
+}
+.main-content table.table:not(.ticket-table) tbody :is([class*="-pill"], .estado-badge, .badge) {
+    font-size: .78rem;
+    font-weight: 600;
+    padding: 6px 10px;
+    line-height: 1.3;
+}
+.main-content table.table:not(.ticket-table) tbody .btn {
+    width: auto;
+    min-width: 36px;
+    min-height: 36px;
+    padding: 6px 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9px !important;
+    white-space: nowrap;
+    font-size: .85rem;
+}
+.main-content table.table:not(.ticket-table) tbody :is(.btn-action, .btn-action-icon, .btn-sale-action, .btn-service-action, .btn-compra-action, .pred-action, .reason-eye, .btn-cobrar) {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+}
+.main-content table.table:not(.ticket-table) :is(.acciones-cell, .pm-actions-cell) {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+}
+.main-content table.table:not(.ticket-table) :is(.pm-action, .btn-action, .product-action, .category-action, .provider-action, .user-action, .btn-service-action, .btn-sale-action, .btn-compra-action, .pred-action, .reason-eye, .btn-cobrar) {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    min-height: 40px;
+    padding: 0 !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px !important;
+    border: 1px solid #fed7aa;
+    background: #fff;
+    color: #f06800;
+    font-size: .92rem;
+    line-height: 1;
+    box-shadow: none;
+    transition: background-color .15s ease, border-color .15s ease, color .15s ease;
+}
+.main-content table.table:not(.ticket-table) :is(.pm-action, .btn-action, .product-action, .category-action, .provider-action, .user-action, .btn-service-action, .btn-sale-action, .btn-compra-action, .pred-action, .reason-eye, .btn-cobrar):is(:hover, :focus-visible) {
+    border-color: #f06800;
+    background: #fff7ed;
+    color: #c2410c;
+}
+.main-content table.table:not(.ticket-table) :is(.pm-action-danger, .btn-action-danger, .action-delete, .action-power, .btn-sale-danger, .btn-action-danger) {
+    border-color: #fecaca !important;
+    color: #dc2626 !important;
+}
+.main-content table.table:not(.ticket-table) :is(.pm-action-danger, .btn-action-danger, .action-delete, .action-power, .btn-sale-danger, .btn-action-danger):is(:hover, :focus-visible) {
+    border-color: #dc2626 !important;
+    background: #fef2f2 !important;
+    color: #b91c1c !important;
+}
+.main-content table.table:not(.ticket-table) :is(.pm-action-success, .btn-action-success, .action-power-on, .action-ok) {
+    border-color: #bbf7d0 !important;
+    color: #059669 !important;
+}
+.main-content table.table:not(.ticket-table) :is(.pm-action-success, .btn-action-success, .action-power-on, .action-ok):is(:hover, :focus-visible) {
+    border-color: #059669 !important;
+    background: #ecfdf5 !important;
+    color: #047857 !important;
+}
+.main-content table.table:not(.ticket-table) :is(.cliente-avatar, .documento-icon, .mascota-avatar, .tipo-icon, .propietario-icon, .pet-avatar) {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    font-size: 1rem;
+    border-radius: 12px;
+}
+.main-content table.table:not(.ticket-table) .contacto-cell { min-width: 180px; }
+.main-content table.table:not(.ticket-table) .contacto-cell span {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    font-size: .8rem;
+}
+.main-content table.table:not(.ticket-table) .contacto-cell i { flex-shrink: 0; margin-right: 0 !important; }
+.main-content table.table:not(.ticket-table) .responsable-cell span {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    font-weight: 600;
+}
+.main-content table.table:not(.ticket-table) tbody :is(.form-control, .form-select) {
+    min-height: 38px;
+    border-radius: 9px;
+    font-size: .9rem;
+}
+.main-content table.table:not(.ticket-table) td[colspan] { color: #64748b; }
+.main-content table.table:not(.ticket-table):not(:has(tfoot)) > tbody > tr:last-child > td,
+.main-content table.table:not(.ticket-table) > tfoot > tr:last-child > :is(th, td) { border-bottom: 0; }
+.main-content table.dataTable thead > tr > :is(th, td)::before,
+.main-content table.dataTable thead > tr > :is(th, td)::after { display: none !important; }
+.main-content .petmor-table-footer :is(.dataTables_paginate, .petmor-table-pagination) .pagination { gap: 6px; margin: 0; flex-wrap: wrap; }
+.main-content .petmor-table-footer :is(.dataTables_paginate, .petmor-table-pagination) .page-link {
+    margin: 0;
+    min-height: 38px;
+    padding: 8px 14px;
+    border: 1px solid #fed7aa;
+    border-radius: 10px !important;
+    background: #fff;
+    color: #f06800 !important;
+    font-size: .85rem;
+    font-weight: 600;
+    box-shadow: none;
+}
+.main-content .petmor-table-footer :is(.dataTables_paginate, .petmor-table-pagination) .page-item.is-selected .page-link,
+.main-content .petmor-table-footer :is(.dataTables_paginate, .petmor-table-pagination) .page-item:not(.disabled) .page-link:is(:hover, :focus-visible, :active) {
+    background: #f06800;
+    border-color: #f06800;
+    color: #fff !important;
+}
+.main-content .petmor-table-footer :is(.dataTables_paginate, .petmor-table-pagination) .page-link:focus-visible { outline: 2px solid #f06800; outline-offset: 3px; }
+.main-content .petmor-table-footer :is(.dataTables_paginate, .petmor-table-pagination) .disabled:not(.is-selected) .page-link { opacity: .45; }
+.main-content table.dataTable td.dataTables_empty { padding: 32px 18px !important; color: #64748b; }
+@media (max-width: 767.98px) {
+    .main-content .petmor-table-toolbar, .main-content .petmor-table-footer { padding: 12px; gap: 12px; }
+    .main-content .dataTables_wrapper .dataTables_info { text-align: left; }
+    .main-content .dataTables_wrapper .dataTables_filter { text-align: left; }
+}

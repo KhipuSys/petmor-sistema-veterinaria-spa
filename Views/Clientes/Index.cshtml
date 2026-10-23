@@ -1,0 +1,188 @@
+@model IEnumerable<MiniMarket.Web.Models.Cliente>
+@{
+    ViewData["Title"] = "Clientes";
+    var clientes = Model.ToList();
+    var totalClientes = ViewBag.TotalClientes is int total ? total : clientes.Count;
+    bool? estadoSeleccionado = ViewBag.Estado as bool?;
+}
+
+<div class="clientes-page">
+    <section class="clientes-hero">
+        <div class="d-flex align-items-center gap-3">
+            <div class="clientes-hero__icon"><i class="fas fa-users"></i></div>
+            <div>
+                <h1>Cartera de clientes y mascotas</h1>
+                <p>Clientes, propietarios y contactos registrados</p>
+            </div>
+        </div>
+        <div class="clientes-hero__actions">
+            <form asp-action="RegistrarMascotaSistema" method="post">
+                <button class="btn btn-nueva-mascota" type="submit"><i class="fas fa-paw me-2"></i>Registrar mascota</button>
+            </form>
+            <a asp-action="Create" class="btn btn-nuevo-cliente"><i class="fas fa-user-plus me-2"></i>Nuevo cliente</a>
+        </div>
+    </section>
+
+    <form method="get" class="clientes-filtros" id="clientesFiltros">
+        <div class="clientes-search">
+            <i class="fas fa-search"></i>
+            <input class="form-control" name="q" value="@ViewBag.Q" maxlength="200" placeholder="Buscar por cliente, DNI/RUC, teléfono, correo, mascota o raza..." aria-label="Buscar clientes y mascotas" />
+        </div>
+        <select class="form-select filtro-select" name="estado" aria-label="Filtrar por estado">
+            <option value="">Todos los estados</option>
+            <option value="true" selected="@(estadoSeleccionado == true)">Activo</option>
+            <option value="false" selected="@(estadoSeleccionado == false)">Inactivo</option>
+        </select>
+        <button class="btn btn-filtrar" type="submit"><i class="fas fa-filter me-2"></i>Filtrar</button>
+        <a class="btn btn-limpiar" asp-action="Index"><i class="fas fa-eraser me-2"></i>Limpiar</a>
+    </form>
+
+    <section class="clientes-panel clientes-panel--hydrating">
+        <div class="clientes-fallback" style="visibility:hidden;">
+            <div class="clientes-count">Mostrando <strong>@clientes.Count</strong> de <strong>@totalClientes</strong> clientes</div>
+            <partial name="_Paginacion" />
+        </div>
+        <div class="table-responsive" data-clientes-table-shell style="visibility:hidden;min-height:260px;">
+            <table class="table clientes-table align-middle" id="tablaClientes" data-url="@Url.Action("DatosTabla")" data-start="@(((int?)ViewBag.Pagina - 1 ?? 0) * 50)">
+                <thead>
+                    <tr>
+                        <th class="text-start">Cliente</th>
+                        <th>Documento</th>
+                        <th>Contacto</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in clientes)
+                    {
+                        var inicial = string.IsNullOrWhiteSpace(item.Nombre) ? "?" : item.Nombre.Trim()[0].ToString().ToUpperInvariant();
+                        var tipoDocumento = item.Documento?.Length == 11 ? "RUC" : "DNI";
+                        <tr class="@(item.Estado ? "" : "cliente-inactivo")">
+                            <td class="text-start">
+                                <div class="cliente-cell">
+                                    <div class="cliente-avatar">@inicial</div>
+                                    <div>
+                                        <strong>@item.Nombre</strong>
+                                        <span>Propietario registrado</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="documento-cell">
+                                    <div class="documento-icon"><i class="fas fa-id-card"></i></div>
+                                    <div><strong>@tipoDocumento</strong><span>@item.Documento</span></div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="contacto-cell">
+                                    <span><i class="fas fa-phone me-2"></i>@(string.IsNullOrWhiteSpace(item.Telefono) ? "Sin teléfono" : item.Telefono)</span>
+                                    <span><i class="fas fa-envelope me-2"></i>@(string.IsNullOrWhiteSpace(item.Correo) ? "Sin correo" : item.Correo)</span>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="estado-badge @(item.Estado ? "estado-activo" : "estado-inactivo")">
+                                    <i class="fas fa-circle"></i>@(item.Estado ? "Activo" : "Inactivo")
+                                </span>
+                            </td>
+                            <td>
+                                <div class="acciones-cell">
+                                    <a asp-controller="Petmor" asp-action="Mascotas" asp-route-clienteId="@item.Id" class="btn btn-action" title="Ver mascotas"><i class="fas fa-paw"></i></a>
+                                    @if (User.IsInRole("Administrador"))
+                                    {
+                                        <a asp-action="Compras" asp-route-id="@item.Id" class="btn btn-action" title="Historial compras"><i class="fas fa-receipt"></i></a>
+                                        <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-action" title="Editar cliente"><i class="fas fa-pen"></i></a>
+                                        @if (item.Estado)
+                                        {
+                                            <form asp-action="CambiarEstado" asp-route-id="@item.Id" method="post" class="d-inline" data-petmor-confirm="danger" data-title="Desactivar cliente" data-text="¿Desactivar cliente?"><button class="btn btn-action btn-action-danger" aria-label="Desactivar cliente"><i class="fas fa-power-off"></i></button></form>
+                                        }
+                                        else
+                                        {
+                                            <form asp-action="CambiarEstado" asp-route-id="@item.Id" method="post" class="d-inline"><button class="btn btn-action btn-action-success" aria-label="Activar cliente"><i class="fas fa-power-off"></i></button></form>
+                                        }
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                    @if (clientes.Count == 0)
+                    {
+                        <tr><td colspan="5" class="text-center py-5 text-muted">No se encontraron clientes con los filtros aplicados.</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+
+<template id="clienteAcciones">
+    <div class="acciones-cell">
+        <a href="@Url.Action("Mascotas", "Petmor", new { clienteId = "__id__" })" class="btn btn-action" title="Ver mascotas" aria-label="Ver mascotas"><i class="fas fa-paw"></i></a>
+        @if (User.IsInRole("Administrador"))
+        {
+            <a href="@Url.Action("Compras", new { id = "__id__" })" class="btn btn-action" title="Historial de compras" aria-label="Historial de compras"><i class="fas fa-receipt"></i></a>
+            <a href="@Url.Action("Edit", new { id = "__id__" })" class="btn btn-action" title="Editar cliente" aria-label="Editar cliente"><i class="fas fa-pen"></i></a>
+            <form action="@Url.Action("CambiarEstado", new { id = "__id__" })" method="post" class="d-inline js-cliente-estado">
+                @Html.AntiForgeryToken()
+                <button class="btn btn-action" type="submit" data-toggle-estado><i></i></button>
+            </form>
+        }
+    </div>
+</template>
+
+@section Scripts {
+    <script src="~/js/clientes-table.js" asp-append-version="true"></script>
+}
+
+<style>
+    .clientes-page { padding: 8px 0 28px; }
+    .clientes-hero { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 28px 32px; border: 1px solid #e5e7eb; border-radius: 22px; background: #fff; margin-bottom: 28px; }
+    .clientes-hero__icon { width: 64px; height: 64px; border-radius: 14px; display: inline-flex; align-items: center; justify-content: center; background: #fff3ea; color: #f06800; font-size: 30px; }
+    .clientes-hero h1 { margin: 0; color: #0f172a; font-size: 2rem; font-weight: 800; }
+    .clientes-hero p { margin: 4px 0 0; color: #64748b; font-size: 1.05rem; }
+    .clientes-hero__actions { display: flex; align-items: center; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
+    .clientes-hero__actions form { margin: 0; }
+    .btn-nuevo-cliente { min-height: 52px; border-radius: 10px; padding: 13px 24px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; background: #f06800; border: 1px solid #f06800; color: #fff !important; font-weight: 800; text-decoration: none; }
+    .btn-nuevo-cliente i { color: #fff !important; }
+    .btn-nuevo-cliente:hover { background: #d95f00; border-color: #d95f00; color: #fff !important; }
+    .btn-nueva-mascota { min-height: 52px; border-radius: 10px; padding: 13px 24px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; background: #fff; border: 1px solid #f06800; color: #f06800; font-weight: 800; text-decoration: none; }
+    .btn-nueva-mascota:hover { background: #fff7ed; border-color: #d95f00; color: #c2410c; }
+    .clientes-filtros { display: grid; grid-template-columns: minmax(320px, 1fr) 210px auto auto; gap: 12px; align-items: center; margin-bottom: 26px; }
+    .clientes-search { position: relative; }
+    .clientes-search i { position: absolute; left: 18px; top: 50%; transform: translateY(-50%); color: #64748b; font-size: 1.15rem; }
+    .clientes-search .form-control { padding-left: 52px; }
+    .clientes-search .form-control, .filtro-select, .btn-filtrar, .btn-limpiar { min-height: 52px; border-radius: 10px; font-weight: 700; }
+    .clientes-search .form-control, .filtro-select { border: 1px solid #cbd5e1; color: #0f172a; }
+    .clientes-search .form-control:focus, .filtro-select:focus { border-color: #f06800; box-shadow: 0 0 0 .18rem rgba(240, 104, 0, .14) !important; }
+    .btn-filtrar { background: #f06800; color: #fff; border: 1px solid #f06800; padding: 0 18px; }
+    .btn-filtrar:hover { background: #d95f00; border-color: #d95f00; color: #fff; }
+    .btn-limpiar { border: 1px solid #f06800; color: #f06800; background: #fff; padding: 13px 18px; }
+    .btn-limpiar:hover { background: #fff7ed; color: #c2410c; }
+    .clientes-panel { padding: 26px 32px; border: 1px solid #e5e7eb; border-radius: 18px; background: #fff; }
+    .clientes-count { color: #334155; font-size: 1rem; margin-bottom: 18px; }
+    .clientes-table { margin: 0; }
+    .clientes-table thead th { color: #0f172a; font-size: .98rem; font-weight: 800; padding: 16px 14px; border-bottom: 1px solid #e2e8f0; text-align: center; }
+    .clientes-table tbody td { padding: 18px 14px; border-bottom: 1px solid #e2e8f0; text-align: center; }
+    .clientes-table tbody tr:last-child td { border-bottom: 0; }
+    .cliente-inactivo { opacity: .72; }
+    .cliente-cell, .documento-cell { display: flex; align-items: center; justify-content: center; gap: 14px; }
+    .cliente-cell { justify-content: flex-start; text-align: left; }
+    .cliente-avatar { width: 56px; height: 56px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #ffedd5, #fff7ed); color: #f06800; font-size: 1.45rem; font-weight: 900; }
+    .documento-icon { width: 50px; height: 50px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: #fff3ea; color: #f06800; font-size: 1.2rem; flex: 0 0 auto; }
+    .cliente-cell strong, .documento-cell strong { display: block; color: #0f172a; font-size: 1.05rem; }
+    .cliente-cell span, .documento-cell span, .contacto-cell span { display: block; color: #64748b; margin-top: 3px; }
+    .contacto-cell i { width: 18px; color: #f06800; }
+    .estado-badge { display: inline-flex; align-items: center; gap: 8px; border-radius: 999px; padding: 8px 14px; font-weight: 800; }
+    .estado-badge i { font-size: .65rem; }
+    .estado-activo { background: #dcfce7; color: #059669; }
+    .estado-inactivo { background: #fee2e2; color: #dc2626; }
+    .acciones-cell { display: flex; justify-content: center; gap: 8px; }
+    .btn-action { width: 42px; height: 42px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #fb923c; border-radius: 9px; color: #f06800; background: #fff; }
+    .btn-action:hover { background: #fff7ed; border-color: #f06800; color: #c2410c; }
+    .btn-action-danger { border-color: #f87171; color: #dc2626; }
+    .btn-action-danger:hover { background: #fef2f2; border-color: #dc2626; color: #b91c1c; }
+    .btn-action-success { border-color: #34d399; color: #059669; }
+    .btn-action-success:hover { background: #ecfdf5; border-color: #059669; color: #047857; }
+    @@media (max-width: 991.98px) { .clientes-filtros { grid-template-columns: 1fr 1fr; } }
+    @@media (max-width: 767.98px) { .clientes-hero { align-items: flex-start; flex-direction: column; padding: 22px; } .clientes-hero__actions { display: grid; width: 100%; } .clientes-hero__actions form { width: 100%; } .btn-nuevo-cliente, .btn-nueva-mascota { width: 100%; } .clientes-filtros { grid-template-columns: 1fr; } .clientes-panel { padding: 18px; } }
+</style>

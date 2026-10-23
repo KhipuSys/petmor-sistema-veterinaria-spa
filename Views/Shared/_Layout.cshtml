@@ -1,0 +1,1373 @@
+@using Microsoft.AspNetCore.Identity
+@using MiniMarket.Web.Data
+@inject SignInManager<IdentityUser> SignInManager
+@inject UserManager<IdentityUser> UserManager
+@inject ApplicationDbContext _context
+
+@{
+    var globalConfig = _context.Configuraciones.FirstOrDefault();
+    var logoUrl = Url.Content("~/petmor-logo-blanco.png");
+    var nombreEmpresa = "Petmor · Veterinaria & Spa";
+    var controladorVisual = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
+    var accionVisual = ViewContext.RouteData.Values["action"]?.ToString() ?? "";
+    var conservarDiseno = controladorVisual == "Clientes" ||
+        (controladorVisual == "Petmor" && new[] { "Mascotas", "Mascota", "FichaMascota" }.Contains(accionVisual));
+    var formularioVisual = new[] { "Create", "Edit", "Agendar", "Servicio", "Ajuste" }.Contains(accionVisual);
+}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Petmor - @ViewData["Title"]</title>
+    <script src="~/js/importes.js" asp-append-version="true"></script>
+    <link rel="icon" type="image/png" href="~/petmor-logo-blanco.png" asp-append-version="true" />
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.11/css/dataTables.bootstrap5.min.css" />
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.3.6/css/buttons.bootstrap5.min.css" />
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --brand-primary: #f06800;
+            --brand-primary-hover: #c65300;
+            --brand-secondary: #f06800;
+            --sidebar-bg: #f06800;
+            --sidebar-hover: #f06800;
+        }
+
+        body { 
+            background-color: #f8fafc; 
+            font-family: 'Outfit', sans-serif; 
+            overflow-x: hidden;
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-shadow: none !important;
+        }
+
+        /* --- LOGICA RESPONSIVA DEL SIDEBAR --- */
+        #wrapper {
+            display: flex;
+            width: 100%;
+            transition: all 0.3s;
+        }
+
+        .sidebar {
+            min-width: 250px;
+            max-width: 250px;
+            background-color: var(--sidebar-bg);
+            color: #fff;
+            min-height: 100vh;
+            transition: margin 0.3s ease-out;
+            z-index: 1040;
+        }
+
+        .sidebar a { color: #fff; text-decoration: none; padding: 12px 15px; display: flex; align-items: center; border-radius: 8px; margin-bottom: 5px; margin-left: 10px; margin-right: 10px; transition: all 0.2s; font-weight: 500; }
+        .sidebar a:hover { background-color: var(--sidebar-hover); color: #fff; }
+        .sidebar a.active { background-color: #f06800; color: #fff; box-shadow: none; font-weight: 700; }
+        .sidebar a.active:hover { color: #fff; }
+        .sidebar .section-title { font-size: 0.75rem; text-transform: uppercase; color: #fff; padding: 10px 20px; font-weight: 700; letter-spacing: 1px; margin-top: 15px; border-bottom: 0; margin-bottom: 10px; }
+        
+        .logo-area { padding: 25px 20px; font-size: 1.5rem; font-weight: 700; color: #fff; display: flex; align-items: center; justify-content: center; background-color: #f06800; border-bottom: 0; }
+        .sidebar a, .sidebar a i, .sidebar .section-title, .logo-area i { color: #fff !important; }
+        .sidebar a:hover { box-shadow: none; text-decoration: underline; }
+        .sidebar a:focus-visible { outline: 2px solid #fff; outline-offset: -2px; }
+
+        .main-content {
+            width: 100%;
+            padding: 20px;
+            transition: all 0.3s;
+        }
+
+        .navbar-top { 
+            background-color: #fff; 
+            padding: 12px 25px; 
+            margin-bottom: 25px; 
+            border-radius: 12px; 
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 20px;
+        }
+
+
+        .card { border: 1px solid #e5e7eb; border-radius: 18px; background: #fff; overflow: hidden; }
+        .card-header {
+            border-bottom: 1px solid #e5e7eb;
+            background: #fff !important;
+            color: #0f172a !important;
+            padding: 18px 22px;
+        }
+        .card-header.bg-primary,
+        .card-header.bg-info,
+        .card-header.bg-success,
+        .card-header.bg-warning,
+        .card-header.bg-danger,
+        .card-header.bg-dark {
+            background: linear-gradient(135deg, #ff7a00 0%, #f06800 100%) !important;
+            color: #fff !important;
+            border-bottom: 0;
+        }
+        .card-header.bg-primary *,
+        .card-header.bg-info *,
+        .card-header.bg-success *,
+        .card-header.bg-warning *,
+        .card-header.bg-danger *,
+        .card-header.bg-dark * { color: #fff !important; }
+        .card-body { padding: 24px; }
+        .btn-primary { background-color: var(--brand-primary); border-color: var(--brand-primary); color: #fff !important; }
+        .btn-primary:hover, .btn-primary:focus { background-color: var(--brand-primary-hover); border-color: var(--brand-primary-hover); color: #fff !important; }
+        .btn-primary i, .btn-primary span { color: #fff !important; }
+        .btn { border-radius: 10px; font-weight: 800; }
+        .reason-eye { width: 34px; height: 34px; display: inline-flex; flex-shrink: 0; align-items: center; justify-content: center; border: 1px solid #fecaca; border-radius: 50%; background: #fff; color: #dc2626; padding: 0; }
+        .reason-eye:is(:hover,:focus,:active) { background: #fef2f2; color: #b91c1c; border-color: #fca5a5; }
+        .btn-form-primary,
+        .btn-config-primary {
+            --bs-btn-color: #fff;
+            --bs-btn-bg: #f06800;
+            --bs-btn-border-color: #f06800;
+            --bs-btn-hover-color: #fff;
+            --bs-btn-hover-bg: #c95500;
+            --bs-btn-hover-border-color: #c95500;
+            --bs-btn-active-color: #fff;
+            --bs-btn-active-bg: #c95500;
+            --bs-btn-active-border-color: #c95500;
+            --bs-btn-disabled-color: #fff;
+            --bs-btn-disabled-bg: #f06800;
+            --bs-btn-disabled-border-color: #f06800;
+            --bs-btn-focus-shadow-rgb: 240, 104, 0;
+        }
+        .btn-lg { min-height: 52px; padding-left: 22px; padding-right: 22px; }
+        .btn-secondary,
+        .btn-light {
+            background: #fff !important;
+            border-color: #cbd5e1 !important;
+            color: #334155 !important;
+        }
+        .btn-secondary:hover,
+        .btn-light:hover {
+            background: #f8fafc !important;
+            color: #0f172a !important;
+        }
+        .btn-warning,
+        .btn-info,
+        .btn-success,
+        .btn-dark {
+            background: var(--brand-primary) !important;
+            border-color: var(--brand-primary) !important;
+            color: #fff !important;
+        }
+        .btn-warning:hover,
+        .btn-info:hover,
+        .btn-success:hover,
+        .btn-dark:hover {
+            background: var(--brand-primary-hover) !important;
+            border-color: var(--brand-primary-hover) !important;
+            color: #fff !important;
+        }
+        .btn-warning i,
+        .btn-info i,
+        .btn-success i,
+        .btn-dark i { color: #fff !important; }
+        .text-primary { color: var(--brand-primary) !important; }
+        a, .text-info, .text-success, .text-warning { color: var(--brand-primary) !important; }
+        .btn-outline-primary, .btn-outline-info, .btn-outline-success, .btn-outline-warning { color: var(--brand-primary) !important; border-color: var(--brand-primary) !important; }
+        .btn-outline-primary:hover, .btn-outline-info:hover, .btn-outline-success:hover, .btn-outline-warning:hover { background-color: var(--brand-primary) !important; color: #fff !important; }
+        .btn-outline-secondary {
+            color: #f06800 !important;
+            border-color: #f06800 !important;
+            background: #fff !important;
+        }
+        .btn-outline-secondary:hover {
+            color: #c2410c !important;
+            background: #fff7ed !important;
+            border-color: #f06800 !important;
+        }
+        .scan-box { border: 1px solid #dbe3ee; border-radius: 12px; padding: 14px; margin: 16px 0; background: #fff; }
+        .scan-label { display: block; margin-bottom: 10px; color: #0f172a; font-weight: 900; }
+        .scan-row { display: grid; grid-template-columns: minmax(180px, 1fr) auto auto; gap: 10px; align-items: center; }
+        .scan-input { min-height: 44px; font-weight: 800; }
+        .scan-btn { min-height: 44px; border-radius: 10px; padding: 10px 16px; font-weight: 900; white-space: nowrap; }
+        .scan-btn-read { background: #f06800; border: 1px solid #f06800; color: #fff !important; }
+        .scan-btn-read:hover { background: #d95f00; border-color: #d95f00; color: #fff !important; }
+        .scan-btn-undo { background: #fff; border: 1px solid #fed7aa; color: #f06800 !important; }
+        .scan-btn-undo:hover { background: #fff7ed; border-color: #f06800; color: #c2410c !important; }
+        .scan-help { display: block; margin-top: 10px; color: #475569; font-weight: 600; }
+        .bg-primary, .bg-info, .bg-success, .bg-warning { background-color: var(--brand-primary) !important; }
+        .border-primary, .border-info, .border-success, .border-warning { border-color: var(--brand-primary) !important; }
+        .page-item.active .page-link, .dataTables_wrapper .pagination .page-item.active .page-link { background-color: var(--brand-primary); border-color: var(--brand-primary); color: #fff !important; }
+        .page-link { color: var(--brand-primary); }
+        .form-control,
+        .form-select {
+            min-height: 46px;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            color: #0f172a;
+        }
+        textarea.form-control { min-height: 92px; }
+        .form-control:focus, .form-select:focus { border-color: var(--brand-primary); outline: 2px solid rgba(240,104,0,.2); outline-offset: 1px; }
+        .form-label,
+        label { color: #111827; font-weight: 800; }
+        .required-mark {
+            color: #dc2626 !important;
+            font-weight: 900;
+            margin-left: 4px;
+        }
+
+        .table { --bs-table-striped-bg: #fff7ed; }
+        .table thead th {
+            color: #0f172a;
+            font-weight: 800;
+            border-bottom: 1px solid #e2e8f0;
+            background: #fff !important;
+        }
+        .table tbody td { border-bottom: 1px solid #e2e8f0; color: #334155; }
+        .main-content .table:not(.ticket-table) th,
+        .main-content .table:not(.ticket-table) td {
+            text-align: left;
+            vertical-align: middle;
+        }
+        .main-content .table .text-start { text-align: left !important; }
+        .main-content .table .text-end { text-align: right !important; }
+        .main-content .table .text-center { text-align: center !important; }
+        .table-hover tbody tr:hover { background: #fff7ed; }
+        .table-responsive { border-radius: 14px; }
+        .badge { border-radius: 999px; padding: 8px 12px; font-weight: 800; }
+        .badge.bg-success { background: #dcfce7 !important; color: #059669 !important; }
+        .badge.bg-danger { background: #fee2e2 !important; color: #dc2626 !important; }
+        .badge.bg-secondary { background: #f1f5f9 !important; color: #334155 !important; }
+        .badge.bg-primary,
+        .badge.bg-info,
+        .badge.bg-warning { background: #fff3ea !important; color: #f06800 !important; }
+
+        .alert {
+            border-radius: 14px;
+            border: 1px solid #e5e7eb;
+            background: #fff;
+            color: #334155;
+        }
+        .alert-info { background: #fff7ed; border-color: #fed7aa; color: #9a3412; }
+        .alert-warning { background: #fffbeb; border-color: #fde68a; color: #92400e; }
+        .alert-danger { background: #fef2f2; border-color: #fecaca; color: #991b1b; }
+        .validation-summary-valid,
+        .alert.validation-summary-valid,
+        .alert[data-valmsg-summary="true"]:not(.validation-summary-errors) {
+            display: none !important;
+        }
+        .validation-summary-errors, .field-validation-error { display: none !important; }
+
+        .dataTables_wrapper .dataTables_filter input,
+        .dataTables_wrapper .dataTables_length select {
+            border-radius: 10px;
+            border: 1px solid #cbd5e1;
+            min-height: 40px;
+        }
+        .dataTables_wrapper .dataTables_length label {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #475569;
+            font-weight: 800;
+        }
+        .dataTables_wrapper .dataTables_length select {
+            width: 74px !important;
+            padding: 6px 28px 6px 10px;
+            color: #0f172a;
+            font-weight: 900;
+        }
+        .dt-buttons .btn { border-radius: 10px !important; }
+
+        .date-filter-panel { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .date-filter-control { position: relative; }
+        .date-filter-control i { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); color: #64748b; pointer-events: none; }
+        .date-filter-control input { min-height: 42px; border: 1px solid #dbe3ee; border-radius: 10px; padding: 8px 12px 8px 38px; color: #334155; font-weight: 800; background: #fff; }
+        .date-filter-apply, .date-filter-clear { min-height: 42px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; border-radius: 10px; padding: 8px 13px; font-weight: 900; }
+        .date-filter-apply { background: #f06800; border: 1px solid #f06800; color: #fff !important; }
+        .date-filter-apply:hover { background: #d95f00; color: #fff !important; }
+        .date-filter-clear { background: #fff; border: 1px solid #fed7aa; color: #f06800 !important; }
+        .date-filter-clear:hover { background: #fff7ed; color: #c2410c !important; }
+        .dashboard-agenda-head .date-filter-apply span, .dashboard-agenda-head .date-filter-clear span { display: none; }
+        .dashboard-agenda-head .date-filter-apply, .dashboard-agenda-head .date-filter-clear { width: 42px; padding: 8px; }
+        @@media (max-width: 767.98px) { .date-filter-panel, .date-filter-control, .date-filter-control input { width: 100%; } .date-filter-apply, .date-filter-clear { flex: 1 1 0; } }
+        @@media (max-width: 575.98px) { .scan-row { grid-template-columns: 1fr; } .scan-btn { width: 100%; } }
+
+        .petmor-page-title,
+        .d-flex.justify-content-between.align-items-center.mb-4,
+        .d-flex.justify-content-between.mb-4 {
+            border: 1px solid #e5e7eb;
+            border-radius: 22px;
+            background: #fff;
+            padding: 24px 28px;
+        }
+        .d-flex.justify-content-between.align-items-center.mb-4 h2,
+        .d-flex.justify-content-between.align-items-center.mb-4 h3,
+        .d-flex.justify-content-between.mb-4 h2,
+        .d-flex.justify-content-between.mb-4 h3 {
+            color: #0f172a !important;
+            font-weight: 900;
+            margin-bottom: 4px;
+        }
+        .d-flex.justify-content-between.align-items-center.mb-4 p,
+        .d-flex.justify-content-between.mb-4 p { color: #64748b !important; }
+
+        /* --- ESTILOS DE ALTO CONTRASTE LEGIBLE --- */
+        body.contraste-oscuro {
+            background-color: #050505 !important;
+            color: #f8fafc !important;
+        }
+
+        body.contraste-oscuro .main-content {
+            background-color: #050505 !important;
+        }
+         
+        body.contraste-oscuro .card, 
+        body.contraste-oscuro .navbar-top,
+        body.contraste-oscuro .modal-content,
+        body.contraste-oscuro .dropdown-menu,
+        body.contraste-oscuro .bg-white,
+        body.contraste-oscuro .bg-light,
+        body.contraste-oscuro .dashboard-card,
+        body.contraste-oscuro .dashboard-metric,
+        body.contraste-oscuro .dashboard-agenda-card,
+        body.contraste-oscuro .dashboard-agenda-head,
+        body.contraste-oscuro .metric-card,
+        body.contraste-oscuro .kardex-card,
+        body.contraste-oscuro .proveedores-card,
+        body.contraste-oscuro .usuarios-card,
+        body.contraste-oscuro .config-shell,
+        body.contraste-oscuro .security-shell,
+        body.contraste-oscuro .form-shell,
+        body.contraste-oscuro .config-panel,
+        body.contraste-oscuro .form-panel,
+        body.contraste-oscuro .info-card,
+        body.contraste-oscuro .logo-preview {
+            background: #101010 !important;
+            color: #f8fafc !important;
+            border-color: #525252 !important;
+        }
+
+        body.contraste-oscuro .sidebar {
+            background-color: #101010 !important;
+            color: #f8fafc !important;
+            border-right: 1px solid #525252 !important;
+        }
+
+        body.contraste-oscuro .logo-area,
+        body.contraste-oscuro .sidebar a.active {
+            background-color: #f06800 !important;
+            color: #ffffff !important;
+        }
+
+        body.contraste-oscuro .sidebar a:not(.active),
+        body.contraste-oscuro .sidebar a:not(.active) i,
+        body.contraste-oscuro .sidebar .section-title {
+            color: #f8fafc !important;
+        }
+
+        body.contraste-oscuro .sidebar a:not(.active):hover {
+            background-color: #262626 !important;
+            color: #ffffff !important;
+        }
+
+        body.contraste-oscuro div[style*="background: white"],
+        body.contraste-oscuro div[style*="background:#fff"],
+        body.contraste-oscuro div[style*="background: #fff"],
+        body.contraste-oscuro div[style*="background-color: white"],
+        body.contraste-oscuro div[style*="background-color: #fff"] {
+            background-color: #101010 !important;
+            color: #f8fafc !important;
+            border-color: #525252 !important;
+        }
+
+        body.contraste-oscuro .bg-primary,
+        body.contraste-oscuro .bg-info,
+        body.contraste-oscuro div[class*="bg-primary"],
+        body.contraste-oscuro div[class*="bg-info"] {
+            background-color: #1f2937 !important;
+            color: #ffffff !important;
+            border: 1px solid #737373 !important;
+        }
+
+        body.contraste-oscuro a, 
+        body.contraste-oscuro p,
+        body.contraste-oscuro h1, 
+        body.contraste-oscuro h2, 
+        body.contraste-oscuro h3, 
+        body.contraste-oscuro h4,
+        body.contraste-oscuro h5,
+        body.contraste-oscuro th,
+        body.contraste-oscuro td,
+        body.contraste-oscuro label,
+        body.contraste-oscuro .text-primary,
+        body.contraste-oscuro .text-dark,
+        body.contraste-oscuro .text-muted,
+        body.contraste-oscuro .text-info {
+            color: #f8fafc !important;
+        }
+
+        body.contraste-oscuro small,
+        body.contraste-oscuro .text-muted,
+        body.contraste-oscuro .metric-card small,
+        body.contraste-oscuro .dashboard-metric small,
+        body.contraste-oscuro .agenda-title p,
+        body.contraste-oscuro .time-cell small,
+        body.contraste-oscuro .pet-cell small,
+        body.contraste-oscuro .card-subtitle,
+        body.contraste-oscuro .form-text {
+            color: #d4d4d4 !important;
+        }
+
+        body.contraste-oscuro a,
+        body.contraste-oscuro .text-primary,
+        body.contraste-oscuro .section-title,
+        body.contraste-oscuro .metric-card span,
+        body.contraste-oscuro .dashboard-metric span,
+        body.contraste-oscuro .kardex-tools > span,
+        body.contraste-oscuro .usuarios-tools > span,
+        body.contraste-oscuro .proveedores-tools > span,
+        body.contraste-oscuro .pred-tools > span {
+            color: #fdba74 !important;
+        }
+
+        body.contraste-oscuro .metric-icon,
+        body.contraste-oscuro .dashboard-metric .metric-icon,
+        body.contraste-oscuro .dashboard-icon,
+        body.contraste-oscuro .agenda-title-icon,
+        body.contraste-oscuro .kardex-icon,
+        body.contraste-oscuro .usuarios-icon,
+        body.contraste-oscuro .config-icon,
+        body.contraste-oscuro .security-icon,
+        body.contraste-oscuro .form-icon,
+        body.contraste-oscuro .panel-title i,
+        body.contraste-oscuro .info-card i {
+            background-color: #262626 !important;
+            color: #fdba74 !important;
+            border: 1px solid #737373 !important;
+        }
+
+        body.contraste-oscuro input,
+        body.contraste-oscuro select,
+        body.contraste-oscuro textarea {
+            background-color: #050505 !important;
+            color: #ffffff !important;
+            border-color: #a3a3a3 !important;
+        }
+
+        body.contraste-oscuro input::placeholder,
+        body.contraste-oscuro textarea::placeholder {
+            color: #d4d4d4 !important;
+        }
+
+        body.contraste-oscuro .table {
+            color: #f8fafc !important;
+            background-color: #101010 !important;
+        }
+        body.contraste-oscuro .table th, 
+        body.contraste-oscuro .table td {
+            background-color: #101010 !important;
+            color: #f8fafc !important;
+            border-color: #525252 !important;
+        }
+
+        body.contraste-oscuro .table thead th {
+            background-color: #1f1f1f !important;
+            color: #ffffff !important;
+        }
+
+        body.contraste-oscuro .dashboard-metric strong,
+        body.contraste-oscuro .agenda-title h2,
+        body.contraste-oscuro .time-cell strong,
+        body.contraste-oscuro .pet-cell strong,
+        body.contraste-oscuro .responsable-cell span,
+        body.contraste-oscuro .agenda-table tbody td,
+        body.contraste-oscuro .agenda-table .text-muted {
+            color: #f8fafc !important;
+        }
+
+        body.contraste-oscuro .dashboard-agenda-card .table-responsive,
+        body.contraste-oscuro .agenda-table {
+            background: #101010 !important;
+            border-color: #525252 !important;
+        }
+
+        body.contraste-oscuro .agenda-table thead th {
+            background: #1f1f1f !important;
+            color: #ffffff !important;
+            border-color: #525252 !important;
+        }
+
+        body.contraste-oscuro .agenda-table tbody td {
+            background: #101010 !important;
+            border-color: #525252 !important;
+        }
+
+        body.contraste-oscuro .time-cell i,
+        body.contraste-oscuro .responsable-cell i {
+            color: #d4d4d4 !important;
+        }
+
+        body.contraste-oscuro .pet-avatar {
+            background: #262626 !important;
+            color: #fdba74 !important;
+            border-color: #737373 !important;
+        }
+
+        body.contraste-oscuro .badge,
+        body.contraste-oscuro .status-pill,
+        body.contraste-oscuro .role-pill,
+        body.contraste-oscuro .quick-chip,
+        body.contraste-oscuro .export-btn,
+        body.contraste-oscuro .dni-pill,
+        body.contraste-oscuro .state-pill,
+        body.contraste-oscuro .stock-pill,
+        body.contraste-oscuro .suggest-pill,
+        body.contraste-oscuro .covered-pill,
+        body.contraste-oscuro .move-pill,
+        body.contraste-oscuro .qty-pill,
+        body.contraste-oscuro .user-pill {
+            background-color: #1f1f1f !important;
+            color: #ffffff !important;
+            border: 1px solid #737373 !important;
+        }
+
+        body.contraste-oscuro .quick-chip.active,
+        body.contraste-oscuro .quick-chip:hover,
+        body.contraste-oscuro .btn-primary,
+        body.contraste-oscuro .btn-pred-primary,
+        body.contraste-oscuro .btn-kardex-primary,
+        body.contraste-oscuro .btn-usuarios-primary,
+        body.contraste-oscuro .btn-config-primary,
+        body.contraste-oscuro .btn-form-primary,
+        body.contraste-oscuro .date-filter-apply {
+            background-color: #f06800 !important;
+            border-color: #f06800 !important;
+            color: #ffffff !important;
+        }
+
+        /* Adaptar botón de accesibilidad en modo oscuro */
+        body.contraste-oscuro #accessibility-toggle-btn {
+            background-color: #f06800 !important;
+            border-color: #ffffff !important;
+            color: #ffffff !important;
+        }
+
+        body.contraste-suave {
+            filter: grayscale(100%) contrast(120%);
+            background-color: #ffffff !important;
+        }
+
+        /* Borde y tono gris plomo (igual al icono de perfil) para el botón de accesibilidad en modo suave */
+        body.contraste-suave #accessibility-toggle-btn {
+            background-color: #ffffff !important;
+            border: 1px solid #666666 !important;
+            color: #555555 !important;
+        }
+
+        body.dislexia-amigable {
+            font-family: 'Comic Sans MS', 'Comic Sans', cursive, sans-serif !important;
+            letter-spacing: 1px;
+        }
+        
+        /* --- ESTILOS DEL CURSOR ANIMADO (ADAPTABLE A TEMAS) --- */
+        .custom-cursor-dot {
+            position: fixed;
+            width: 14px;
+            height: 14px;
+            background-color: #f06800;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 99999;
+            transform: translate(-50%, -50%);
+            transition: transform 0.1s ease, background-color 0.3s ease;
+        }
+
+        .custom-cursor-halo {
+            position: fixed;
+            width: 65px;
+            height: 65px;
+            border: 2.5px solid rgba(37, 99, 235, 0.5);
+            background-color: rgba(37, 99, 235, 0.12);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 99998;
+            transform: translate(-50%, -50%);
+            animation: heartbeat-halo 1.5s infinite ease-in-out;
+            transition: border-color 0.3s ease, background-color 0.3s ease;
+        }
+
+        /* Cambio de color automático del cursor en Modo Oscuro (Ámbar/Dorado) */
+        body.contraste-oscuro .custom-cursor-dot {
+            background-color: #fcd34d !important;
+        }
+        body.contraste-oscuro .custom-cursor-halo {
+            border-color: rgba(252, 211, 77, 0.6) !important;
+            background-color: rgba(252, 211, 77, 0.15) !important;
+        }
+
+        @@keyframes heartbeat-halo {
+            0% {
+                transform: translate(-50%, -50%) scale(0.9);
+                opacity: 0.8;
+            }
+            50% {
+                transform: translate(-50%, -50%) scale(1.35);
+                opacity: 0.25;
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(0.9);
+                opacity: 0.8;
+            }
+        }
+
+        /* --- ESTILOS OSCUROS PARA EL MENÚ FLOTANTE DE ACCESIBILIDAD --- */
+        body.contraste-oscuro #accessibility-panel {
+            background-color: #12100e !important;
+            border-color: #78350f !important;
+        }
+        body.contraste-oscuro #accessibility-panel div[style*="background: #f8fafc"],
+        body.contraste-oscuro #accessibility-panel div[style*="background:#f8fafc"] {
+            background-color: #12100e !important;
+        }
+        body.contraste-oscuro #accessibility-panel div[onclick*="ciclar"],
+        body.contraste-oscuro #accessibility-panel div[onclick*="toggle"],
+        body.contraste-oscuro #accessibility-panel div[onclick*="restablecer"] {
+            background-color: #1c1917 !important;
+            border-color: #78350f !important;
+            color: #fcd34d !important;
+        }
+        body.contraste-oscuro #accessibility-panel div[onclick*="ciclar"] div,
+        body.contraste-oscuro #accessibility-panel div[onclick*="toggle"] div {
+            color: #fcd34d !important;
+        }
+    </style>
+    <link rel="stylesheet" href="~/css/responsive.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/petmor-tables.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/petmor-ui.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/contrast.css" asp-append-version="true" />
+</head>
+<body>
+    @Html.AntiForgeryToken()
+    
+    <div class="d-flex" id="wrapper">
+        
+        <div class="sidebar border-end offcanvas-lg offcanvas-start" id="sidebar-wrapper" tabindex="-1" aria-label="Navegación principal">
+            <div class="d-flex justify-content-between align-items-center p-3 d-lg-none">
+                <span></span>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" data-bs-target="#sidebar-wrapper" aria-label="Cerrar menú"></button>
+            </div>
+            <div class="logo-area mb-3 text-center">
+                @if (!string.IsNullOrEmpty(logoUrl))
+                {
+                    <img src="@logoUrl" alt="Petmor Veterinaria y Spa" style="max-height: 80px; max-width: 90%; object-fit: contain;" />
+                }
+                else
+                {
+                    <span><i class="fas fa-shopping-basket me-2"></i> @nombreEmpresa</span>
+                }
+            </div>
+
+            <div class="list-group list-group-flush px-2">
+                @if (SignInManager.IsSignedIn(User))
+                {
+                    <div class="section-title">Principal</div>
+                    <a asp-controller="Home" asp-action="Index" class="@(ViewContext.RouteData.Values["Controller"]?.ToString() == "Home" && ViewContext.RouteData.Values["Action"]?.ToString() == "Index" ? "active" : "")">
+                        <i class="fas fa-tachometer-alt me-2" style="width:20px"></i> Dashboard
+                    </a>
+                    <div class="section-title">Recepción y atención</div>
+                    @if (User.IsInRole("Administrador") || User.IsInRole("Recepcionista") || User.IsInRole("Veterinario")) {
+                        <a asp-controller="Clientes" asp-action="Index" class="@(ViewContext.RouteData.Values["Controller"]?.ToString() == "Clientes" || ViewContext.RouteData.Values["Controller"]?.ToString() == "Petmor" && new[] { "Mascotas", "Mascota", "FichaMascota" }.Contains(ViewContext.RouteData.Values["Action"]?.ToString()) ? "active" : "")"><i class="fas fa-users me-2"></i> Clientes y Mascotas</a>
+                    }
+                    <a asp-controller="Petmor" asp-action="Agenda" class="@(ViewContext.RouteData.Values["Controller"]?.ToString() == "Petmor" && new[] { "Agenda", "Agendar" }.Contains(ViewContext.RouteData.Values["Action"]?.ToString()) ? "active" : "")"><i class="fas fa-calendar-check me-2"></i> Agenda y Atenciones</a>
+                    <a asp-controller="Petmor" asp-action="Servicios"><i class="fas fa-list me-2"></i> Servicios y tarifas</a>
+                    <a asp-controller="Petmor" asp-action="Cuentas"><i class="fas fa-receipt me-2"></i> Cuentas pendientes</a>
+                    @if (User.IsInRole("Administrador") || User.IsInRole("Recepcionista")) {
+                    <div class="section-title">Caja y ventas</div>
+                    <a asp-controller="Caja" asp-action="Index" class="@(ViewContext.RouteData.Values["Controller"]?.ToString() == "Caja" && ViewContext.RouteData.Values["Action"]?.ToString() == "Index" ? "active" : "")">
+                        <i class="fas fa-cash-register me-2" style="width:20px"></i> Caja / Turno
+                    </a>
+                    <a asp-controller="Ventas" asp-action="Create" class="@(ViewContext.RouteData.Values["Controller"]?.ToString() == "Ventas" && ViewContext.RouteData.Values["Action"]?.ToString() == "Create" ? "active" : "") text-info fw-bold">
+                        <i class="fas fa-cart-shopping me-2" style="width:20px"></i> PUNTO DE VENTA
+                    </a>
+                    }
+
+                    @if (User.IsInRole("Recepcionista") && !User.IsInRole("Administrador"))
+                    {
+                        <div class="section-title text-success">Ventas</div>
+                        <a asp-controller="Ventas" asp-action="Index" class="@(ViewContext.RouteData.Values["Controller"]?.ToString() == "Ventas" && ViewContext.RouteData.Values["Action"]?.ToString() == "Index" ? "active" : "")">
+                            <i class="fas fa-history me-2" style="width:20px"></i> Historial Ventas
+                        </a>
+                        <a asp-controller="Caja" asp-action="Historial" class="@(ViewContext.RouteData.Values["Controller"]?.ToString() == "Caja" && ViewContext.RouteData.Values["Action"]?.ToString() == "Historial" ? "active" : "")">
+                            <i class="fas fa-cash-register me-2" style="width:20px"></i> Historial Caja
+                        </a>
+                    }
+
+                    @if (User.IsInRole("Administrador"))
+                    {
+                        <a asp-controller="Petmor" asp-action="Reporte"><i class="fas fa-chart-line me-2"></i> Reporte de atenciones</a>
+                        <div class="section-title text-success">Ventas</div>
+                        <a asp-controller="Ventas" asp-action="Index" class="@(ViewContext.RouteData.Values["Controller"]?.ToString() == "Ventas" && ViewContext.RouteData.Values["Action"]?.ToString() == "Index" ? "active" : "")">
+                            <i class="fas fa-history me-2" style="width:20px"></i> Historial Ventas
+                        </a>
+                        <a asp-controller="Gastos" asp-action="Index" class="@(ViewContext.RouteData.Values["Controller"]?.ToString() == "Gastos" ? "active" : "")">
+                            <i class="fas fa-hand-holding-usd me-2" style="width:20px"></i> Control de Gastos
+                        </a>
+                        <a asp-controller="Caja" asp-action="Historial" class="@(ViewContext.RouteData.Values["Controller"]?.ToString() == "Caja" && ViewContext.RouteData.Values["Action"]?.ToString() == "Historial" ? "active" : "")">
+                            <i class="fas fa-cash-register me-2" style="width:20px"></i> Historial Caja
+                        </a>
+                        <a asp-controller="Reportes" asp-action="Ventas" class="@(ViewContext.RouteData.Values["Controller"]?.ToString() == "Reportes" ? "active" : "") text-info fw-bold">
+                            <i class="fas fa-chart-pie me-2" style="width:20px"></i> Reportes Financieros
+                        </a>
+
+                        <div class="section-title text-primary">Inventario</div>
+                        <a asp-controller="Productos" asp-action="Index" class="@(ViewContext.RouteData.Values["Controller"]?.ToString() == "Productos" ? "active" : "")">
+                            <i class="fas fa-boxes me-2" style="width:20px"></i> Productos
+                        </a>
+                        <a asp-controller="Categorias" asp-action="Index" class="@(ViewContext.RouteData.Values["Controller"]?.ToString() == "Categorias" ? "active" : "")">
+                            <i class="fas fa-tags me-2" style="width:20px"></i> Categorías
+                        </a>
+                        <a asp-controller="Prediccion" asp-action="Index" class="@(ViewContext.RouteData.Values["Controller"]?.ToString() == "Prediccion" ? "active" : "")">
+                            <i class="fas fa-chart-line me-2" style="width:20px"></i> Predicción de Stock
+                        </a>
+                        <a asp-controller="Proveedores" asp-action="Index" class="@(ViewContext.RouteData.Values["Controller"]?.ToString() == "Proveedores" ? "active" : "")">
+                            <i class="fas fa-truck me-2" style="width:20px"></i> Proveedores
+                        </a>
+
+                        <div class="section-title text-danger">Mantenimiento</div>
+                        <a asp-controller="Usuarios" asp-action="Index" class="@(ViewContext.RouteData.Values["Controller"]?.ToString() == "Usuarios" ? "active" : "")">
+                            <i class="fas fa-user-shield me-2" style="width:20px"></i> Usuarios
+                        </a>
+                        <a asp-controller="Configuracion" asp-action="Index" class="@(ViewContext.RouteData.Values["Controller"]?.ToString() == "Configuracion" ? "active" : "")">
+                            <i class="fas fa-cogs me-2" style="width:20px"></i> Configuración
+                        </a>
+                    }
+                }
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="navbar-top d-flex justify-content-end align-items-center">
+                <partial name="_SelectorSede" />
+                <button type="button" class="btn btn-outline-primary d-lg-none me-auto" data-bs-toggle="offcanvas" data-bs-target="#sidebar-wrapper" aria-controls="sidebar-wrapper" aria-label="Abrir menú principal">
+                    <i class="fas fa-bars" aria-hidden="true"></i> <span class="ms-1">Menú</span>
+                </button>
+
+                <!-- BOTÓN DE ACCESIBILIDAD CON ANIMACIÓN -->
+                <div style="position: relative; margin-right: 20px;" class="me-3">
+                    <button id="accessibility-toggle-btn" class="btn btn-light border rounded-circle shadow-sm" style="width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; background-color: #fff7f0; color: #f06800;" title="Menú de Accesibilidad">
+                        <i class="fas fa-universal-access" style="font-size: 28px;"></i>
+                    </button>
+
+                    <!-- MODAL / PANEL DE ACCESIBILIDAD DE 4 TARJETAS -->
+                    <div id="accessibility-panel" style="display: none; position: absolute; right: 0; top: 55px; width: 380px; background: white; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); overflow: hidden; border: 1px solid #e2e8f0; z-index: 9999; font-family: inherit;">
+                        <div style="background-color: #f06800; color: white; padding: 14px 18px; font-weight: 600; display: flex; justify-content: space-between; align-items: center;">
+                            <span><i class="fas fa-universal-access me-2"></i> Menú de accesibilidad</span>
+                            <button id="accessibility-close-btn" style="background: none; border: none; color: white; font-size: 20px; cursor: pointer;">&times;</button>
+                        </div>
+                        <div style="padding: 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; background: #f8fafc;">
+                            <!-- Tarjeta 1: Tamaño de texto -->
+                            <div onclick="ciclarTamanioTexto()" style="background: white; border: 1px solid #cbd5e1; border-radius: 10px; padding: 12px; text-align: center; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='#f06800'" onmouseout="this.style.borderColor='#cbd5e1'">
+                                <i class="fas fa-text-height fa-lg text-primary mb-1"></i>
+                                <div style="font-size: 13px; font-weight: 600; color: #1e293b; margin-bottom: 6px;">Tamaño de texto</div>
+                                <div style="display: flex; justify-content: center; gap: 3px;" id="barras-texto">
+                                    <span class="bar-t" style="width: 12px; height: 4px; background: #334155; border-radius: 2px;"></span>
+                                    <span class="bar-t" style="width: 12px; height: 4px; background: #cbd5e1; border-radius: 2px;"></span>
+                                    <span class="bar-t" style="width: 12px; height: 4px; background: #cbd5e1; border-radius: 2px;"></span>
+                                    <span class="bar-t" style="width: 12px; height: 4px; background: #cbd5e1; border-radius: 2px;"></span>
+                                </div>
+                            </div>
+
+                            <!-- Tarjeta 2: Contrastes -->
+                            <div role="button" tabindex="0" aria-label="Cambiar contraste" onclick="toggleAltoContraste()" onkeydown="if(event.key === 'Enter' || event.key === ' ') { event.preventDefault(); toggleAltoContraste(); }" style="background: white; border: 1px solid #cbd5e1; border-radius: 10px; padding: 12px; text-align: center; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='#f06800'" onmouseout="this.style.borderColor='#cbd5e1'">
+                                <i class="fas fa-adjust fa-lg text-primary mb-1"></i>
+                                <div id="contrast-label" aria-live="polite" style="font-size: 13px; font-weight: 600; color: #1e293b; margin-bottom: 6px;">Contraste: normal</div>
+                                <div style="display: flex; justify-content: center; gap: 3px;">
+                                    <span class="bar-c" style="width: 12px; height: 4px; background: #334155; border-radius: 2px;"></span>
+                                    <span class="bar-c" style="width: 12px; height: 4px; background: #cbd5e1; border-radius: 2px;"></span>
+                                    <span class="bar-c" style="width: 12px; height: 4px; background: #cbd5e1; border-radius: 2px;"></span>
+                                </div>
+                            </div>
+
+                            <!-- Tarjeta 3: Cursor grande -->
+                            <div onclick="toggleCursorGrande()" style="background: white; border: 1px solid #cbd5e1; border-radius: 10px; padding: 12px; text-align: center; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='#f06800'" onmouseout="this.style.borderColor='#cbd5e1'">
+                                <i class="fas fa-mouse-pointer fa-lg text-primary mb-1"></i>
+                                <div style="font-size: 13px; font-weight: 600; color: #1e293b; margin-bottom: 6px;">Cursor</div>
+                                <div style="display: flex; justify-content: center; gap: 4px;">
+                                    <span class="bar-u" style="width: 28px; height: 4px; background: #334155; border-radius: 2px;"></span>
+                                    <span class="bar-u" style="width: 28px; height: 4px; background: #cbd5e1; border-radius: 2px;"></span>
+                                </div>
+                            </div>
+
+                            <!-- Tarjeta 4: Dislexia amigable -->
+                            <div onclick="toggleDislexia()" style="background: white; border: 1px solid #cbd5e1; border-radius: 10px; padding: 12px; text-align: center; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='#f06800'" onmouseout="this.style.borderColor='#cbd5e1'">
+                                <i class="fas fa-font fa-lg text-primary mb-1"></i>
+                                <div style="font-size: 13px; font-weight: 600; color: #1e293b; margin-bottom: 6px;">Dislexia amigable</div>
+                                <div style="display: flex; justify-content: center; gap: 4px;">
+                                    <span class="bar-d" style="width: 28px; height: 4px; background: #334155; border-radius: 2px;"></span>
+                                    <span class="bar-d" style="width: 28px; height: 4px; background: #cbd5e1; border-radius: 2px;"></span>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <!-- BOTÓN INFERIOR DE RESTABLECER VALORES -->
+                        <div style="padding: 0 16px 16px 16px; background: #f8fafc;">
+                            <div onclick="restablecerAccesibilidad()" style="background: #ffeeec; border: 1px solid #fca5a5; border-radius: 10px; padding: 10px; text-align: center; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='#dc2626'" onmouseout="this.style.borderColor='#fca5a5'">
+                                <i class="fas fa-undo text-danger me-2"></i>
+                                <span style="font-size: 13px; font-weight: 600; color: #991b1b;">Restablecer valores</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- PERFIL DE USUARIO -->
+                @if (SignInManager.IsSignedIn(User))
+                {
+                    <div class="dropdown">
+                        <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle text-dark" id="userMenu" data-bs-toggle="dropdown" aria-label="Menú de usuario">
+                            <i class="fas fa-user fa-2x me-2" style="color: var(--brand-primary);"></i>
+                            <div class="d-none d-md-block line-height-normal text-start">
+                                <div class="fw-bold">@User.Identity.Name</div>
+                                @if (User.IsInRole("Administrador")) { <small class="fw-bold" style="font-size:0.7em; color: var(--brand-primary);">ADMINISTRADOR</small> }
+                                else { <small class="fw-bold text-primary" style="font-size:0.7em">@string.Join(" · ", new[] { "Recepcionista", "Veterinario", "Groomer" }.Where(User.IsInRole))</small> }
+                            </div>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end shadow border-0 animated fadeIn">
+                            <li>
+                                <form class="form-inline" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })">
+                                    <button type="submit" class="dropdown-item text-danger"><i class="fas fa-sign-out-alt me-2"></i> Cerrar Sesión</button>
+                                </form>
+                            </li>
+                        </ul>
+                    </div>
+                }
+                else
+                {
+                     <a class="btn btn-primary" asp-area="Identity" asp-page="/Account/Login">Iniciar Sesión</a>
+                }
+            </div>
+
+            @if (!conservarDiseno)
+            {
+                <link rel="stylesheet" href="~/css/petmor-admin.css" asp-append-version="true" />
+            }
+            <div class="container-fluid p-0 @(conservarDiseno ? "" : "petmor-admin") @(formularioVisual && !conservarDiseno ? "petmor-form-page" : "")">
+                @RenderBody()
+            </div>
+            
+            <footer class="mt-5 text-center text-muted small py-3">
+                © 2026 - Petmor - Veterinaria &amp; Spa
+                <div>Fechas y horas de Perú (UTC−5).</div>
+            </footer>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.11/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="~/js/motivos.js" asp-append-version="true"></script>
+    @{
+        var alertaTitulo = TempData["Titulo"] as string;
+        var alertaTexto = TempData["Mensaje"] as string;
+        var alertaTipo = TempData["Tipo"] as string;
+        var alertaExito = TempData["Exito"] as string ?? TempData["MensajeExito"] as string;
+        var alertaError = TempData["Error"] as string ?? TempData["MensajeError"] as string ?? TempData["ErrorCaja"] as string;
+        var erroresModelo = ViewData.ModelState.Values
+            .SelectMany(v => v.Errors)
+            .Select(e => e.ErrorMessage)
+            .Where(e => !string.IsNullOrWhiteSpace(e))
+            .Distinct()
+            .ToList();
+        if (!string.IsNullOrWhiteSpace(alertaError))
+        {
+            alertaTitulo = "Error";
+            alertaTexto = alertaError;
+            alertaTipo = "error";
+        }
+        else if (erroresModelo.Any())
+        {
+            alertaTitulo = "Revisa el formulario";
+            alertaTipo = "warning";
+        }
+        else if (!string.IsNullOrWhiteSpace(alertaExito))
+        {
+            alertaTitulo ??= "Operación exitosa";
+            alertaTexto ??= alertaExito;
+            alertaTipo ??= "success";
+        }
+    }
+    @if (!string.IsNullOrWhiteSpace(alertaTexto) || erroresModelo.Any())
+    {
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                const erroresModelo = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(erroresModelo));
+                const normalizarMensaje = (texto) => {
+                    texto = String(texto || '').replace(/\s+/g, ' ').trim();
+                    const requerido = texto.match(/^The (.+) field is required\.$/i);
+                    if (!requerido) return texto;
+                    const mapa = {
+                        MascotaId: 'Mascota',
+                        ServicioId: 'Servicio / tarifa',
+                        ResponsableId: 'Profesional responsable',
+                        Nombre: 'Nombre',
+                        Documento: 'DNI / RUC',
+                        Password: 'Contraseña',
+                        Rol: 'Rol'
+                    };
+                    return `Completa: ${mapa[requerido[1]] || requerido[1]}.`;
+                };
+                const htmlErrores = erroresModelo.length
+                    ? `<div style="text-align:center">${erroresModelo.map(e => `<div>${PetmorImportes.texto(normalizarMensaje(e))}</div>`).join('')}</div>`
+                    : null;
+                Swal.fire({
+                    title: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(alertaTitulo ?? "Aviso")),
+                    text: htmlErrores ? undefined : @Html.Raw(System.Text.Json.JsonSerializer.Serialize(alertaTexto)),
+                    html: htmlErrores || undefined,
+                    icon: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(alertaTipo ?? "info")),
+                    confirmButtonColor: '#f06800'
+                });
+            });
+        </script>
+    }
+    <script src="https://cdn.datatables.net/1.13.11/js/dataTables.bootstrap5.min.js"></script>
+    <script src="~/js/petmor-tables.js" asp-append-version="true"></script>
+    <script src="https://cdn.datatables.net/buttons/2.3.6/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.bootstrap5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.html5.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.print.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="~/js/petmor-ui.js" asp-append-version="true"></script>
+
+    <!-- SCRIPTS DE CONTROL DE WIDGETS -->
+    <script>
+        // Crear elementos del cursor animado (punto central y halo grande con latido)
+        const cursorDot = document.createElement('div');
+        cursorDot.className = 'custom-cursor-dot';
+        cursorDot.style.display = 'none';
+        document.body.appendChild(cursorDot);
+
+        const cursorHalo = document.createElement('div');
+        cursorHalo.className = 'custom-cursor-halo';
+        cursorHalo.style.display = 'none';
+        document.body.appendChild(cursorHalo);
+
+        // Seguir el movimiento del mouse
+        window.addEventListener('mousemove', (e) => {
+            if (document.body.classList.contains('cursor-grande')) {
+                cursorDot.style.display = 'block';
+                cursorHalo.style.display = 'block';
+                
+                cursorDot.style.left = e.clientX + 'px';
+                cursorDot.style.top = e.clientY + 'px';
+                
+                cursorHalo.style.left = e.clientX + 'px';
+                cursorHalo.style.top = e.clientY + 'px';
+            }
+        });
+
+        // Cargar preferencias guardadas al iniciar
+        document.addEventListener("DOMContentLoaded", function() {
+            let savedContraste = localStorage.getItem('modoContraste');
+            if (savedContraste) {
+                tipoContraste = parseInt(savedContraste);
+                aplicarContrasteVisual(tipoContraste);
+            }
+            if (localStorage.getItem('dislexia') === 'true') {
+                document.body.classList.add('dislexia-amigable');
+                actualizarBarraDoble('d', true);
+            }
+            if (localStorage.getItem('cursorGrande') === 'true') {
+                document.body.classList.add('cursor-grande');
+                actualizarBarraDoble('u', true);
+                cursorDot.style.display = 'block';
+                cursorHalo.style.display = 'block';
+            }
+            let savedSize = localStorage.getItem('tamanioTexto');
+            if (savedSize) {
+                nivelTexto = parseInt(savedSize);
+                const tamanios = [16, 18, 20, 22];
+                document.body.style.fontSize = tamanios[nivelTexto] + 'px';
+                actualizarBarrasTexto(nivelTexto);
+            }
+        });
+
+        document.getElementById('accessibility-toggle-btn').addEventListener('click', function(e) {
+            e.stopPropagation();
+            const panel = document.getElementById('accessibility-panel');
+            panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+        });
+        document.getElementById('accessibility-close-btn').addEventListener('click', function() {
+            document.getElementById('accessibility-panel').style.display = 'none';
+        });
+        window.addEventListener('click', function(e) {
+            const panel = document.getElementById('accessibility-panel');
+            const btn = document.getElementById('accessibility-toggle-btn');
+            if (!panel.contains(e.target) && !btn.contains(e.target)) {
+                panel.style.display = 'none';
+            }
+        });
+
+        let nivelTexto = 0; 
+        function ciclarTamanioTexto() {
+            nivelTexto = (nivelTexto + 1) % 4;
+            localStorage.setItem('tamanioTexto', nivelTexto);
+            actualizarBarrasTexto(nivelTexto);
+            const tamanios = [16, 18, 20, 22];
+            document.body.style.fontSize = tamanios[nivelTexto] + 'px';
+        }
+
+        function actualizarBarrasTexto(nivel) {
+            const barras = document.querySelectorAll('.bar-t');
+            barras.forEach((b, index) => {
+                b.style.background = index === nivel ? '#334155' : '#cbd5e1';
+            });
+        }
+        
+        let tipoContraste = 0; 
+        function toggleAltoContraste() {
+            tipoContraste = (tipoContraste + 1) % 3;
+            localStorage.setItem('modoContraste', tipoContraste);
+            aplicarContrasteVisual(tipoContraste);
+        }
+
+        function aplicarContrasteVisual(tipo) {
+            document.body.classList.remove('contraste-oscuro', 'contraste-suave');
+            tipoContraste = [0, 1, 2].includes(tipo) ? tipo : 0;
+            if (tipoContraste === 0) document.body.removeAttribute('data-contrast');
+            else document.body.dataset.contrast = tipoContraste === 1 ? 'dark' : 'light';
+            document.getElementById('contrast-label').textContent = ['Contraste: normal', 'Alto contraste oscuro', 'Alto contraste claro'][tipoContraste];
+
+            const barras = document.querySelectorAll('.bar-c');
+            barras.forEach((b, index) => {
+                b.style.background = index === tipoContraste ? '#334155' : '#cbd5e1';
+                b.dataset.selected = String(index === tipoContraste);
+            });
+        }
+        
+        function actualizarBarraDoble(clase, activo) {
+            const barras = document.querySelectorAll(`.bar-${clase}`);
+            if (barras.length === 2) {
+                barras[0].style.background = activo ? '#cbd5e1' : '#334155';
+                barras[1].style.background = activo ? '#334155' : '#cbd5e1';
+            }
+        }
+
+        function toggleCursorGrande() {
+            document.body.classList.toggle('cursor-grande');
+            const activo = document.body.classList.contains('cursor-grande');
+            localStorage.setItem('cursorGrande', activo);
+            actualizarBarraDoble('u', activo);
+
+            if (activo) {
+                cursorDot.style.display = 'block';
+                cursorHalo.style.display = 'block';
+            } else {
+                cursorDot.style.display = 'none';
+                cursorHalo.style.display = 'none';
+            }
+        }
+
+        function toggleDislexia() {
+            document.body.classList.toggle('dislexia-amigable');
+            const activo = document.body.classList.contains('dislexia-amigable');
+            localStorage.setItem('dislexia', activo);
+            actualizarBarraDoble('d', activo);
+        }
+
+        function restablecerAccesibilidad() {
+            document.body.classList.remove('dislexia-amigable', 'cursor-grande', 'contraste-oscuro', 'contraste-suave');
+            document.body.style.fontSize = '';
+            nivelTexto = 0;
+            tipoContraste = 0;
+            ['modoContraste', 'dislexia', 'cursorGrande', 'tamanioTexto'].forEach(key => localStorage.removeItem(key));
+
+            cursorDot.style.display = 'none';
+            cursorHalo.style.display = 'none';
+
+            actualizarBarrasTexto(0);
+            aplicarContrasteVisual(0);
+            actualizarBarraDoble('u', false);
+            actualizarBarraDoble('d', false);
+        }
+
+    </script>
+    
+    @await RenderSectionAsync("Scripts", required: false)
+    <style id="accessibility-final-overrides">
+        body.contraste-oscuro .main-content,
+        body.contraste-oscuro .main-content main {
+            background: #050505 !important;
+            color: #f8fafc !important;
+        }
+
+        body.contraste-oscuro .main-content *,
+        body.contraste-oscuro .swal2-container * {
+            border-color: #525252 !important;
+            box-shadow: none !important;
+        }
+
+        body.contraste-oscuro .main-content :is(h1,h2,h3,h4,h5,h6,p,span,strong,small,label,legend,td,th,li,div),
+        body.contraste-oscuro .main-content :is(.text-dark,.text-muted,.text-primary,.text-secondary,.text-info,.text-success,.text-warning,.text-danger),
+        body.contraste-oscuro .main-content :is(.card-title,.card-subtitle,.form-label,.form-text) {
+            color: #f8fafc !important;
+            text-shadow: none !important;
+        }
+
+        body.contraste-oscuro .main-content :is(small,.text-muted,.form-text,[class*="subtitle"],[class*="description"],[class*="hint"]) {
+            color: #d4d4d4 !important;
+        }
+
+        body.contraste-oscuro .main-content :is(
+            .card, [class*="-card"], [class$="card"],
+            [class*="-shell"], [class*="-panel"], [class*="-wrap"],
+            [class*="-head"], [class*="-body"], [class*="-section"],
+            .table-responsive, .table, table, thead, tbody, tr, td, th,
+            .modal-content, .dropdown-menu, .select2-selection, .select2-dropdown,
+            .dataTables_wrapper, .dataTables_length, .dataTables_filter,
+            .alert, .list-group-item
+        ) {
+            background: #101010 !important;
+            color: #f8fafc !important;
+            border-color: #525252 !important;
+        }
+
+        body.contraste-oscuro .main-content [style*="background: white"],
+        body.contraste-oscuro .main-content [style*="background:white"],
+        body.contraste-oscuro .main-content [style*="background: #fff"],
+        body.contraste-oscuro .main-content [style*="background:#fff"],
+        body.contraste-oscuro .main-content [style*="background-color: white"],
+        body.contraste-oscuro .main-content [style*="background-color:white"],
+        body.contraste-oscuro .main-content [style*="background-color: #fff"],
+        body.contraste-oscuro .main-content [style*="background-color:#fff"] {
+            background: #101010 !important;
+            color: #f8fafc !important;
+            border-color: #525252 !important;
+        }
+
+        body.contraste-oscuro .main-content :is(input,select,textarea,.form-control,.form-select,.select2-selection__rendered) {
+            background: #050505 !important;
+            color: #ffffff !important;
+            border-color: #a3a3a3 !important;
+        }
+
+        body.contraste-oscuro .main-content :is(input,textarea)::placeholder {
+            color: #d4d4d4 !important;
+            opacity: 1 !important;
+        }
+
+        body.contraste-oscuro .main-content :is(.btn,button,[role="button"]):not(.btn-primary):not([class*="primary"]):not([class*="main"]):not([class*="danger"]):not([class*="delete"]):not([class*="reset"]),
+        body.contraste-oscuro .main-content :is(.badge,[class*="pill"],[class*="chip"],[class*="avatar"],[class*="icon"]) {
+            background: #1f1f1f !important;
+            color: #ffffff !important;
+            border-color: #737373 !important;
+        }
+
+        body.contraste-oscuro .main-content :is(.btn-primary,[class*="primary"],[class*="main"],.active):not(.page-link),
+        body.contraste-oscuro .main-content :is(button[type="submit"],[class*="apply"],[class*="filter"]):not([class*="clear"]):not([class*="secondary"]) {
+            background: #f06800 !important;
+            color: #ffffff !important;
+            border-color: #f06800 !important;
+        }
+
+        body.contraste-oscuro .main-content :is([class*="danger"],[class*="delete"],[class*="reset"]) {
+            background: #7f1d1d !important;
+            color: #ffffff !important;
+            border-color: #ef4444 !important;
+        }
+
+        body.contraste-oscuro .main-content :is(a,a *,button *, .btn *, i) {
+            color: inherit !important;
+        }
+
+        body.contraste-oscuro .main-content :is(a):not(.btn) {
+            color: #fdba74 !important;
+            text-decoration-color: #fdba74 !important;
+        }
+
+        body.contraste-oscuro .main-content :is(.table thead th, table thead th) {
+            background: #1f1f1f !important;
+            color: #ffffff !important;
+        }
+
+        body.contraste-oscuro .main-content :is(.table tbody tr:hover, table tbody tr:hover) td {
+            background: #262626 !important;
+        }
+
+        body.contraste-oscuro .main-content :is(.bg-white,.bg-light,.bg-body,.bg-primary,.bg-info,.bg-success,.bg-warning) {
+            background: #101010 !important;
+            color: #f8fafc !important;
+        }
+
+        body.contraste-oscuro .main-content :is(img,svg) {
+            opacity: .95;
+        }
+    </style>
+    <script>
+        (() => {
+            const campoDesdeNombre = (nombre) => {
+                if (!nombre) return '';
+                const input = document.querySelector(`[name="${CSS.escape(nombre)}"], #${CSS.escape(nombre)}`);
+                const id = input?.id || nombre;
+                const label = document.querySelector(`label[for="${CSS.escape(id)}"]`);
+                return (label?.textContent || nombre)
+                    .replace(/\*/g, '')
+                    .replace(/\s+/g, ' ')
+                    .trim();
+            };
+
+            const etiquetaDeCampo = (campo) => {
+                if (!campo) return null;
+                if (campo.id) {
+                    const porId = document.querySelector(`label[for="${CSS.escape(campo.id)}"]`);
+                    if (porId) return porId;
+                }
+                const contenedora = campo.closest('label');
+                if (contenedora) return contenedora;
+                return campo.closest('.mb-3,.mb-4,.my-4,.field-wrap,.form-group,[class*="col-"]')?.querySelector('label') || null;
+            };
+
+            const marcarCamposObligatorios = (scope = document) => {
+                scope.querySelectorAll('input, select, textarea').forEach(campo => {
+                    const tipo = (campo.getAttribute('type') || '').toLowerCase();
+                    if (tipo === 'hidden' || tipo === 'checkbox' || tipo === 'radio') return;
+                    const label = etiquetaDeCampo(campo);
+                    if (!label) return;
+                    const requerida = !campo.disabled && !campo.readOnly && (campo.required || campo.hasAttribute('data-val-required'));
+                    if (!requerida) { label.querySelector('.required-mark')?.remove(); campo.removeAttribute('aria-required'); return; }
+                    campo.setAttribute('aria-required', 'true');
+                    if (label.querySelector('.required-mark')) return;
+                    const existente = Array.from(label.querySelectorAll('span')).find(s => s.textContent.trim() === '*');
+                    if (existente) { existente.classList.add('required-mark'); existente.setAttribute('aria-hidden', 'true'); return; }
+                    if (label.textContent.includes('*')) return;
+                    const marca = document.createElement('span');
+                    marca.className = 'required-mark';
+                    marca.setAttribute('aria-hidden', 'true');
+                    marca.textContent = '*';
+                    label.appendChild(marca);
+                });
+            };
+
+            const normalizarError = (texto) => {
+                texto = String(texto || '').replace(/\s+/g, ' ').trim();
+                const requerido = texto.match(/^The (.+) field is required\.$/i);
+                if (requerido) {
+                    const campo = campoDesdeNombre(requerido[1]);
+                    return campo ? `Completa: ${campo}.` : 'Completa los campos obligatorios.';
+                }
+                return texto;
+            };
+
+            const mensajeValidacionCampo = (campo) => {
+                const nombreCampo = campoDesdeNombre(campo?.name || campo?.id);
+                if (campo?.validity?.valueMissing) {
+                    return nombreCampo ? `Completa: ${nombreCampo}.` : 'Completa los campos obligatorios.';
+                }
+                if (campo?.validity?.patternMismatch) {
+                    return nombreCampo ? `Revisa el formato de: ${nombreCampo}.` : 'Revisa el formato del campo.';
+                }
+                if (campo?.validity?.tooShort) {
+                    return nombreCampo ? `${nombreCampo} debe tener más caracteres.` : 'El campo debe tener más caracteres.';
+                }
+                if (campo?.validity?.tooLong) {
+                    return nombreCampo ? `${nombreCampo} excede el máximo permitido.` : 'El campo excede el máximo permitido.';
+                }
+                if (campo?.validity?.typeMismatch) {
+                    return nombreCampo ? `Revisa el valor de: ${nombreCampo}.` : 'Revisa el valor ingresado.';
+                }
+                return normalizarError(campo?.validationMessage || (nombreCampo ? `Revisa: ${nombreCampo}.` : 'Revisa los campos marcados.'));
+            };
+
+            const erroresVisibles = (scope = document) => {
+                const errores = [];
+                scope.querySelectorAll('.validation-summary-errors li, .field-validation-error').forEach(el => {
+                    const texto = normalizarError(el.textContent);
+                    if (texto && !errores.includes(texto)) errores.push(texto);
+                });
+                return errores;
+            };
+
+            const mostrarErrores = (errores) => {
+                errores = [...new Set((errores || []).filter(Boolean))];
+                if (!errores.length || !window.Swal) return;
+                Swal.fire({
+                    title: 'Revisa el formulario',
+                    html: `<div style="text-align:center">${errores.map(e => `<div>${PetmorImportes.texto(e)}</div>`).join('')}</div>`,
+                    icon: 'warning',
+                    confirmButtonColor: '#f06800'
+                });
+            };
+
+            const mostrarCamposInvalidos = (form) => {
+                const errores = Array.from(form.elements)
+                    .filter(el => el.willValidate && !el.validity.valid)
+                    .map(el => mensajeValidacionCampo(el));
+                mostrarErrores(errores);
+            };
+
+            document.addEventListener('DOMContentLoaded', () => {
+                marcarCamposObligatorios();
+                new MutationObserver(cambios => {
+                    if (cambios.some(c => c.type === 'attributes' || Array.from(c.addedNodes).some(n => n.nodeType === 1 && !n.matches('.required-mark'))))
+                        marcarCamposObligatorios();
+                }).observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['required', 'disabled', 'readonly', 'data-val-required'] });
+                if (!window.Swal?.isVisible?.()) mostrarErrores(erroresVisibles());
+
+                if (window.jQuery) {
+                    jQuery(document).on('invalid-form.validate', 'form', function (_event, validator) {
+                        const errores = (validator.errorList || []).map(error => `${campoDesdeNombre(error.element.name || error.element.id)}: ${normalizarError(error.message)}`);
+                        mostrarErrores(errores.length ? errores : erroresVisibles(this));
+                    });
+                }
+
+                document.querySelectorAll('form').forEach(form => {
+                    form.addEventListener('submit', (event) => {
+                        let errores = [];
+
+                        if (window.jQuery && jQuery.fn?.valid && jQuery(form).data('validator')) {
+                            const valido = jQuery(form).valid();
+                            if (!valido) {
+                                const validator = jQuery(form).data('validator');
+                                errores = (validator.errorList || []).map(error => {
+                                    const campo = error.element?.name || error.element?.id;
+                                    return normalizarError(error.message || `Completa: ${campoDesdeNombre(campo)}.`);
+                                });
+                            }
+                        } else if (!form.checkValidity()) {
+                            errores = Array.from(form.elements)
+                                .filter(el => el.willValidate && !el.validity.valid)
+                                .map(el => mensajeValidacionCampo(el));
+                        }
+
+                        if (errores.length) {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            mostrarErrores(errores);
+                        }
+                    }, true);
+                });
+            });
+
+            const validacionPendiente = new WeakMap();
+            document.addEventListener('invalid', (event) => {
+                const campo = event.target;
+                if (!campo?.form) return;
+                clearTimeout(validacionPendiente.get(campo.form));
+                validacionPendiente.set(campo.form, setTimeout(() => mostrarCamposInvalidos(campo.form), 0));
+            }, true);
+        })();
+    </script>
+</body>
+</html>

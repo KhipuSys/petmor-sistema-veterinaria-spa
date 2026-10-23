@@ -1,0 +1,181 @@
+/* Shared UI system for operational screens outside table internals. */
+:root {
+    --pm-brand: #f06800;
+    --pm-brand-dark: #c65300;
+    --pm-danger: #dc2626;
+    --pm-success: #16a34a;
+    --pm-info: #2563eb;
+    --pm-warning: #d97706;
+    --pm-ink: #0f172a;
+    --pm-muted: #64748b;
+    --pm-line: #dbe3ee;
+    --pm-soft: #f8fafc;
+}
+
+.main-content :is(.pm-btn, .btn.pm-btn),
+.main-content :is(.btn-primary, .btn-config-primary, .btn-compras-primary, .btn-gastos-primary, .btn-purchase-primary, .btn-guardar, .btn-guardar-mascota, .btn-nueva-mascota) {
+    min-height: 42px;
+    border-radius: 11px !important;
+    padding: 10px 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: var(--pm-brand) !important;
+    border-color: var(--pm-brand) !important;
+    color: #fff !important;
+    font-weight: 800;
+    text-decoration: none !important;
+}
+.main-content :is(.btn-primary, .btn-config-primary, .btn-compras-primary, .btn-gastos-primary, .btn-purchase-primary, .btn-guardar, .btn-guardar-mascota, .btn-nueva-mascota):is(:hover, :focus-visible),
+.main-content .pm-btn-primary:is(:hover, :focus-visible) { background: var(--pm-brand-dark) !important; border-color: var(--pm-brand-dark) !important; }
+.main-content :is(.pm-btn-secondary, .btn-secondary, .btn-outline-primary, .btn-outline-secondary, .btn-cancelar, .btn-gasto-secondary, .btn-purchase-secondary) {
+    min-height: 42px;
+    border-radius: 11px !important;
+    padding: 10px 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: #fff !important;
+    border: 1px solid var(--pm-line) !important;
+    color: #334155 !important;
+    font-weight: 800;
+    text-decoration: none !important;
+}
+.main-content :is(.pm-btn-danger, .btn-danger, .btn-outline-danger) {
+    min-height: 42px;
+    border-radius: 11px !important;
+    padding: 10px 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-weight: 800;
+}
+.main-content .pm-action-icon,
+.main-content :is(.user-action, .provider-action, .btn-sale-action, .btn-compra-action, .btn-service-action, .pred-action, .btn-action, .btn-action-icon) {
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+    min-height: 38px;
+    padding: 0 !important;
+    border-radius: 10px !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.main-content :is(.export-actions, .pm-export-actions) { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.main-content .dt-buttons { position: absolute; width: 1px; height: 1px; overflow: hidden; opacity: 0; pointer-events: none; }
+.main-content :is(.export-btn, .pm-export-btn) {
+    min-height: 38px;
+    border: 1px solid #fed7aa;
+    border-radius: 10px;
+    background: #fff7ed;
+    color: var(--pm-brand);
+    padding: 8px 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: .84rem;
+    font-weight: 800;
+}
+
+.main-content :is(.metric-card, .dashboard-metric, .pm-metric-card) {
+    border: 1px solid var(--pm-line);
+    border-radius: 18px;
+    background: #fff;
+    padding: 18px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    color: var(--pm-ink);
+    text-decoration: none !important;
+}
+.main-content :is(.metric-card, .dashboard-metric, .pm-metric-card) :is(.metric-icon, .pm-metric-icon) {
+    width: 46px;
+    height: 46px;
+    border-radius: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    background: #fff7ed;
+    color: var(--pm-brand);
+    font-size: 1.15rem;
+}
+.main-content :is(.metric-card, .dashboard-metric, .pm-metric-card) span { color: var(--pm-muted); font-size: .8rem; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; }
+.main-content :is(.metric-card, .dashboard-metric, .pm-metric-card) strong { display: block; color: var(--pm-ink); font-size: 1.5rem; line-height: 1.1; }
+.main-content :is(.metric-card, .dashboard-metric, .pm-metric-card) small { color: var(--pm-muted); font-weight: 600; }
+
+.main-content :is(.filter-card, .pm-filter-bar, .agenda-filters, .date-filter, .report-filter) {
+    border: 1px solid var(--pm-line);
+    border-radius: 16px;
+    background: #fff;
+    padding: 14px;
+    margin-bottom: 18px;
+}
+.main-content :is(.field-wrap, .date-field, .product-select-shell, .select-shell, .field-shell, .control-wrap, .pm-field) { position: relative; }
+.main-content :is(.form-control, .form-select) {
+    border-color: var(--pm-line);
+    border-radius: 10px;
+    color: #334155;
+    font-weight: 700;
+}
+.main-content :is(.form-control, .form-select):focus { border-color: var(--pm-brand); outline: 2px solid #fed7aa; outline-offset: 1px; }
+.main-content .form-label { color: #334155; font-weight: 800; }
+.main-content .required-mark { color: var(--pm-danger); font-weight: 900; margin-left: 3px; }
+.main-content :is(.text-danger, .field-validation-error) { color: var(--pm-danger) !important; font-size: .84rem; font-weight: 700; }
+.main-content :is(.validation-summary-errors, [data-valmsg-summary="true"]):not(:empty) {
+    border: 1px solid #fecaca;
+    border-radius: 12px;
+    background: #fef2f2;
+    color: #991b1b !important;
+    padding: 12px 14px;
+    margin-bottom: 14px;
+}
+
+.main-content .select2-container--bootstrap-5 .select2-selection {
+    min-height: 44px;
+    border: 1px solid var(--pm-line);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+}
+.main-content .select2-container--bootstrap-5 .select2-selection--single .select2-selection__rendered { color: #334155; font-weight: 800; }
+.main-content .select2-dropdown { border-color: var(--pm-line); border-radius: 10px; overflow: hidden; }
+.main-content .select2-results__option--highlighted { background: var(--pm-brand) !important; color: #fff !important; }
+
+.main-content :is(.pm-status, .estado-badge, .badge, [class*="-pill"]) {
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 800;
+}
+.main-content :is(.pm-status-ok, .bg-success) { background: #dcfce7 !important; color: #166534 !important; }
+.main-content :is(.pm-status-warn, .bg-warning) { background: #fef3c7 !important; color: #92400e !important; }
+.main-content :is(.pm-status-danger, .bg-danger) { background: #fee2e2 !important; color: #991b1b !important; }
+.main-content :is(.pm-status-info, .bg-info) { background: #dbeafe !important; color: #1e40af !important; }
+.main-content :is(.pm-status-muted, .bg-secondary) { background: #f1f5f9 !important; color: #475569 !important; }
+
+.main-content :is(.pm-empty, .categorias-empty, .compras-empty, .gastos-empty, .productos-empty, .proveedores-empty, .ventas-empty, .kardex-empty, .caja-empty, .finance-empty, .purchase-empty) {
+    border: 1px dashed #cbd5e1;
+    border-radius: 16px;
+    background: #fff;
+    padding: 28px;
+    text-align: center;
+    color: var(--pm-muted);
+}
+.main-content :is(.pm-empty, .categorias-empty, .compras-empty, .gastos-empty, .productos-empty, .proveedores-empty, .ventas-empty, .kardex-empty, .caja-empty, .finance-empty, .purchase-empty) > i { color: var(--pm-brand); font-size: 2rem; margin-bottom: 10px; }
+.main-content :is(.pm-empty, .categorias-empty, .compras-empty, .gastos-empty, .productos-empty, .proveedores-empty, .ventas-empty, .kardex-empty, .caja-empty, .finance-empty, .purchase-empty) h3 { color: var(--pm-ink); font-size: 1.1rem; font-weight: 900; }
+
+.swal2-popup.petmor-alert-popup { border-radius: 18px; }
+.swal2-popup.petmor-alert-popup .swal2-confirm { background: var(--pm-brand) !important; border-radius: 10px !important; font-weight: 800; }
+.swal2-popup.petmor-alert-popup .swal2-cancel { background: #64748b !important; border-radius: 10px !important; font-weight: 800; }
+
+@media (max-width: 767.98px) {
+    .main-content :is(.metric-card, .dashboard-metric, .pm-metric-card) { padding: 14px; }
+    .main-content :is(.export-actions, .pm-export-actions) { width: 100%; }
+    .main-content :is(.export-btn, .pm-export-btn) { flex: 1 1 auto; }
+}

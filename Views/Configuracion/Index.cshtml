@@ -1,0 +1,54 @@
+@model MiniMarket.Web.Models.ConfiguracionViewModel
+@{
+    ViewData["Title"] = "Configuración del Sistema";
+}
+
+<section class="config-metrics">
+    <article class="metric-card metric-brand"><div class="metric-icon"><i class="fas fa-store"></i></div><div><span>Empresa</span><strong>@(string.IsNullOrWhiteSpace(Model.NombreEmpresa) ? "Petmor" : Model.NombreEmpresa)</strong><small>Identidad comercial</small></div></article>
+    <article class="metric-card metric-tax"><div class="metric-icon"><i class="fas fa-percent"></i></div><div><span>IGV</span><strong>@Model.IgvPorcentaje.ToString("N2")%</strong><small>Impuesto configurado</small></div></article>
+    <article class="metric-card metric-money"><div class="metric-icon"><i class="fas fa-coins"></i></div><div><span>Moneda</span><strong>@Model.MonedaSimbolo</strong><small>Símbolo del sistema</small></div></article>
+    <article class="metric-card metric-logo"><div class="metric-icon"><i class="fas fa-image"></i></div><div><span>Logo</span><strong>@(string.IsNullOrWhiteSpace(Model.CurrentLogoUrl) ? "Pendiente" : "Activo")</strong><small>Imagen para tickets</small></div></article>
+</section>
+
+<section class="config-shell">
+    <div class="config-head">
+        <div class="config-title"><div class="config-icon"><i class="fas fa-cogs"></i></div><div><h2>Configuración</h2><p>Datos generales usados en tickets, reportes y operación</p></div></div>
+    </div>
+
+    <form asp-action="Guardar" method="post" enctype="multipart/form-data" class="config-grid">
+        <div class="config-main">
+            <section class="config-panel"><div class="panel-title"><i class="fas fa-building"></i><div><h3>Datos de la empresa</h3><span>Información visible en comprobantes y reportes</span></div></div><div class="row g-3"><div class="col-md-7"><label asp-for="NombreEmpresa" class="form-label fw-bold"></label><input asp-for="NombreEmpresa" class="form-control" placeholder="Ej: Petmor" /><span asp-validation-for="NombreEmpresa" class="text-danger small"></span></div><div class="col-md-5"><label asp-for="Ruc" class="form-label fw-bold"></label><input asp-for="Ruc" class="form-control" placeholder="11 dígitos" maxlength="11" /><span asp-validation-for="Ruc" class="text-danger small"></span></div><div class="col-12"><label asp-for="Direccion" class="form-label fw-bold"></label><input asp-for="Direccion" class="form-control" /><span asp-validation-for="Direccion" class="text-danger small"></span></div><div class="col-md-6"><label asp-for="Telefono" class="form-label fw-bold"></label><input asp-for="Telefono" class="form-control" /></div><div class="col-md-6"><label asp-for="EmailContacto" class="form-label fw-bold"></label><input asp-for="EmailContacto" type="email" class="form-control" /><span asp-validation-for="EmailContacto" class="text-danger small"></span></div></div></section>
+            <section class="config-panel"><div class="panel-title"><i class="fas fa-sliders-h"></i><div><h3>Parámetros del sistema</h3><span>Valores globales de operación</span></div></div><div class="row g-3"><div class="col-md-4"><label asp-for="IgvPorcentaje" class="form-label fw-bold"></label><div class="input-group"><input asp-for="IgvPorcentaje" type="number" step="0.01" class="form-control fw-bold text-end" /><span class="input-group-text fw-bold">%</span></div><span asp-validation-for="IgvPorcentaje" class="text-danger small"></span></div><div class="col-md-4"><label asp-for="MonedaSimbolo" class="form-label fw-bold"></label><input asp-for="MonedaSimbolo" class="form-control" placeholder="S/." /><span asp-validation-for="MonedaSimbolo" class="text-danger small"></span></div></div></section>
+            <section class="config-panel"><div class="panel-title"><i class="fas fa-key"></i><div><h3>Integración Factiliza</h3><span>Consulta DNI/RUC y emisión electrónica</span></div></div><label asp-for="FactilizaToken" class="form-label fw-bold"></label><input asp-for="FactilizaToken" type="password" class="form-control" placeholder="Pega aquí tu token de Factiliza" autocomplete="new-password" /><small class="text-muted d-block mt-2">El token se guarda cifrado. Déjalo vacío para conservar el token actual.</small><div class="mt-2"><span class="badge @(Model.FactilizaTokenConfigurado ? "text-bg-success" : "text-bg-secondary")">@(Model.FactilizaTokenConfigurado ? "Token configurado" : "Token no configurado")</span></div></section>
+            <section class="config-panel"><div class="panel-title"><i class="fas fa-image"></i><div><h3>Imagen visual</h3><span>Logo usado en tickets y encabezados</span></div></div><label asp-for="LogoUpload" class="form-label fw-bold"></label><input asp-for="LogoUpload" type="file" class="form-control" accept="image/*" /><small class="text-muted d-block mt-2">Recomendado: PNG o JPG ligero, de preferencia con fondo transparente.</small></section>
+            <div class="config-actions"><button type="submit" class="btn btn-config-primary"><i class="fas fa-check"></i>Guardar cambios</button></div>
+        </div>
+
+        <aside class="config-side">
+            <div class="logo-preview">
+                <span>Logo actual</span>
+                @if (!string.IsNullOrEmpty(Model.CurrentLogoUrl))
+                {
+                    <img src="@Model.CurrentLogoUrl" alt="Logo actual" />
+                }
+                else
+                {
+                    <div class="logo-empty"><i class="fas fa-image"></i><strong>Sin logo definido</strong></div>
+                }
+            </div>
+            <div class="info-card"><i class="fas fa-receipt"></i><h3>Impacto de estos datos</h3><p>Se usan para personalizar tickets, reportes internos y datos visibles de la empresa.</p></div>
+            <div class="info-card warning"><i class="fas fa-circle-info"></i><h3>Antes de guardar</h3><p>Verifica RUC, dirección e IGV para evitar datos incorrectos en comprobantes.</p></div>
+        </aside>
+    </form>
+</section>
+
+<style>
+    .config-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; margin-bottom: 22px; } .metric-card { min-height: 112px; display: flex; align-items: center; gap: 16px; padding: 20px; border: 1px solid #e5e7eb; border-radius: 14px; background: linear-gradient(135deg, #fff, #fbfdff); } .metric-icon { width: 58px; height: 58px; border-radius: 16px; display: inline-flex; align-items: center; justify-content: center; font-size: 25px; flex: 0 0 auto; } .metric-card span { color: #64748b; font-weight: 900; font-size: .82rem; text-transform: uppercase; letter-spacing: .05em; } .metric-card strong { display: block; color: #0f172a; font-size: 1.2rem; font-weight: 900; line-height: 1.1; max-width: 210px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .metric-card small { display: block; margin-top: 8px; color: #64748b; font-weight: 600; } .metric-brand .metric-icon { background: #fff3ea; color: #f06800; } .metric-tax .metric-icon { background: #eff6ff; color: #2563eb; } .metric-money .metric-icon { background: #ecfdf5; color: #059669; } .metric-logo .metric-icon { background: #f5f3ff; color: #7c3aed; }
+    .config-shell { border: 1px solid #e5e7eb; border-radius: 14px; background: #fff; overflow: hidden; } .config-head { padding: 18px 20px; border-bottom: 1px solid #e5e7eb; background: linear-gradient(135deg, #fff, #f8fafc); } .config-title { display: flex; align-items: center; gap: 12px; } .config-icon { width: 46px; height: 46px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; background: #fff3ea; color: #f06800; font-size: 20px; } .config-title h2 { margin: 0; color: #0f172a; font-size: 1.15rem; font-weight: 900; } .config-title p { margin: 3px 0 0; color: #64748b; }
+    .config-grid { display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 18px; padding: 20px; } .config-main { display: grid; gap: 18px; } .config-panel, .logo-preview, .info-card { border: 1px solid #e5e7eb; border-radius: 14px; background: #fff; padding: 18px; } .panel-title { display: flex; gap: 10px; align-items: center; margin-bottom: 16px; color: #f06800; } .panel-title i { width: 38px; height: 38px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; background: #fff3ea; } .panel-title h3, .info-card h3 { margin: 0; color: #0f172a; font-size: 1rem; font-weight: 900; } .panel-title span { color: #64748b; font-size: .85rem; font-weight: 700; }
+    .form-control, .input-group-text { min-height: 46px; border-color: #dbe3ee; border-radius: 10px; font-weight: 700; } .input-group .form-control { border-top-right-radius: 0; border-bottom-right-radius: 0; } .input-group .input-group-text { border-top-right-radius: 10px; border-bottom-right-radius: 10px; } .config-actions { display: flex; justify-content: flex-end; } .btn-config-primary { min-height: 46px; border-radius: 10px; padding: 11px 20px; background: #f06800; border: 1px solid #f06800; color: #fff !important; font-weight: 900; display: inline-flex; align-items: center; gap: 8px; }
+    .config-side { display: grid; gap: 18px; align-content: start; } .logo-preview span { color: #64748b; font-size: .8rem; font-weight: 900; text-transform: uppercase; } .logo-preview img { width: 100%; max-height: 150px; object-fit: contain; border: 1px dashed #fed7aa; border-radius: 12px; background: #fff7ed; padding: 14px; margin-top: 10px; } .logo-empty { min-height: 140px; display: grid; place-items: center; text-align: center; color: #94a3b8; border: 1px dashed #cbd5e1; border-radius: 12px; margin-top: 10px; } .logo-empty i { font-size: 34px; } .info-card i { width: 42px; height: 42px; display: inline-flex; align-items: center; justify-content: center; border-radius: 12px; background: #fff3ea; color: #f06800; margin-bottom: 12px; } .info-card p { margin: 8px 0 0; color: #64748b; font-weight: 600; } .info-card.warning i { background: #fffbeb; color: #d97706; }
+    @@media (max-width: 1199.98px) { .config-metrics { grid-template-columns: 1fr 1fr; } .config-grid { grid-template-columns: 1fr; } } @@media (max-width: 767.98px) { .config-metrics { grid-template-columns: 1fr; } .config-actions .btn { width: 100%; } }
+</style>
+
+@section Scripts { @{await Html.RenderPartialAsync("_ValidationScriptsPartial");} }

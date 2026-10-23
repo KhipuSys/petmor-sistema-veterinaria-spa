@@ -1,0 +1,29 @@
+@{
+    var pagina = (int?)ViewBag.Pagina ?? 1;
+    var total = (int?)ViewBag.TotalPaginas ?? 1;
+    var direccion = Context.Request.Query["navegacion"].ToString();
+    string UrlPagina(int numero) {
+        var valores = Context.Request.Query.ToDictionary(x => x.Key, x => x.Value.ToString());
+        valores["pagina"] = numero.ToString();
+        valores["navegacion"] = numero < pagina ? "anterior" : "siguiente";
+        return Microsoft.AspNetCore.WebUtilities.QueryHelpers.AddQueryString(Context.Request.Path, valores);
+    }
+}
+<div class="petmor-table-footer">
+    <div class="petmor-table-info">
+        @if (ViewData["ResumenTabla"] is string resumen) { <span>@resumen · </span> }
+        <span>Página @pagina de @total</span>
+    </div>
+    <nav class="petmor-table-pagination" aria-label="Páginas de resultados">
+        <ul class="pagination">
+            <li class="page-item previous @(pagina <= 1 ? "disabled" : "") @(direccion == "anterior" ? "is-selected" : "")">
+                @if (pagina > 1) { <a class="page-link" href="@UrlPagina(pagina - 1)">Anterior</a> }
+                else { <span class="page-link" aria-disabled="true">Anterior</span> }
+            </li>
+            <li class="page-item next @(pagina >= total ? "disabled" : "") @(direccion == "siguiente" ? "is-selected" : "")">
+                @if (pagina < total) { <a class="page-link" href="@UrlPagina(pagina + 1)">Siguiente</a> }
+                else { <span class="page-link" aria-disabled="true">Siguiente</span> }
+            </li>
+        </ul>
+    </nav>
+</div>

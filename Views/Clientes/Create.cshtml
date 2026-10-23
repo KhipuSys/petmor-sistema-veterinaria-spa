@@ -1,0 +1,271 @@
+@model MiniMarket.Web.Models.Cliente
+
+@{
+    ViewData["Title"] = "Nuevo Cliente";
+}
+
+<div class="cliente-create-page py-4">
+    <div class="cliente-card mx-auto">
+        <div class="cliente-card__header">
+            <div class="cliente-card__header-icon">
+                <i class="fas fa-user-plus"></i>
+            </div>
+            <div>
+                <h1>Registrar Cliente</h1>
+                <p>Agrega la información del cliente al sistema</p>
+            </div>
+        </div>
+
+        <div class="cliente-card__body">
+            <form asp-action="Create">
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                <div class="mb-4 cliente-datos-reales">
+                    <label asp-for="Documento" class="form-label cliente-label">
+                        <i class="fas fa-id-card me-2"></i>DNI / RUC
+                    </label>
+                    <div class="row g-3">
+                        <div class="col-lg-8">
+                            <input asp-for="Documento" class="form-control cliente-control" placeholder="DNI o RUC" maxlength="11" inputmode="numeric" pattern="[0-9]{8}([0-9]{3})?" />
+                        </div>
+                        <div class="col-lg-4">
+                            <button class="btn btn-consultar w-100" type="button" id="btnConsultarDocumento" data-consulta-url="@Url.Action("ConsultarDocumento", "Clientes")">
+                                <i class="fas fa-search me-2" aria-hidden="true"></i>Consultar DNI/RUC
+                            </button>
+                        </div>
+                    </div>
+                    <small id="consultaDocumentoMensaje" class="form-text mt-2 d-block" role="status" aria-live="polite"></small>
+                    <span asp-validation-for="Documento" class="text-danger"></span>
+                </div>
+
+                <div class="mb-4 cliente-datos-reales">
+                    <label asp-for="Nombre" class="form-label cliente-label">
+                        <i class="fas fa-user me-2"></i>Nombre Completo
+                    </label>
+                    <input asp-for="Nombre" class="form-control cliente-control" placeholder="Nombre completo" />
+                    <span asp-validation-for="Nombre" class="text-danger"></span>
+                </div>
+
+                <div class="row g-4 cliente-datos-reales">
+                    <div class="col-md-6">
+                        <label asp-for="Telefono" class="form-label cliente-label">
+                            <i class="fas fa-phone me-2"></i>Teléfono
+                        </label>
+                        <input asp-for="Telefono" class="form-control cliente-control" placeholder="Ingresa el número de teléfono" required />
+                        <span asp-validation-for="Telefono" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Correo" class="form-label cliente-label">
+                            <i class="fas fa-envelope me-2"></i>Correo
+                        </label>
+                        <input asp-for="Correo" class="form-control cliente-control" type="email" placeholder="Ingresa el correo electrónico" />
+                    </div>
+                </div>
+
+                <div class="my-4 cliente-datos-reales">
+                    <label asp-for="Direccion" class="form-label cliente-label">
+                        <i class="fas fa-location-dot me-2"></i>Dirección
+                    </label>
+                    <textarea asp-for="Direccion" class="form-control cliente-control" rows="3"></textarea>
+                </div>
+
+                <div class="cliente-actions">
+                    <a asp-action="Index" class="btn btn-cancelar">
+                        <i class="fas fa-times me-2"></i>Cancelar
+                    </a>
+                    <button type="submit" name="registrarMascota" value="false" class="btn btn-guardar">
+                        <i class="fas fa-check me-2"></i>Guardar Cliente
+                    </button>
+                    <button type="submit" name="registrarMascota" value="true" class="btn btn-guardar-mascota">
+                        <i class="fas fa-paw me-2"></i>Guardar y registrar mascota
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .cliente-create-page {
+        background: linear-gradient(180deg, #f8fafc 0%, #eef4fb 100%);
+        border-radius: 24px;
+        margin: 0 auto;
+    }
+
+    .cliente-card {
+        max-width: 1120px;
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 18px;
+        overflow: hidden;
+    }
+
+    .cliente-card__header {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        padding: 28px 40px;
+        background: linear-gradient(135deg, #ff7a00 0%, #f06800 100%);
+        color: #fff;
+    }
+
+    .cliente-card__header-icon {
+        width: 66px;
+        height: 66px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: #fff;
+        color: #f06800;
+        font-size: 28px;
+        flex: 0 0 auto;
+    }
+
+    .cliente-card__header h1 {
+        margin: 0;
+        font-size: clamp(1.8rem, 3vw, 2.45rem);
+        font-weight: 800;
+        line-height: 1.1;
+    }
+
+    .cliente-card__header p {
+        margin: 6px 0 0;
+        font-size: 1.05rem;
+        opacity: .92;
+    }
+
+    .cliente-card__body {
+        padding: 34px 40px 32px;
+    }
+
+    .cliente-label {
+        color: #111827;
+        font-size: 1.1rem;
+        font-weight: 800;
+        margin-bottom: 10px;
+    }
+
+    .cliente-label i {
+        color: #111827;
+        width: 24px;
+        text-align: center;
+    }
+
+    .cliente-control {
+        min-height: 54px;
+        border: 1px solid #cbd5e1;
+        border-radius: 10px;
+        color: #111827;
+        font-size: 1.05rem;
+        padding: 12px 16px;
+    }
+
+    textarea.cliente-control {
+        min-height: 92px;
+    }
+
+    .cliente-control:focus {
+        border-color: #f06800;
+        box-shadow: 0 0 0 .18rem rgba(240, 104, 0, .14) !important;
+    }
+
+    .btn-consultar,
+    .btn-guardar {
+        min-height: 54px;
+        border: 1px solid #f06800;
+        border-radius: 10px;
+        background: #fff;
+        color: #e65300;
+        font-weight: 800;
+    }
+
+    .btn-consultar:hover,
+    .btn-guardar:hover {
+        background: #fff7ed;
+        border-color: #e65300;
+        color: #c2410c;
+    }
+
+    .cliente-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        padding-top: 20px;
+        border-top: 1px solid #e5e7eb;
+        flex-wrap: wrap;
+    }
+
+    .cliente-actions .btn {
+        min-height: 52px;
+        border-radius: 10px;
+        padding: 12px 22px;
+        font-weight: 800;
+    }
+
+    .btn-cancelar {
+        border: 1px solid #94a3b8;
+        background: #f8fafc;
+        color: #334155;
+    }
+
+    .btn-cancelar:hover {
+        background: #e2e8f0;
+        color: #0f172a;
+    }
+
+    .btn-guardar-mascota {
+        border: 1px solid #f06800;
+        background: #f06800;
+        color: #fff;
+    }
+
+    .btn-guardar-mascota:hover {
+        border-color: #d95f00;
+        background: #d95f00;
+        color: #fff;
+    }
+
+    #consultaDocumentoMensaje:not(:empty) {
+        padding: 14px 16px;
+        border-radius: 10px;
+        background: #ecfdf5;
+        color: #047857;
+        font-weight: 700;
+    }
+
+    @@media (max-width: 767.98px) {
+        .cliente-create-page {
+            padding: 0 !important;
+            background: transparent;
+        }
+
+        .cliente-card {
+            border-radius: 14px;
+        }
+
+        .cliente-card__header,
+        .cliente-card__body {
+            padding-left: 20px;
+            padding-right: 20px;
+        }
+
+        .cliente-card__header {
+            align-items: flex-start;
+        }
+
+        .cliente-actions {
+            display: grid;
+        }
+
+        .cliente-actions .btn {
+            width: 100%;
+        }
+    }
+</style>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+
+    <script src="~/js/clientes-documento.js" asp-append-version="true"></script>
+}

@@ -1,0 +1,168 @@
+@model List<MiniMarket.Web.Models.Atencion>
+@using MiniMarket.Web.Models
+@{
+    ViewData["Title"] = "Cuentas pendientes";
+    var reservas = ViewBag.Reservas as List<ReservaProducto> ?? new();
+    var totalPendiente = Model.Sum(a => a.Cargos.Sum(c => c.Cantidad * c.Precio)) + reservas.Sum(x => x.Total);
+    var veterinaria = Model.Count(a => a.Area == AreaAtencion.Veterinaria);
+    var spa = Model.Count(a => a.Area == AreaAtencion.Spa);
+}
+<partial name="_Avisos" />
+
+<section class="cuentas-metrics">
+    <article class="metric-card metric-total"><div class="metric-icon"><i class="fas fa-receipt"></i></div><div><span>Cuentas</span><strong>@(Model.Count + reservas.Count)</strong><small>@reservas.Count reservas de productos</small></div></article>
+    <article class="metric-card metric-money"><div class="metric-icon"><i class="fas fa-coins"></i></div><div><span>Total</span><strong>S/. @totalPendiente.ToString("N2")</strong><small>Importe pendiente</small></div></article>
+    <article class="metric-card metric-vet"><div class="metric-icon"><i class="fas fa-stethoscope"></i></div><div><span>Veterinaria</span><strong>@veterinaria</strong><small>Cuentas clínicas</small></div></article>
+    <article class="metric-card metric-spa"><div class="metric-icon"><i class="fab fa-pagelines"></i></div><div><span>Spa</span><strong>@spa</strong><small>Cuentas grooming</small></div></article>
+</section>
+
+<section class="cuentas-card">
+    <div class="cuentas-head">
+        <div class="cuentas-title"><div class="cuentas-icon"><i class="fas fa-wallet"></i></div><div><h2>Cuentas pendientes de cobro</h2><p>Atenciones y productos separados para cobrar desde caja</p></div></div>
+        @if (User.IsInRole("Administrador") || User.IsInRole("Recepcionista"))
+        {
+            <a asp-controller="Reservas" asp-action="Create" class="btn btn-primary">+ Añadir pendiente de pago</a>
+        }
+    </div>
+    <div class="table-responsive cuentas-table-wrap">
+        <table class="table cuentas-table align-middle" data-petmor-list>
+            <thead><tr><th>Atención</th><th>Mascota / propietario</th><th>Área</th><th>Conceptos</th><th>Total</th><th>Método</th><th class="text-end">Cobro</th></tr></thead>
+            <tbody>
+            @foreach(var a in Model)
+            {
+                var total = a.Cargos.Sum(c => c.Cantidad * c.Precio);
+                <tr>
+                    <td><strong>#@a.Id</strong><small>@a.Inicio.ToString("dd/MM/yyyy HH:mm")</small></td>
+                    <td><strong>@a.Mascota.Nombre</strong><small>@a.Mascota.Cliente.Nombre</small></td>
+                    <td><span class="area-pill @(a.Area == AreaAtencion.Spa ? "area-spa" : "area-vet")">@a.Area</span></td>
+                    <td><div class="conceptos-list">@foreach(var c in a.Cargos.Take(2)) { <span>@($"{c.Descripcion} x{c.Cantidad}")</span> }@if(a.Cargos.Count > 2){<small>+ @(a.Cargos.Count - 2) más</small>}</div></td>
+                    <td><strong class="price-text cuenta-total" data-base="@total.ToString(System.Globalization.CultureInfo.InvariantCulture)">S/. @total.ToString("N2")</strong><small class="recargo-line d-none"></small></td>
+                    <td>
+                        <form id="cobro-@a.Id" method="post" asp-action="Cobrar" target="_blank" class="cobro-form js-cobrar-cuenta" data-mascota="@a.Mascota.Nombre" data-base="@total.ToString(System.Globalization.CultureInfo.InvariantCulture)">
+                            <input name="id" value="@a.Id" type="hidden" />
+                            <input name="operacion" value="@a.OperacionCobro" type="hidden" />
+                            <input name="total" value="@total.ToString(System.Globalization.CultureInfo.InvariantCulture)" type="hidden" />
+                            <select name="metodoPago" class="form-select metodo-select" aria-label="Método de pago">
+                                <option>Efectivo</option><option>Tarjeta</option><option>Yape</option><option>Plin</option><option>QR</option>
+                            </select>
+                        </form>
+                    </td>
+                    <td><div class="acciones-cell"><button form="cobro-@a.Id" class="btn btn-cobrar" title="Cobrar cuenta" aria-label="Cobrar cuenta"><i class="fas fa-cash-register"></i></button></div></td>
+                </tr>
+            }
+            @foreach (var r in reservas)
+            {
+                <tr>
+                    <td><strong>Reserva #@r.Id</strong><small>@r.Fecha.ToString("dd/MM/yyyy HH:mm")</small></td>
+                    <td><strong>@r.Cliente.Nombre</strong><small>@r.Observaciones</small></td>
+                    <td><span class="badge bg-warning text-dark">Producto separado</span></td>
+                    <td><strong>@r.Descripcion × @r.Cantidad</strong><small>Stock ya separado</small></td>
+                    <td><strong class="price-text cuenta-total" data-base="@r.Total.ToString(System.Globalization.CultureInfo.InvariantCulture)">S/. @r.Total.ToString("N2")</strong><small class="recargo-line d-none"></small></td>
+                    <td>
+                        @if (User.IsInRole("Administrador") || User.IsInRole("Recepcionista"))
+                        {
+                            <form id="reserva-@r.Id" method="post" asp-controller="Reservas" asp-action="Cobrar" target="_blank" class="js-cobrar-cuenta" data-mascota="@r.Cliente.Nombre" data-base="@r.Total.ToString(System.Globalization.CultureInfo.InvariantCulture)">
+                                <input name="id" value="@r.Id" type="hidden" /><input name="operacion" value="@r.OperacionCobro" type="hidden" /><input name="total" value="@r.Total.ToString(System.Globalization.CultureInfo.InvariantCulture)" type="hidden" />
+                                <select name="metodoPago" class="form-select metodo-select" aria-label="Método de pago"><option>Efectivo</option><option>Tarjeta</option><option>Yape</option><option>Plin</option><option>QR</option></select>
+                            </form>
+                        }
+                    </td>
+                    <td>
+                        @if (User.IsInRole("Administrador") || User.IsInRole("Recepcionista"))
+                        {
+                            <div class="d-flex gap-2 justify-content-end flex-wrap">
+                                <button form="reserva-@r.Id" class="btn btn-primary" type="submit">Cobrar</button>
+                                <form asp-controller="Reservas" asp-action="Cancelar" method="post" data-petmor-confirm="danger" data-title="Cancelar reserva" data-text="¿Cancelar la reserva y liberar las unidades separadas?"><input name="id" value="@r.Id" type="hidden" /><button class="btn btn-outline-danger" type="submit">Cancelar</button></form>
+                            </div>
+                        }
+                    </td>
+                </tr>
+            }
+            @if(Model.Count == 0 && reservas.Count == 0) { <tr><td colspan="7" class="text-center text-muted py-5">No hay cuentas pendientes de cobro.</td></tr> }
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<style>
+    .cuentas-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; margin-bottom: 22px; }
+    .metric-card { min-height: 112px; display: flex; align-items: center; gap: 16px; padding: 20px; border: 1px solid #e5e7eb; border-radius: 12px; background: linear-gradient(135deg, #fff, #fbfdff); }
+    .metric-icon { width: 58px; height: 58px; border-radius: 16px; display: inline-flex; align-items: center; justify-content: center; font-size: 25px; flex: 0 0 auto; }
+    .metric-card span { color: #64748b; font-weight: 900; font-size: .82rem; text-transform: uppercase; letter-spacing: .05em; }
+    .metric-card strong { display: block; margin-top: 2px; color: #0f172a; font-size: 1.8rem; line-height: 1; font-weight: 900; }
+    .metric-card small { display: block; margin-top: 8px; color: #64748b; font-weight: 600; }
+    .metric-total .metric-icon { background: #fff3ea; color: #f06800; }
+    .metric-money .metric-icon { background: #fef3c7; color: #d97706; }
+    .metric-vet .metric-icon { background: #dcfce7; color: #16a34a; }
+    .metric-spa .metric-icon { background: #fce7f3; color: #db2777; }
+    .cuentas-card { border: 1px solid #e5e7eb; border-radius: 14px; background: #fff; overflow: hidden; }
+    .cuentas-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; padding: 18px 20px; border-bottom: 1px solid #e5e7eb; background: linear-gradient(135deg, #fff, #f8fafc); }
+    .cuentas-title { display: flex; align-items: center; gap: 12px; }
+    .cuentas-icon { width: 42px; height: 42px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; background: #fff3ea; color: #f06800; }
+    .cuentas-title h2 { margin: 0; color: #0f172a; font-size: 1.1rem; font-weight: 900; }
+    .cuentas-title p { margin: 3px 0 0; color: #64748b; font-size: .92rem; }
+    .cuentas-table-wrap { margin: 18px; border: 1px solid #e5e7eb; border-radius: 12px; }
+    .cuentas-table { margin: 0; table-layout: fixed; min-width: 1120px; }
+    .cuentas-table thead th { background: #f8fafc; color: #0f172a; font-weight: 900; padding: 16px 18px; border-bottom: 1px solid #e2e8f0; font-size: .88rem; }
+    .cuentas-table tbody td { padding: 18px; border-bottom: 1px solid #e2e8f0; color: #334155; vertical-align: middle; }
+    .cuentas-table tbody tr:last-child td { border-bottom: 0; }
+    .cuentas-table strong { display: block; color: #0f172a; font-weight: 900; }
+    .cuentas-table small { display: block; color: #64748b; margin-top: 3px; }
+    .area-pill { display: inline-flex; align-items: center; gap: 7px; border-radius: 999px; padding: 8px 13px; font-weight: 900; font-size: .8rem; }
+    .area-vet { background: #dcfce7; color: #16a34a; }
+    .area-spa { background: #fce7f3; color: #db2777; }
+    .area-vet::before { content: "\f0f1"; font-family: "Font Awesome 6 Free"; font-weight: 900; }
+    .area-spa::before { content: "\f5bb"; font-family: "Font Awesome 6 Free"; font-weight: 900; }
+    .conceptos-list { display: grid; gap: 3px; }
+    .conceptos-list span { color: #334155; font-weight: 700; }
+    .price-text { font-size: 1.05rem; }
+    .recargo-line { color: #f06800 !important; font-weight: 900; }
+    .metodo-select { min-height: 42px; border-radius: 9px; border-color: #dbe3ee; font-weight: 800; color: #334155; }
+    .acciones-cell { display: flex; justify-content: flex-end; }
+    .btn-cobrar { width: 42px; height: 42px; display: inline-flex; align-items: center; justify-content: center; border-radius: 10px; background: #f06800; border: 1px solid #f06800; color: #fff; }
+    .btn-cobrar:hover { background: #d95f00; color: #fff; }
+    @@media (max-width: 1199.98px) { .cuentas-metrics { grid-template-columns: 1fr 1fr; } }
+    @@media (max-width: 767.98px) { .cuentas-metrics { grid-template-columns: 1fr; } }
+</style>
+
+<script>
+    const recargoTarjetaPct = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(PagoReglas.RecargoTarjetaPct));
+    function formatoSoles(valor) { return 'S/. ' + Number(valor).toFixed(2); }
+    function resumenCobro(form) {
+        const metodo = form.querySelector('[name="metodoPago"]').value;
+        const base = Number(form.dataset.base || 0);
+        const recargo = metodo === 'Tarjeta' ? PetmorImportes.porcentaje(base, recargoTarjetaPct * 100) : 0;
+        return { metodo, base, recargo, total: Number((base + recargo).toFixed(2)) };
+    }
+    document.querySelectorAll('.js-cobrar-cuenta').forEach(form => {
+        const row = form.closest('tr');
+        const totalCell = row.querySelector('.cuenta-total');
+        const recargoLine = row.querySelector('.recargo-line');
+        const actualizar = () => {
+            const resumen = resumenCobro(form);
+            totalCell.textContent = formatoSoles(resumen.total);
+            recargoLine.textContent = resumen.recargo > 0 ? `Incluye recargo tarjeta: ${formatoSoles(resumen.recargo)}` : '';
+            recargoLine.classList.toggle('d-none', resumen.recargo <= 0);
+        };
+        form.querySelector('[name="metodoPago"]').addEventListener('change', actualizar);
+        actualizar();
+    });
+    document.querySelectorAll('.js-cobrar-cuenta').forEach(form => {
+        form.addEventListener('submit', async event => {
+            if (form.dataset.confirmed === 'true') return;
+            event.preventDefault();
+            const resumen = resumenCobro(form);
+            const result = await PetmorUI.confirm({
+                title: 'Confirmar cobro',
+                html: `<div style="text-align:center"><strong>${PetmorImportes.texto(form.dataset.mascota)}</strong><br>Base: ${formatoSoles(resumen.base)}${resumen.recargo > 0 ? `<br>Recargo tarjeta: ${formatoSoles(resumen.recargo)}` : ''}<br><strong>Total: ${formatoSoles(resumen.total)}</strong><br><small>Método: ${PetmorImportes.texto(resumen.metodo)}</small></div>`,
+                confirmButtonText: 'Sí, cobrar',
+                cancelButtonText: 'Cancelar'
+            });
+            if (result.isConfirmed) {
+                form.dataset.confirmed = 'true';
+                form.requestSubmit();
+                setTimeout(() => window.location.reload(), 1200);
+            }
+        });
+    });
+</script>

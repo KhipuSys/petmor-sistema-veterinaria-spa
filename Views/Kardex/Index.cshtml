@@ -1,0 +1,174 @@
+@model IEnumerable<MiniMarket.Web.Models.MovimientoInventario>
+
+@{
+    ViewData["Title"] = "Kardex";
+    var movimientos = Model?.ToList() ?? new List<MiniMarket.Web.Models.MovimientoInventario>();
+    var producto = ViewBag.ProductoObjeto as MiniMarket.Web.Models.Producto;
+    var productoSeleccionado = ViewBag.ProductoSeleccionado?.ToString();
+    var stockGeneral = ViewBag.StockGeneral as int?;
+    var totalEntradas = movimientos.Where(m => m.TipoMovimiento.Contains("ENTRADA") || (m.TipoMovimiento == "AJUSTE" && (m.Referencia ?? "").Contains("ENTRADA"))).Sum(m => m.Cantidad);
+    var totalSalidas = movimientos.Where(m => m.TipoMovimiento.Contains("SALIDA") || m.TipoMovimiento == "VENTA" || (m.TipoMovimiento == "AJUSTE" && (m.Referencia ?? "").Contains("SALIDA"))).Sum(m => m.Cantidad);
+    var ajustes = movimientos.Count(m => m.TipoMovimiento.Contains("AJUSTE"));
+}
+
+<section class="kardex-metrics">
+    <article class="metric-card metric-stock"><div class="metric-icon"><i class="fas fa-boxes-stacked"></i></div><div><span>@(producto != null ? "Stock actual" : "Stock general")</span><strong>@(producto != null ? producto.Stock.ToString("N0") : (stockGeneral?.ToString("N0") ?? "0"))</strong><small>@(producto?.Nombre ?? "Todos los productos")</small></div></article>
+    <article class="metric-card metric-in"><div class="metric-icon"><i class="fas fa-arrow-down"></i></div><div><span>Entradas</span><strong>+@totalEntradas.ToString("N0")</strong><small>Unidades ingresadas</small></div></article>
+    <article class="metric-card metric-out"><div class="metric-icon"><i class="fas fa-arrow-up"></i></div><div><span>Salidas</span><strong>-@totalSalidas.ToString("N0")</strong><small>Unidades descontadas</small></div></article>
+    <article class="metric-card metric-adjust"><div class="metric-icon"><i class="fas fa-sliders-h"></i></div><div><span>Ajustes</span><strong>@ajustes</strong><small>Movimientos manuales</small></div></article>
+</section>
+
+<section class="kardex-card">
+    <div class="kardex-head">
+        <div class="kardex-title"><div class="kardex-icon"><i class="fas fa-exchange-alt"></i></div><div><h2>Kardex de Inventario</h2><p>Trazabilidad de entradas, ventas y ajustes de stock</p></div></div>
+        @if (User.IsInRole("Administrador"))
+        {
+            <a asp-action="Ajuste" class="btn btn-kardex-primary"><i class="fas fa-sliders-h me-2"></i>Ajuste manual</a>
+        }
+    </div>
+
+    <form asp-action="Index" method="get" class="kardex-filter-row">
+        <div class="product-select-shell">
+            <label>Producto a auditar</label>
+            <select name="productoId" class="form-select select2">
+                <option value="">Seleccionar producto</option>
+                @foreach (var item in (SelectList)ViewBag.Productos)
+                {
+                    <option value="@item.Value" selected="@(productoSeleccionado == item.Value)">@item.Text</option>
+                }
+            </select>
+        </div>
+        <div class="date-field"><label>Desde</label><input type="date" name="desde" class="form-control" value="@ViewBag.Desde" /></div>
+        <div class="date-field"><label>Hasta</label><input type="date" name="hasta" class="form-control" value="@ViewBag.Hasta" /></div>
+        <div class="filter-actions">
+            <button type="submit" class="btn btn-kardex-primary" title="Filtrar"><i class="fas fa-filter"></i><span>Filtrar</span></button>
+            <a asp-action="Index" class="btn btn-kardex-secondary" title="Limpiar"><i class="fas fa-rotate-left"></i><span>Limpiar</span></a>
+        </div>
+    </form>
+
+    @if (producto != null)
+    {
+        <div class="product-audit-strip">
+            <div><span>Producto auditado</span><strong>@producto.Nombre</strong></div>
+            <div><span>Código</span><strong>@(string.IsNullOrWhiteSpace(producto.CodigoBarras) ? "Sin código" : producto.CodigoBarras)</strong></div>
+            <div><span>Costo</span><strong>S/. @producto.Costo.ToString("N2")</strong></div>
+            <div><span>Precio</span><strong>S/. @producto.Precio.ToString("N2")</strong></div>
+        </div>
+    }
+
+    <div class="kardex-tools">
+        <span>Filtros rápidos:</span>
+        <button type="button" class="quick-chip active" data-filter="todos"><i class="fas fa-list"></i>Todos</button>
+        <button type="button" class="quick-chip" data-filter="entrada"><i class="fas fa-arrow-down"></i>Entradas</button>
+        <button type="button" class="quick-chip" data-filter="salida"><i class="fas fa-arrow-up"></i>Salidas</button>
+        <button type="button" class="quick-chip" data-filter="ajuste"><i class="fas fa-sliders-h"></i>Ajustes</button>
+        <div class="export-actions">
+            <button type="button" class="export-btn" id="btnExportExcel"><i class="fas fa-file-excel"></i>Excel</button>
+            <button type="button" class="export-btn" id="btnExportPdf"><i class="fas fa-file-pdf"></i>PDF</button>
+            <button type="button" class="export-btn" id="btnExportPrint"><i class="fas fa-print"></i>Imprimir</button>
+        </div>
+    </div>
+
+    <div class="table-responsive kardex-table-wrap">
+        <table class="table kardex-table align-middle" id="tablaKardex">
+            <thead><tr><th>Fecha</th><th>Producto</th><th>Tipo</th><th>Referencia</th><th>Motivo</th><th class="text-center">Cantidad</th><th>Responsable</th></tr></thead>
+            <tbody>
+            @foreach (var item in movimientos)
+            {
+                var referencia = item.Referencia ?? "";
+                var tipo = item.TipoMovimiento ?? "";
+                var esEntrada = tipo == "ENTRADA" || tipo == "AJUSTE-ENTRADA" || (tipo == "AJUSTE" && referencia.Contains("ENTRADA"));
+                var esAjuste = tipo.Contains("AJUSTE");
+                var filtro = esAjuste ? "ajuste" : esEntrada ? "entrada" : "salida";
+                var icono = esEntrada ? "fa-arrow-down" : esAjuste ? "fa-sliders-h" : "fa-arrow-up";
+                <tr data-entrada="@(esEntrada ? "true" : "false")" data-salida="@(!esEntrada ? "true" : "false")" data-ajuste="@(esAjuste ? "true" : "false")">
+                    <td><strong>@item.Fecha.ToString("dd/MM/yyyy")</strong><small>@item.Fecha.ToString("HH:mm:ss")</small></td>
+                    <td><strong>@(item.Producto?.Nombre ?? "Producto")</strong><small><i class="fas fa-barcode me-1"></i>@(string.IsNullOrWhiteSpace(item.Producto?.CodigoBarras) ? "Sin código" : item.Producto.CodigoBarras)</small></td>
+                    <td><span class="move-pill move-@filtro"><i class="fas @icono"></i>@tipo</span></td>
+                    <td><strong>@referencia</strong><small>Movimiento de inventario</small></td>
+                    <td><span class="reason-text">@(string.IsNullOrWhiteSpace(item.Motivo) ? "Sin motivo" : item.Motivo)</span></td>
+                    <td class="text-center"><span class="qty-pill @(esEntrada ? "qty-in" : "qty-out")">@(esEntrada ? "+" : "-")@item.Cantidad.ToString("N0") u.</span></td>
+                    <td><span class="user-pill"><i class="fas fa-user"></i>@(item.Usuario ?? "Sistema")</span></td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+
+    @if (!movimientos.Any())
+    {
+        <div class="kardex-empty"><i class="fas fa-box-open"></i><h3>Sin movimientos registrados</h3><p>No se encontraron entradas ni salidas en el rango seleccionado.</p></div>
+    }
+</section>
+
+<style>
+    .kardex-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; margin-bottom: 22px; }
+    .metric-card { min-height: 112px; display: flex; align-items: center; gap: 16px; padding: 20px; border: 1px solid #e5e7eb; border-radius: 14px; background: linear-gradient(135deg, #fff, #fbfdff); }
+    .metric-icon { width: 58px; height: 58px; border-radius: 16px; display: inline-flex; align-items: center; justify-content: center; font-size: 25px; flex: 0 0 auto; }
+    .metric-card span { color: #64748b; font-weight: 900; font-size: .82rem; text-transform: uppercase; letter-spacing: .05em; }
+    .metric-card strong { display: block; margin-top: 2px; color: #0f172a; font-size: 1.6rem; line-height: 1; font-weight: 900; }
+    .metric-card small { display: block; margin-top: 8px; color: #64748b; font-weight: 600; }
+    .metric-stock .metric-icon { background: #fff3ea; color: #f06800; } .metric-in .metric-icon { background: #ecfdf5; color: #059669; } .metric-out .metric-icon { background: #fee2e2; color: #dc2626; } .metric-adjust .metric-icon { background: #eff6ff; color: #2563eb; }
+    .kardex-card { border: 1px solid #e5e7eb; border-radius: 14px; background: #fff; overflow: hidden; }
+    .kardex-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px 20px; border-bottom: 1px solid #e5e7eb; background: linear-gradient(135deg, #fff, #f8fafc); }
+    .kardex-title { display: flex; align-items: center; gap: 12px; } .kardex-icon { width: 42px; height: 42px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; background: #fff3ea; color: #f06800; }
+    .kardex-title h2 { margin: 0; color: #0f172a; font-size: 1.1rem; font-weight: 900; } .kardex-title p { margin: 3px 0 0; color: #64748b; font-size: .92rem; }
+    .btn-kardex-primary, .btn-kardex-secondary { min-height: 46px; border-radius: 10px; padding: 11px 18px; font-weight: 900; display: inline-flex; align-items: center; justify-content: center; gap: 7px; }
+    .btn-kardex-primary { background: #f06800; border: 1px solid #f06800; color: #fff !important; } .btn-kardex-primary:hover { background: #d95f00; color: #fff !important; }
+    .btn-kardex-secondary { background: #fff; border: 1px solid #fed7aa; color: #f06800 !important; } .btn-kardex-secondary:hover { background: #fff7ed; color: #c2410c !important; }
+    .kardex-filter-row { display: grid; grid-template-columns: minmax(320px, 1fr) 180px 180px 220px; gap: 12px; align-items: end; padding: 16px 20px 0; }
+    .product-select-shell label, .date-field label { display: block; margin-bottom: 7px; color: #111827; font-weight: 900; font-size: .84rem; }
+    .product-select-shell .select2-container--bootstrap-5 .select2-selection, .date-field .form-control { min-height: 46px; border: 1px solid #dbe3ee; border-radius: 10px; color: #334155; font-weight: 800; }
+    .filter-actions { display: flex; gap: 8px; }
+    .product-audit-strip { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 16px 20px 0; padding: 14px; border: 1px solid #fed7aa; border-radius: 12px; background: #fff7ed; }
+    .product-audit-strip span { display: block; color: #9a3412; font-size: .75rem; font-weight: 900; text-transform: uppercase; letter-spacing: .04em; } .product-audit-strip strong { color: #0f172a; font-weight: 900; }
+    .kardex-tools { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 14px 20px 0; color: #475569; font-weight: 900; font-size: .86rem; }
+    .quick-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 6px 12px; border-radius: 999px; border: 1px solid #fed7aa; background: #fff; color: #f06800; font-size: .82rem; font-weight: 900; }
+    .quick-chip.active, .quick-chip:hover { background: #f06800; color: #fff; border-color: #f06800; }
+    .export-actions { display: inline-flex; gap: 8px; flex-wrap: wrap; margin-left: auto; }
+    .export-btn { min-height: 34px; display: inline-flex; align-items: center; gap: 6px; border-radius: 9px; border: 1px solid #fed7aa; background: #fff; color: #f06800; padding: 6px 12px; font-size: .82rem; font-weight: 900; } .export-btn:hover { background: #fff7ed; color: #c2410c; }
+    .kardex-table-wrap { margin: 18px; border: 1px solid #e5e7eb; border-radius: 12px; }
+    .kardex-table { margin: 0; min-width: 1180px; }
+    .kardex-table thead th { background: #f8fafc !important; color: #0f172a; font-weight: 900; padding: 16px 18px; border-bottom: 1px solid #e2e8f0; font-size: .88rem; }
+    .kardex-table tbody td { padding: 18px; border-bottom: 1px solid #e2e8f0; color: #334155; vertical-align: middle; }
+    .kardex-table tbody tr:last-child td { border-bottom: 0; } .kardex-table strong { display: block; color: #0f172a; font-weight: 900; } .kardex-table small { display: block; color: #64748b; margin-top: 3px; }
+    .move-pill, .qty-pill, .user-pill { display: inline-flex; align-items: center; gap: 7px; border-radius: 999px; padding: 8px 13px; font-weight: 900; font-size: .8rem; }
+    .move-entrada, .qty-in { background: #ecfdf5; color: #059669; } .move-salida, .qty-out { background: #fee2e2; color: #dc2626; } .move-ajuste { background: #eff6ff; color: #2563eb; } .user-pill { background: #f1f5f9; color: #334155; }
+    .reason-text { color: #334155; font-weight: 700; }
+    .kardex-empty { display: grid; place-items: center; padding: 44px 16px; text-align: center; color: #64748b; }
+    .kardex-empty i { width: 58px; height: 58px; display: inline-flex; align-items: center; justify-content: center; border-radius: 16px; background: #fff3ea; color: #f06800; font-size: 26px; margin-bottom: 12px; }
+    .kardex-empty h3 { color: #0f172a; font-size: 1.2rem; font-weight: 900; margin: 0; } .kardex-empty p { margin: 6px 0 0; }
+    .dataTables_wrapper { padding: 0 18px 18px; } .dataTables_wrapper .dt-buttons .btn { border-radius: 9px; font-weight: 900; margin-right: 6px; border: 1px solid #fed7aa !important; background: #fff !important; color: #f06800 !important; } .dataTables_filter input, .dataTables_length select { border: 1px solid #dbe3ee; border-radius: 9px; padding: 6px 10px; }
+    @@media (max-width: 1199.98px) { .kardex-metrics, .product-audit-strip { grid-template-columns: 1fr 1fr; } .kardex-filter-row { grid-template-columns: 1fr 1fr; } }
+    @@media (max-width: 767.98px) { .kardex-metrics, .product-audit-strip, .kardex-filter-row { grid-template-columns: 1fr; } .kardex-head { align-items: flex-start; flex-direction: column; } .btn-kardex-primary, .btn-kardex-secondary { width: 100%; } .filter-actions { flex-direction: column; } .export-actions { margin-left: 0; width: 100%; } }
+</style>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            $('.select2').each(function() { PetmorUI.initSelect(this, { kind: 'producto' }); });
+            if ($.fn.DataTable.isDataTable('#tablaKardex')) $('#tablaKardex').DataTable().destroy();
+            let filtroRapido = 'todos';
+            $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
+                if (settings.nTable.id !== 'tablaKardex' || filtroRapido === 'todos') return true;
+                const row = settings.aoData[dataIndex].nTr;
+                if (!row) return true;
+                return row.dataset[filtroRapido] === 'true';
+            });
+            const tabla = $('#tablaKardex').DataTable({
+                dom: PetmorTables.dom,
+                buttons: PetmorTables.exportButtons('Kardex de inventario'),
+                order: [[0, 'desc']],
+            });
+            $('.quick-chip').on('click', function() {
+                $('.quick-chip').removeClass('active');
+                $(this).addClass('active');
+                filtroRapido = $(this).data('filter');
+                tabla.draw();
+            });
+            $('#btnExportExcel').on('click', () => tabla.button('.buttons-excel').trigger());
+            $('#btnExportPdf').on('click', () => tabla.button('.buttons-pdf').trigger());
+            $('#btnExportPrint').on('click', () => tabla.button('.buttons-print').trigger());
+        });
+    </script>
+}

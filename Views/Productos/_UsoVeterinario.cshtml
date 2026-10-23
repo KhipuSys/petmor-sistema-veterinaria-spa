@@ -1,0 +1,25 @@
+@model MiniMarket.Web.Models.Producto
+<div class="producto-section mb-3">
+    <div class="producto-section-head">
+        <span class="producto-section-icon"><i class="fas fa-paw"></i></span>
+        <div>
+            <h6 class="fw-bold mb-0">Uso en veterinaria / spa</h6>
+            <small class="text-muted">Configuracion adicional para uso en veterinaria o spa.</small>
+        </div>
+    </div>
+    <div class="p-3 p-lg-4">
+        <div class="row g-4 align-items-center">
+            <div class="col-lg-6">
+                <label asp-for="Unidad" class="producto-label">Unidad base de inventario</label>
+                <select asp-for="Unidad" class="form-select"><option value="unidad">Unidad</option><option value="ml">Mililitros (ml)</option><option value="g">Gramos (g)</option><option value="kg">Kilogramos (kg)</option><option value="dosis">Dosis</option></select>
+            </div>
+            <div class="col-lg-6">
+                <div class="form-check">
+                    <input class="form-check-input" asp-for="UsoInterno" />
+                    <label class="form-check-label fw-semibold" asp-for="UsoInterno">Insumo de uso interno (no disponible en punto de venta)</label>
+                    <small class="d-block text-muted">Este producto no estara disponible para la venta.</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

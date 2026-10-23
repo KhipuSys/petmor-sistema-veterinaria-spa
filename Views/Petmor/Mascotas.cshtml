@@ -1,0 +1,186 @@
+@model List<MiniMarket.Web.Models.Mascota>
+@using Microsoft.AspNetCore.Mvc.Rendering
+@{
+    ViewData["Title"] = "Mascotas";
+    var totalMascotas = ViewBag.TotalMascotas is int total ? total : Model.Count;
+    ViewData["ResumenTabla"] = $"Mostrando {Model.Count} de {totalMascotas} mascotas";
+    var especies = ViewBag.Especies as List<string> ?? new List<string>();
+    var especieSeleccionada = ViewBag.Especie as string;
+    bool? estadoSeleccionado = ViewBag.Activa as bool?;
+    int? clienteSeleccionado = ViewBag.ClienteId as int?;
+    var fotos = ViewBag.Fotos as Dictionary<int, int> ?? new Dictionary<int, int>();
+}
+
+<div class="mascotas-page">
+    <section class="mascotas-hero">
+        <div class="d-flex align-items-center gap-3">
+            <div class="mascotas-hero__icon"><i class="fas fa-paw"></i></div>
+            <div>
+                <h1>Mascotas</h1>
+                <p>Mascotas y sus propietarios</p>
+            </div>
+        </div>
+        <div class="mascotas-hero__actions">
+            <a class="btn btn-volver-mascotas" asp-controller="Clientes" asp-action="Index"><i class="fas fa-arrow-left me-2"></i>Volver</a>
+            <a class="btn btn-nueva-mascota" asp-action="Mascota" asp-route-clienteId="@clienteSeleccionado"><i class="fas fa-plus me-2"></i>Registrar mascota</a>
+        </div>
+    </section>
+
+    <form method="get" class="mascotas-filtros">
+        <div class="mascotas-search">
+            <i class="fas fa-search"></i>
+            <input class="form-control" name="q" value="@ViewBag.Q" placeholder="Buscar por nombre, especie, raza, propietario o documento..." aria-label="Buscar mascotas" />
+        </div>
+        <select class="form-select filtro-select" name="especie" aria-label="Filtrar por especie">
+            <option value="">Todas las especies</option>
+            @foreach (var especie in especies)
+            {
+                <option value="@especie" selected="@(especie == especieSeleccionada)">@especie</option>
+            }
+        </select>
+        <select class="form-select filtro-select" name="clienteId" asp-items="ViewBag.Clientes" aria-label="Filtrar por propietario">
+            <option value="">Todos los propietarios</option>
+        </select>
+        <select class="form-select filtro-select" name="activa" aria-label="Filtrar por estado">
+            <option value="">Todos los estados</option>
+            <option value="true" selected="@(estadoSeleccionado == true)">Activo</option>
+            <option value="false" selected="@(estadoSeleccionado == false)">Inactivo</option>
+        </select>
+        <button class="btn btn-filtrar" type="submit"><i class="fas fa-filter me-2"></i>Filtrar</button>
+        <a class="btn btn-limpiar" asp-action="Mascotas"><i class="fas fa-eraser me-2"></i>Limpiar</a>
+    </form>
+
+    <section class="mascotas-panel">
+        <div class="table-responsive">
+            <table class="table mascotas-table align-middle">
+                <thead>
+                    <tr>
+                        <th>Mascota</th>
+                        <th>Especie / Raza</th>
+                        <th>Propietario</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var m in Model)
+                    {
+                        var inicial = string.IsNullOrWhiteSpace(m.Nombre) ? "?" : m.Nombre.Trim()[0].ToString().ToUpperInvariant();
+                        fotos.TryGetValue(m.Id, out var fotoId);
+                        var sexoClase = m.Sexo == "Hembra" ? "sexo-hembra" : m.Sexo == "Macho" ? "sexo-macho" : "sexo-neutral";
+                        <tr>
+                            <td>
+                                <div class="mascota-cell">
+                                    <div class="mascota-avatar">
+                                        @if (fotoId > 0)
+                                        {
+                                            <img src="@Url.Action("Archivo", new { id = fotoId })" alt="Foto de @m.Nombre" />
+                                        }
+                                        else
+                                        {
+                                            @inicial
+                                        }
+                                    </div>
+                                    <div>
+                                        <strong>@m.Nombre</strong>
+                                        <span class="sexo-label @sexoClase"><i class="fas @(m.Sexo == "Hembra" ? "fa-venus" : m.Sexo == "Macho" ? "fa-mars" : "fa-venus-mars") me-1"></i>@m.Sexo</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="tipo-cell">
+                                    <div class="tipo-icon"><i class="fas fa-paw"></i></div>
+                                    <div><strong>@m.Especie</strong><span>@m.Raza</span></div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="propietario-cell">
+                                    <div class="propietario-icon"><i class="far fa-user"></i></div>
+                                    <div><strong>@m.Cliente.Nombre</strong><span>Documento: @m.Cliente.Documento</span></div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="estado-badge @(m.Activa ? "estado-activo" : "estado-inactivo")">
+                                    <i class="fas fa-circle"></i>@(m.Activa ? "Activo" : "Inactivo")
+                                </span>
+                            </td>
+                            <td>
+                                <div class="acciones-cell">
+                                    <a class="btn btn-action" asp-action="FichaMascota" asp-route-id="@m.Id" title="Ver ficha"><i class="fas fa-eye"></i></a>
+                                    <a class="btn btn-action" asp-action="Mascota" asp-route-id="@m.Id" title="Editar ficha" aria-label="Editar ficha"><i class="fas fa-pen"></i></a>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                    @if (Model.Count == 0)
+                    {
+                        <tr><td colspan="5" class="text-center py-5 text-muted">No se encontraron mascotas con los filtros aplicados.</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <partial name="_Paginacion" />
+    </section>
+</div>
+
+<style>
+    .mascotas-page { padding: 8px 0 28px; }
+    .mascotas-hero { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 28px 32px; border: 1px solid #e5e7eb; border-radius: 22px; background: #fff; margin-bottom: 28px; }
+    .mascotas-hero__icon { width: 64px; height: 64px; border-radius: 14px; display: inline-flex; align-items: center; justify-content: center; background: #fff3ea; color: #f06800; font-size: 34px; }
+    .mascotas-hero h1 { margin: 0; color: #0f172a; font-size: 2rem; font-weight: 800; }
+    .mascotas-hero p { margin: 4px 0 0; color: #64748b; font-size: 1.05rem; }
+    .mascotas-hero__actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .btn-volver-mascotas { min-height: 52px; border-radius: 10px; padding: 13px 22px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #f06800; color: #f06800; background: #fff; font-weight: 800; text-decoration: none; }
+    .btn-volver-mascotas:hover { background: #fff7ed; color: #c2410c; }
+    .btn-nueva-mascota {
+        min-height: 52px;
+        border-radius: 10px;
+        padding: 13px 24px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        background: #f06800;
+        border: 1px solid #f06800;
+        color: #fff !important;
+        font-weight: 800;
+        text-decoration: none;
+    }
+    .btn-nueva-mascota i { color: #fff !important; }
+    .btn-nueva-mascota:hover, .btn-nueva-mascota:focus { background: #d95f00; border-color: #d95f00; color: #fff !important; }
+    .mascotas-filtros { display: grid; grid-template-columns: minmax(280px, 1fr) 190px 240px 190px auto auto; gap: 12px; align-items: center; margin-bottom: 26px; }
+    .mascotas-search { position: relative; }
+    .mascotas-search i { position: absolute; left: 18px; top: 50%; transform: translateY(-50%); color: #64748b; font-size: 1.15rem; }
+    .mascotas-search .form-control { padding-left: 52px; }
+    .mascotas-search .form-control, .filtro-select, .btn-filtrar, .btn-limpiar { min-height: 52px; border-radius: 10px; font-weight: 700; }
+    .mascotas-search .form-control, .filtro-select { border: 1px solid #cbd5e1; color: #0f172a; }
+    .mascotas-search .form-control:focus, .filtro-select:focus { border-color: #f06800; box-shadow: 0 0 0 .18rem rgba(240, 104, 0, .14) !important; }
+    .btn-filtrar { background: #f06800; color: #fff; border: 1px solid #f06800; padding: 0 18px; }
+    .btn-filtrar:hover { background: #d95f00; border-color: #d95f00; color: #fff; }
+    .btn-limpiar { border: 1px solid #f06800; color: #f06800; background: #fff; padding: 13px 18px; }
+    .btn-limpiar:hover { background: #fff7ed; color: #c2410c; }
+    .mascotas-panel { padding: 26px 32px; border: 1px solid #e5e7eb; border-radius: 18px; background: #fff; }
+    .mascotas-count { color: #334155; font-size: 1rem; margin-bottom: 18px; }
+    .mascotas-table { margin: 0; }
+    .mascotas-table thead th { color: #0f172a; font-size: .98rem; font-weight: 800; padding: 16px 14px; border-bottom: 1px solid #e2e8f0; text-align: center; }
+    .mascotas-table tbody td { padding: 18px 14px; border-bottom: 1px solid #e2e8f0; text-align: center; }
+    .mascotas-table tbody tr:last-child td { border-bottom: 0; }
+    .mascota-cell, .tipo-cell, .propietario-cell { display: flex; align-items: center; justify-content: center; gap: 14px; }
+    .mascota-avatar { width: 56px; height: 56px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; overflow: hidden; background: linear-gradient(135deg, #ffedd5, #fff7ed); color: #f06800; font-size: 1.45rem; font-weight: 900; }
+    .mascota-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .mascota-cell strong, .tipo-cell strong, .propietario-cell strong { display: block; color: #0f172a; font-size: 1.05rem; }
+    .mascota-cell span, .tipo-cell span, .propietario-cell span { display: block; color: #64748b; margin-top: 3px; }
+    .sexo-label.sexo-hembra { color: #ec4899; }
+    .sexo-label.sexo-macho { color: #2563eb; }
+    .sexo-label.sexo-neutral { color: #64748b; }
+    .tipo-icon, .propietario-icon { width: 50px; height: 50px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: #fff3ea; color: #f06800; font-size: 1.2rem; flex: 0 0 auto; }
+    .estado-badge { display: inline-flex; align-items: center; gap: 8px; border-radius: 999px; padding: 8px 14px; font-weight: 800; }
+    .estado-badge i { font-size: .65rem; }
+    .estado-activo { background: #dcfce7; color: #059669; }
+    .estado-inactivo { background: #fee2e2; color: #dc2626; }
+    .acciones-cell { display: flex; justify-content: center; gap: 8px; }
+    .btn-action { width: 42px; height: 42px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #fb923c; border-radius: 9px; color: #f06800; background: #fff; }
+    .btn-action:hover { background: #fff7ed; border-color: #f06800; color: #c2410c; }
+    @@media (max-width: 1199.98px) { .mascotas-filtros { grid-template-columns: 1fr 1fr; } }
+    @@media (max-width: 767.98px) { .mascotas-hero { align-items: flex-start; flex-direction: column; padding: 22px; } .mascotas-hero__actions { display: grid; width: 100%; } .btn-nueva-mascota, .btn-volver-mascotas { width: 100%; } .mascotas-filtros { grid-template-columns: 1fr; } .mascotas-panel { padding: 18px; } }
+</style>

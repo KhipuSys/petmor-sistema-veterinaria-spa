@@ -1,0 +1,126 @@
+@model List<MiniMarket.Web.Models.Atencion>
+@using MiniMarket.Web.Models
+@{
+    ViewData["Title"] = "Reporte de atenciones";
+    var desde = (DateTime)ViewBag.Desde;
+    var hasta = (DateTime)ViewBag.Hasta;
+    var cobradas = Model.Where(a => a.Venta?.Estado == "Activa").ToList();
+    var ingresos = cobradas.Sum(a => a.Venta.Total);
+    var consumo = cobradas.Sum(a => a.Consumos.Sum(c => c.Costo * c.Cantidad));
+    var veterinaria = Model.Count(a => a.Area == AreaAtencion.Veterinaria);
+    var spa = Model.Count(a => a.Area == AreaAtencion.Spa);
+
+    string MotivoCancelacion(Atencion atencion)
+    {
+        var evento = atencion.Eventos?.Where(e => e.Descripcion.StartsWith("Estado: Cancelada.")).OrderByDescending(e => e.Fecha).FirstOrDefault();
+        return atencion.MotivoCancelacionVisible;
+    }
+
+    string AuditoriaCancelacion(Atencion atencion)
+    {
+        var evento = atencion.Eventos?.Where(e => e.Descripcion.StartsWith("Estado: Cancelada.")).OrderByDescending(e => e.Fecha).FirstOrDefault();
+        return atencion.AuditoriaCancelacion;
+    }
+}
+
+<section class="reporte-metrics">
+    <article class="metric-card metric-total"><div class="metric-icon"><i class="fas fa-chart-line"></i></div><div><span>Atenciones</span><strong>@Model.Count</strong><small>Periodo seleccionado</small></div></article>
+    <article class="metric-card metric-money"><div class="metric-icon"><i class="fas fa-coins"></i></div><div><span>Ingresos</span><strong>S/. @ingresos.ToString("N2")</strong><small>Cuentas cobradas</small></div></article>
+    <article class="metric-card metric-vet"><div class="metric-icon"><i class="fas fa-stethoscope"></i></div><div><span>Veterinaria</span><strong>@veterinaria</strong><small>Atenciones clínicas</small></div></article>
+    <article class="metric-card metric-spa"><div class="metric-icon"><i class="fab fa-pagelines"></i></div><div><span>Spa</span><strong>@spa</strong><small>Atenciones grooming</small></div></article>
+</section>
+
+<section class="reporte-filter-card">
+    <div class="reporte-head">
+        <div class="reporte-title"><div class="reporte-icon"><i class="fas fa-chart-line"></i></div><div><h2>Reporte de veterinaria y spa</h2><p>Atenciones iniciadas e ingresos de cuentas cobradas</p></div></div>
+    </div>
+    <form class="reporte-filtros" method="get">
+        <div class="field-wrap"><label>Desde</label><div class="control-wrap"><i class="far fa-calendar-alt"></i><input name="desde" type="date" value="@desde.ToString("yyyy-MM-dd")" class="form-control" aria-label="Desde" /></div></div>
+        <div class="field-wrap"><label>Hasta</label><div class="control-wrap"><i class="fas fa-calendar-check"></i><input name="hasta" type="date" value="@hasta.ToString("yyyy-MM-dd")" class="form-control" aria-label="Hasta" /></div></div>
+        <button class="btn btn-reporte-primary"><i class="fas fa-filter me-2"></i>Consultar</button>
+        <a class="btn btn-reporte-outline" asp-action="Reporte"><i class="fas fa-eraser me-2"></i>Limpiar</a>
+    </form>
+</section>
+
+<section class="area-summary">
+    @foreach(var area in new[]{AreaAtencion.Veterinaria, AreaAtencion.Spa})
+    {
+        var filas = Model.Where(a => a.Area == area).ToList();
+        var areaCobradas = filas.Where(a => a.Venta?.Estado == "Activa").ToList();
+        var areaIngresos = areaCobradas.Sum(a => a.Venta.Total);
+        var areaConsumo = areaCobradas.Sum(a => a.Consumos.Sum(c => c.Costo * c.Cantidad));
+        <article class="area-card @(area == AreaAtencion.Spa ? "area-card-spa" : "area-card-vet")">
+            <div class="area-card-head"><span class="area-pill @(area == AreaAtencion.Spa ? "area-spa" : "area-vet")">@area</span><strong>@filas.Count</strong></div>
+            <div class="area-row"><span>Cobradas</span><strong>@areaCobradas.Count</strong></div>
+            <div class="area-row"><span>Ingresos</span><strong>S/. @areaIngresos.ToString("N2")</strong></div>
+            <div class="area-row"><span>Insumos aplicados</span><strong>S/. @areaConsumo.ToString("N2")</strong></div>
+        </article>
+    }
+</section>
+
+<section class="reporte-table-card">
+    <div class="table-card-head"><div class="reporte-title"><div class="table-icon"><i class="fas fa-table"></i></div><div><h2>Detalle de atenciones</h2><p>@Model.Count registro@(Model.Count == 1 ? "" : "s") encontrado@(Model.Count == 1 ? "" : "s")</p></div></div></div>
+    <div class="table-responsive reporte-table-wrap">
+        <table class="table reporte-table align-middle" data-petmor-list>
+            <thead><tr><th>Fecha</th><th>Mascota / propietario</th><th>Área</th><th>Estado</th><th>Pago</th><th>Ingreso</th></tr></thead>
+            <tbody>
+            @foreach(var a in Model)
+            {
+                var pagada = a.Venta?.Estado == "Activa";
+                <tr>
+                    <td><strong>@a.Inicio.ToString("dd/MM/yyyy")</strong><small>@a.Inicio.ToString("HH:mm")</small></td>
+                    <td><strong>@a.Mascota.Nombre</strong><small>@a.Mascota.Cliente?.Nombre</small></td>
+                    <td><span class="area-pill @(a.Area == AreaAtencion.Spa ? "area-spa" : "area-vet")">@a.Area</span></td>
+                    <td><div class="estado-cell"><span class="estado-pill @(a.Estado == EstadoAtencion.Cancelada ? "estado-cancelada" : a.Estado == EstadoAtencion.Entregada ? "estado-entregada" : a.Estado == EstadoAtencion.Lista ? "estado-lista" : "estado-pendiente")">@a.Estado.Texto()</span>@if (a.Estado == EstadoAtencion.Cancelada) { <button type="button" class="btn reason-eye js-ver-motivo" data-title="Motivo de cancelación" data-audit="@AuditoriaCancelacion(a)" data-reason="@MotivoCancelacion(a)" title="Ver motivo" aria-label="Ver motivo de cancelación"><i class="fas fa-eye"></i></button> }</div></td>
+                    <td><span class="pago-pill @(pagada ? "pago-ok" : "pago-pendiente")">@(pagada ? "Pagada" : "Sin cobro")</span></td>
+                    <td><strong class="price-text">@(pagada ? $"S/. {a.Venta.Total:N2}" : "-")</strong></td>
+                </tr>
+            }
+            @if(Model.Count == 0) { <tr><td colspan="6" class="text-center text-muted py-5">No hay atenciones en el periodo seleccionado.</td></tr> }
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<style>
+    .reporte-metrics, .area-summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; margin-bottom: 22px; }
+    .metric-card, .area-card { min-height: 112px; padding: 20px; border: 1px solid #e5e7eb; border-radius: 12px; background: linear-gradient(135deg, #fff, #fbfdff); }
+    .metric-card { display: flex; align-items: center; gap: 16px; }
+    .metric-icon { width: 58px; height: 58px; border-radius: 16px; display: inline-flex; align-items: center; justify-content: center; font-size: 25px; flex: 0 0 auto; }
+    .metric-card span { color: #64748b; font-weight: 900; font-size: .82rem; text-transform: uppercase; letter-spacing: .05em; }
+    .metric-card strong { display: block; margin-top: 2px; color: #0f172a; font-size: 1.8rem; line-height: 1; font-weight: 900; }
+    .metric-card small { display: block; margin-top: 8px; color: #64748b; font-weight: 600; }
+    .metric-total .metric-icon { background: #fff3ea; color: #f06800; } .metric-money .metric-icon { background: #fef3c7; color: #d97706; } .metric-vet .metric-icon { background: #dcfce7; color: #16a34a; } .metric-spa .metric-icon { background: #fce7f3; color: #db2777; }
+    .reporte-filter-card, .reporte-table-card { border: 1px solid #e5e7eb; border-radius: 14px; background: #fff; margin-bottom: 22px; overflow: hidden; }
+    .reporte-head, .table-card-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px 20px; border-bottom: 1px solid #e5e7eb; background: linear-gradient(135deg, #fff, #f8fafc); }
+    .reporte-title { display: flex; align-items: center; gap: 12px; }
+    .reporte-icon, .table-icon { width: 42px; height: 42px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; background: #fff3ea; color: #f06800; }
+    .table-icon { background: #eff6ff; color: #2563eb; }
+    .reporte-title h2 { margin: 0; color: #0f172a; font-size: 1.1rem; font-weight: 900; }
+    .reporte-title p { margin: 3px 0 0; color: #64748b; font-size: .92rem; }
+    .reporte-filtros { display: grid; grid-template-columns: 1fr 1fr auto auto; gap: 14px; align-items: end; padding: 18px 20px; }
+    .field-wrap label { display: block; margin-bottom: 8px; color: #0f172a; font-weight: 900; font-size: .86rem; }
+    .control-wrap { position: relative; } .control-wrap i { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #64748b; z-index: 2; }
+    .control-wrap .form-control { min-height: 52px; border-radius: 10px; padding-left: 42px; border-color: #dbe3ee; color: #334155; font-weight: 700; }
+    .btn-reporte-primary, .btn-reporte-outline { min-height: 52px; border-radius: 10px; padding: 13px 22px; font-weight: 900; }
+    .btn-reporte-primary { background: #f06800; border: 1px solid #f06800; color: #fff !important; } .btn-reporte-primary:hover { background: #d95f00; color: #fff !important; }
+    .btn-reporte-outline { border: 1px solid #f06800; background: #fff; color: #f06800; } .btn-reporte-outline:hover { background: #fff7ed; color: #c2410c; }
+    .area-card-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; } .area-card-head strong { color: #0f172a; font-size: 1.8rem; font-weight: 900; }
+    .area-row { display: flex; align-items: center; justify-content: space-between; padding: 7px 0; border-top: 1px solid #eef2f7; } .area-row span { color: #64748b; font-weight: 700; } .area-row strong { color: #0f172a; }
+    .area-pill, .estado-pill, .pago-pill { display: inline-flex; align-items: center; gap: 7px; border-radius: 999px; padding: 8px 13px; font-weight: 900; font-size: .8rem; }
+    .estado-cell { display: inline-flex; align-items: center; gap: 8px; }
+    .reason-eye { width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; border: 1px solid #fecaca; background: #fff; color: #dc2626; padding: 0; }
+    .reason-eye:hover { background: #fef2f2; color: #b91c1c; border-color: #fca5a5; }
+    .area-vet { background: #dcfce7; color: #16a34a; } .area-spa { background: #fce7f3; color: #db2777; }
+    .area-vet::before { content: "\f0f1"; font-family: "Font Awesome 6 Free"; font-weight: 900; } .area-spa::before { content: "\f5bb"; font-family: "Font Awesome 6 Free"; font-weight: 900; }
+    .estado-pendiente { background: #eff6ff; color: #2563eb; } .estado-lista { background: #dcfce7; color: #059669; } .estado-entregada { background: #ecfdf5; color: #047857; } .estado-cancelada { background: #fee2e2; color: #dc2626; }
+    .pago-ok { background: #ecfdf5; color: #059669; } .pago-pendiente { background: #f1f5f9; color: #475569; }
+    .reporte-table-wrap { margin: 18px; border: 1px solid #e5e7eb; border-radius: 12px; }
+    .reporte-table { margin: 0; table-layout: fixed; min-width: 980px; }
+    .reporte-table thead th { background: #f8fafc; color: #0f172a; font-weight: 900; padding: 16px 18px; border-bottom: 1px solid #e2e8f0; font-size: .88rem; }
+    .reporte-table tbody td { padding: 18px; border-bottom: 1px solid #e2e8f0; color: #334155; vertical-align: middle; }
+    .reporte-table tbody tr:last-child td { border-bottom: 0; } .reporte-table strong { display: block; color: #0f172a; font-weight: 900; } .reporte-table small { display: block; color: #64748b; margin-top: 3px; }
+    .price-text { color: #0f172a; }
+    @@media (max-width: 1199.98px) { .reporte-metrics, .area-summary { grid-template-columns: 1fr 1fr; } .reporte-filtros { grid-template-columns: 1fr 1fr; } }
+    @@media (max-width: 767.98px) { .reporte-metrics, .area-summary, .reporte-filtros { grid-template-columns: 1fr; } .btn-reporte-primary, .btn-reporte-outline { width: 100%; } }
+</style>

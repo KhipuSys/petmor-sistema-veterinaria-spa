@@ -1,0 +1,63 @@
+@model MiniMarket.Web.Models.ReservaForm
+@using MiniMarket.Web.Models
+@{
+    ViewData["Title"] = "Añadir pendiente de pago";
+    var cliente = ViewBag.Cliente as Cliente;
+    var producto = ViewBag.Producto as Producto;
+}
+<div class="card mx-auto" style="max-width:900px">
+    <div class="card-header p-4"><h1 class="h4 mb-2">Añadir pendiente de pago</h1><p class="mb-0 text-muted">Separa un producto para un cliente. Se cobrará después desde Cuentas pendientes.</p></div>
+    <div class="card-body p-4">
+        <form method="post" asp-action="Create" id="reservaForm">
+            <div asp-validation-summary="All" class="text-danger mb-3"></div>
+            <input asp-for="OperacionId" type="hidden" />
+            @{ ViewData["LecturasCantidad"] = "#Cantidad"; ViewData["LecturasProducto"] = "#ProductoId"; ViewBag.Lecturas = Model.Lecturas; }
+            <partial name="_Lecturas" />
+            <div class="mb-3">
+                <label asp-for="ClienteId" class="form-label fw-bold">Cliente</label>
+                <select asp-for="ClienteId" class="form-select" required><option value="">Escribe para buscar cliente</option>
+                    @if (cliente != null) { <option value="@cliente.Id" selected>@cliente.Nombre · @cliente.Documento</option> }
+                </select>
+            </div>
+            <div class="mb-3">
+                <label asp-for="ProductoId" class="form-label fw-bold">Producto</label>
+                <select asp-for="ProductoId" class="form-select" required><option value="">Escribe o escanea para buscar producto</option>
+                    @if (producto != null) { <option value="@producto.Id" selected>@producto.Nombre · @producto.CodigoBarras</option> }
+                </select>
+            </div>
+            <div class="row g-3 mb-3">
+                <div class="col-md-4"><label asp-for="Cantidad" class="form-label fw-bold">Unidades leídas a separar</label><input asp-for="Cantidad" type="number" min="1" max="2000" step="1" class="form-control" readonly required /></div>
+                <div class="col-md-8 d-flex align-items-end"><p id="resumenReserva" class="mb-2 text-muted" aria-live="polite">El precio se fijará al guardar la reserva.</p></div>
+            </div>
+            <div class="mb-3"><label asp-for="Observaciones" class="form-label fw-bold">Referencia / observaciones</label><textarea asp-for="Observaciones" class="form-control" maxlength="300" rows="2" placeholder="Por ejemplo: nombre o contacto de quien recogerá el producto"></textarea></div>
+            <p class="text-muted mb-3">Las unidades se restarán del stock disponible de esta sede. No se registra ingreso en caja hasta cobrar. Al cancelar, las unidades se liberan.</p>
+            <div class="d-flex gap-2 justify-content-end"><a asp-controller="Petmor" asp-action="Cuentas" class="btn btn-outline-secondary">Volver</a><button class="btn btn-primary" type="submit">Separar y guardar pendiente</button></div>
+        </form>
+    </div>
+</div>
+@section Scripts {
+    <script src="~/js/lecturas.js" asp-append-version="true"></script>
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        $(function () {
+            PetmorUI.initSelect(document.getElementById('ClienteId'), { kind: 'cliente',
+                ajax: { url: '@Url.Action("BuscarClientes", "Ventas")', dataType: 'json', delay: 250,
+                    data: p => ({ term: p.term, page: p.page || 1 }), processResults: data => data } });
+            PetmorUI.initSelect(document.getElementById('ProductoId'), { kind: 'producto',
+                ajax: { url: '@Url.Action("BuscarProductos", "Ventas")', dataType: 'json', delay: 250,
+                    data: p => ({ term: p.term, page: p.page || 1 }), processResults: data => data } });
+            let precio = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(producto?.Precio));
+            let stock = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(producto?.Stock));
+            function resumen() {
+                if (precio === null) return;
+                $('#resumenReserva').text(`Disponible: ${stock} · Precio: S/. ${Number(precio).toFixed(2)} · Total: S/. ${(Number(precio) * Number($('#Cantidad').val() || 0)).toFixed(2)}`);
+            }
+            $('#ProductoId').on('select2:select', e => { precio = e.params.data.precio; stock = e.params.data.stock; resumen(); });
+            $('#Cantidad').on('input', resumen);
+            resumen();
+            document.getElementById('reservaForm').addEventListener('keydown', e => {
+                if (e.key === 'Enter' && e.target.matches('input')) e.preventDefault();
+            });
+        });
+    </script>
+}

@@ -1,0 +1,184 @@
+@model List<MiniMarket.Web.Models.Atencion>
+@using MiniMarket.Web.Models
+@using System.Security.Claims
+@{
+    var responsables = ViewBag.Responsables as IDictionary<string, string> ?? new Dictionary<string, string>();
+    var fotos = ViewBag.Fotos as Dictionary<int, int> ?? new Dictionary<int, int>();
+    var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+    var operativo = new[] { "Administrador", "Recepcionista", "Veterinario", "Groomer" }.Any(User.IsInRole);
+    var mostrarAcciones = ViewBag.MostrarAccionesAgenda as bool? ?? true;
+    var returnUrl = Context.Request.Path + Context.Request.QueryString;
+
+    string MotivoCancelacion(Atencion atencion)
+    {
+        var evento = atencion.Eventos?.Where(e => e.Descripcion.StartsWith("Estado: Cancelada.")).OrderByDescending(e => e.Fecha).FirstOrDefault();
+        return atencion.MotivoCancelacionVisible;
+    }
+
+    string AuditoriaCancelacion(Atencion atencion)
+    {
+        var evento = atencion.Eventos?.Where(e => e.Descripcion.StartsWith("Estado: Cancelada.")).OrderByDescending(e => e.Fecha).FirstOrDefault();
+        return atencion.AuditoriaCancelacion;
+    }
+}
+<div class="table-responsive">
+    <table class="table agenda-table align-middle" data-petmor-list>
+        <thead>
+            <tr>
+                <th>Horario</th>
+                <th>Mascota / propietario</th>
+                <th>Servicio</th>
+                <th>Área</th>
+                <th>Responsable</th>
+                <th>Estado</th>
+                @if (mostrarAcciones) { <th class="text-end">Acciones</th> }
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var a in Model)
+            {
+                var servicio = a.Cargos.FirstOrDefault(x => x.Producto?.EsServicio == true)?.Descripcion ?? a.Motivo;
+                var estadoClase = a.Estado switch
+                {
+                    EstadoAtencion.Cancelada => "estado-cancelada",
+                    EstadoAtencion.Entregada => "estado-entregada",
+                    EstadoAtencion.Lista => "estado-lista",
+                    EstadoAtencion.EnAtencion => "estado-atencion",
+                    _ => "estado-pendiente"
+                };
+                <tr>
+                    <td><div class="time-cell"><i class="far fa-clock"></i><div><strong>@a.Inicio.ToString("dd/MM HH:mm")</strong><small>hasta @a.FinPrevisto.ToString("HH:mm")</small></div></div></td>
+                    <td><div class="pet-cell"><div class="pet-avatar">@if (fotos.TryGetValue(a.MascotaId, out var fotoId)) { <img src="@Url.Action("Archivo", "Petmor", new { id = fotoId })" alt="Foto de @a.Mascota.Nombre" /> } else { <i class="fas fa-paw"></i> }</div><div><strong>@a.Mascota.Nombre</strong><small>@a.Mascota.Cliente.Nombre</small></div></div></td>
+                    <td>@servicio</td>
+                    <td><span class="area-pill @(a.Area == AreaAtencion.Spa ? "area-spa" : "area-vet")">@a.Area</span></td>
+                    <td><div class="responsable-cell"><i class="far fa-user"></i><span>@(responsables.TryGetValue(a.ResponsableId, out var responsable) ? responsable : "-")</span></div></td>
+                    <td><div class="estado-cell"><span class="estado-pill @estadoClase">@a.Estado.Texto()</span>@if (a.Estado == EstadoAtencion.Cancelada) { <button type="button" class="btn reason-eye js-ver-motivo" data-title="Motivo de cancelación" data-audit="@AuditoriaCancelacion(a)" data-reason="@MotivoCancelacion(a)" title="Ver motivo" aria-label="Ver motivo de cancelación"><i class="fas fa-eye"></i></button> }</div></td>
+                    @if (mostrarAcciones) { <td>
+                        <div class="acciones-cell">
+                            @if (operativo && a.Estado == EstadoAtencion.EnEspera)
+                            { <form method="post" asp-controller="Petmor" asp-action="Estado" class="js-agenda-estado" data-confirm-title="Iniciar servicio" data-confirm-text="¿Deseas iniciar la atención de @a.Mascota.Nombre?"><input name="id" value="@a.Id" type="hidden" /><input name="estado" value="EnAtencion" type="hidden" /><input name="returnUrl" value="@returnUrl" type="hidden" /><button class="btn btn-action-icon btn-action-main" title="Iniciar atención" aria-label="Iniciar atención"><i class="fas fa-play"></i></button></form> }
+                            else
+                            { <button class="btn btn-action-icon btn-action-main" title="Iniciar atención" aria-label="Iniciar atención" disabled><i class="fas fa-play"></i></button> }
+
+                            @if (operativo && a.Estado is EstadoAtencion.Programada or EstadoAtencion.Confirmada or EstadoAtencion.EnEspera)
+                            { <form method="post" asp-controller="Petmor" asp-action="Estado" class="js-agenda-cancelar"><input name="id" value="@a.Id" type="hidden" /><input name="estado" value="Cancelada" type="hidden" /><input name="returnUrl" value="@returnUrl" type="hidden" /><input name="motivo" type="hidden" /><button class="btn btn-action-icon btn-action-danger" title="Cancelar cita" aria-label="Cancelar cita"><i class="fas fa-ban"></i></button></form> }
+                            else
+                            { <button class="btn btn-action-icon btn-action-danger" title="Cancelar cita" aria-label="Cancelar cita" disabled><i class="fas fa-ban"></i></button> }
+
+                            @if (operativo && a.Estado == EstadoAtencion.EnAtencion)
+                            { <form method="post" asp-controller="Petmor" asp-action="Estado" class="js-agenda-estado" data-confirm-title="Finalizar atención" data-confirm-text="¿Deseas finalizar la atención de @a.Mascota.Nombre?"><input name="id" value="@a.Id" type="hidden" /><input name="estado" value="Lista" type="hidden" /><input name="returnUrl" value="@returnUrl" type="hidden" /><button class="btn btn-action-icon btn-action-finish" title="Finalizar atención" aria-label="Finalizar atención"><i class="fas fa-stop"></i></button></form> }
+                            else
+                            { <button class="btn btn-action-icon btn-action-finish" title="Finalizar atención" aria-label="Finalizar atención" disabled><i class="fas fa-stop"></i></button> }
+
+                            @if (operativo && a.Estado == EstadoAtencion.Lista)
+                            { <form method="post" asp-controller="Petmor" asp-action="Estado" class="js-agenda-estado" data-confirm-title="Marcar completado" data-confirm-text="¿Deseas marcar como completada la atención de @a.Mascota.Nombre?"><input name="id" value="@a.Id" type="hidden" /><input name="estado" value="Entregada" type="hidden" /><input name="returnUrl" value="@returnUrl" type="hidden" /><button class="btn btn-action-icon btn-action-complete" title="Marcar completado" aria-label="Marcar completado"><i class="fas fa-check"></i></button></form> }
+                            else
+                            { <button class="btn btn-action-icon btn-action-complete" title="Marcar completado" aria-label="Marcar completado" disabled><i class="fas fa-check"></i></button> }
+                        </div>
+                    </td> }
+                </tr>
+            }
+            @if (Model.Count == 0)
+            {
+                <tr><td colspan="@(mostrarAcciones ? 7 : 6)" class="text-center text-muted py-5">No hay atenciones con los filtros seleccionados.</td></tr>
+            }
+        </tbody>
+    </table>
+</div>
+<style>
+    .agenda-table { min-width: 1080px; }
+    .agenda-table thead th { background: #f8fafc; color: #0f172a; font-weight: 900; padding: 16px 18px; border-bottom: 1px solid #e2e8f0; font-size: .88rem; }
+    .agenda-table tbody td { padding: 18px; border-bottom: 1px solid #e2e8f0; color: #334155; vertical-align: middle; }
+    .agenda-table tbody tr:last-child td { border-bottom: 0; }
+    .time-cell, .pet-cell, .responsable-cell { display: flex; align-items: center; gap: 10px; }
+    .time-cell i { color: #64748b; font-size: 18px; }
+    .time-cell strong, .pet-cell strong { display: block; color: #0f172a; font-weight: 900; }
+    .time-cell small, .pet-cell small { display: block; color: #64748b; font-size: .8rem; margin-top: 3px; }
+    .pet-avatar { width: 46px; height: 46px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; overflow: hidden; background: linear-gradient(135deg, #ffedd5, #fff7ed); color: #f06800; font-size: 1.1rem; flex: 0 0 auto; border: 2px solid #fff3ea; }
+    .pet-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .responsable-cell i { color: #64748b; }
+    .responsable-cell span { color: #334155; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .area-pill, .estado-pill { display: inline-flex; align-items: center; border-radius: 999px; padding: 8px 13px; font-weight: 900; font-size: .8rem; }
+    .estado-cell { display: inline-flex; align-items: center; gap: 8px; }
+    .reason-eye { width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; border: 1px solid #fecaca; background: #fff; color: #dc2626; padding: 0; }
+    .reason-eye:hover { background: #fef2f2; color: #b91c1c; border-color: #fca5a5; }
+    .area-vet { background: #dcfce7; color: #16a34a; }
+    .area-spa { background: #fce7f3; color: #db2777; }
+    .area-vet::before { content: "\f0f1"; font-family: "Font Awesome 6 Free"; font-weight: 900; margin-right: 7px; }
+    .area-spa::before { content: "\f5bb"; font-family: "Font Awesome 6 Free"; font-weight: 900; margin-right: 7px; }
+    .estado-pendiente { background: #eff6ff; color: #2563eb; }
+    .estado-pendiente::before, .estado-atencion::before, .estado-lista::before, .estado-entregada::before, .estado-cancelada::before { font-family: "Font Awesome 6 Free"; font-weight: 900; margin-right: 7px; }
+    .estado-pendiente::before { content: "\f017"; }
+    .estado-atencion { background: #dbeafe; color: #2563eb; }
+    .estado-atencion::before { content: "\f04b"; }
+    .estado-lista { background: #dcfce7; color: #059669; }
+    .estado-lista::before { content: "\f00c"; }
+    .estado-entregada { background: #ecfdf5; color: #047857; }
+    .estado-entregada::before { content: "\f058"; }
+    .estado-cancelada { background: #fee2e2; color: #dc2626; }
+    .estado-cancelada::before { content: "\f00d"; }
+    .acciones-cell { display: flex; justify-content: flex-end; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .btn-action { width: 42px; height: 42px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #fb923c; border-radius: 9px; color: #f06800; background: #fff; }
+    .btn-action:hover { background: #fff7ed; color: #c2410c; }
+    .btn-action-text { min-height: 38px; border-radius: 9px; border: 1px solid #fed7aa; color: #f06800; background: #fff; font-weight: 800; padding: 8px 12px; }
+    .btn-action-text:hover { background: #fff7ed; color: #c2410c; }
+    .btn-action-icon { width: 42px; height: 42px; display: inline-flex; align-items: center; justify-content: center; border-radius: 10px; font-size: .95rem; }
+    .btn-action-icon:disabled { opacity: .35; cursor: not-allowed; filter: grayscale(.35); }
+    .btn-action-main { background: #f06800; border: 1px solid #f06800; color: #fff; }
+    .btn-action-main:hover { background: #d95f00; border-color: #d95f00; color: #fff; }
+    .btn-action-danger { border: 1px solid #fecaca; color: #dc2626; background: #fff; }
+    .btn-action-danger:hover { background: #fef2f2; color: #b91c1c; }
+    .btn-action-finish { border: 1px solid #fed7aa; color: #f06800; background: #fff7ed; }
+    .btn-action-finish:hover { background: #ffedd5; color: #c2410c; }
+    .btn-action-complete { border: 1px solid #bbf7d0; color: #16a34a; background: #f0fdf4; }
+    .btn-action-complete:hover { background: #dcfce7; color: #15803d; }
+</style>
+<script>
+    document.querySelectorAll('.js-agenda-estado').forEach(form => {
+        form.addEventListener('submit', async event => {
+            if (form.dataset.confirmed === 'true') return;
+            event.preventDefault();
+            const result = await Swal.fire({
+                title: form.dataset.confirmTitle || 'Confirmar acción',
+                text: form.dataset.confirmText || '¿Deseas continuar?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, continuar',
+                cancelButtonText: 'No',
+                confirmButtonColor: '#f06800',
+                cancelButtonColor: '#64748b'
+            });
+            if (result.isConfirmed) {
+                form.dataset.confirmed = 'true';
+                form.requestSubmit();
+            }
+        });
+    });
+
+    document.querySelectorAll('.js-agenda-cancelar').forEach(form => {
+        form.addEventListener('submit', async event => {
+            if (form.dataset.confirmed === 'true') return;
+            event.preventDefault();
+            const result = await Swal.fire({
+                title: 'Cancelar cita',
+                text: 'Indica el motivo de cancelación.',
+                input: 'textarea',
+                inputPlaceholder: 'Motivo de cancelación',
+                inputAttributes: { maxlength: 300 },
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, cancelar',
+                cancelButtonText: 'Volver',
+                confirmButtonColor: '#dc2626',
+                cancelButtonColor: '#64748b',
+                inputValidator: value => !value || !value.trim() ? 'Ingresa el motivo de cancelación.' : undefined
+            });
+            if (result.isConfirmed) {
+                form.querySelector('input[name="motivo"]').value = result.value.trim();
+                form.dataset.confirmed = 'true';
+                form.requestSubmit();
+            }
+        });
+    });
+
+</script>

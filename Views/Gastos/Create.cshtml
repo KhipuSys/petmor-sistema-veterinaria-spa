@@ -1,0 +1,62 @@
+@model MiniMarket.Web.Models.Gasto
+
+@{
+    ViewData["Title"] = "Registrar Gasto";
+}
+
+<section class="gasto-form-shell">
+    <div class="gasto-form-card">
+        <div class="gasto-form-head">
+            <div class="gasto-form-title"><div class="gasto-form-icon"><i class="fas fa-hand-holding-usd"></i></div><div><h2>Registrar Gasto</h2><p>Salida de dinero asociada a la caja abierta</p></div></div>
+            <a asp-controller="Caja" asp-action="Index" class="btn btn-gasto-secondary"><i class="fas fa-arrow-left me-2"></i>Volver a caja</a>
+        </div>
+        <form asp-action="Create" class="gasto-form-body">
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+            <p class="gasto-note"><i class="fas fa-circle-info"></i><span>El monto se registra como salida de caja y quedará visible en el historial de gastos.</span></p>
+            <div class="row g-4">
+                <div class="col-lg-8">
+                    <label asp-for="Concepto" class="form-label">Concepto del gasto</label>
+                    <div class="field-shell"><i class="fas fa-file-signature"></i><input asp-for="Concepto" class="form-control" placeholder="Ej. viáticos, útiles, movilidad" autocomplete="off" required /></div>
+                    <span asp-validation-for="Concepto" class="text-danger small"></span>
+                </div>
+                <div class="col-lg-4">
+                    <label asp-for="Monto" class="form-label">Monto extraído</label>
+                    <div class="field-shell amount-shell"><span>S/.</span><input asp-for="Monto" class="form-control" type="number" step="0.10" min="0.10" placeholder="0.00" required /></div>
+                    <span asp-validation-for="Monto" class="text-danger small"></span>
+                </div>
+            </div>
+            <div class="gasto-actions">
+                <button type="submit" class="btn btn-gasto-primary"><i class="fas fa-check me-2"></i>Registrar salida</button>
+                <a asp-controller="Gastos" asp-action="Index" class="btn btn-gasto-secondary"><i class="fas fa-clock-rotate-left me-2"></i>Ver historial</a>
+            </div>
+        </form>
+    </div>
+</section>
+
+<style>
+    .gasto-form-shell { max-width: 980px; margin: 0 auto; }
+    .gasto-form-card { border: 1px solid #e5e7eb; border-radius: 14px; background: #fff; overflow: hidden; }
+    .gasto-form-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 20px; border-bottom: 1px solid #e5e7eb; background: linear-gradient(135deg, #fff, #f8fafc); }
+    .gasto-form-title { display: flex; align-items: center; gap: 12px; }
+    .gasto-form-icon { width: 46px; height: 46px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; background: #fff3ea; color: #f06800; font-size: 20px; }
+    .gasto-form-title h2 { margin: 0; color: #0f172a; font-size: 1.2rem; font-weight: 900; }
+    .gasto-form-title p { margin: 3px 0 0; color: #64748b; font-weight: 600; }
+    .gasto-form-body { padding: 22px; }
+    .gasto-note { display: flex; align-items: center; gap: 10px; margin-bottom: 22px; color: #64748b; font-weight: 700; }
+    .field-shell { position: relative; }
+    .field-shell i { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #64748b; pointer-events: none; }
+    .field-shell .form-control { min-height: 52px; padding-left: 42px; font-weight: 800; }
+    .amount-shell span { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #dc2626; font-weight: 900; }
+    .amount-shell .form-control { padding-left: 48px; color: #dc2626; text-align: right; font-size: 1.15rem; font-weight: 900; }
+    .gasto-actions { display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap; margin-top: 24px; padding-top: 20px; border-top: 1px solid #e5e7eb; }
+    .btn-gasto-primary, .btn-gasto-secondary { min-height: 46px; border-radius: 10px; padding: 11px 18px; font-weight: 900; }
+    .btn-gasto-primary { background: #f06800; border: 1px solid #f06800; color: #fff !important; }
+    .btn-gasto-primary:hover { background: #d95f00; color: #fff !important; }
+    .btn-gasto-secondary { background: #fff; border: 1px solid #fed7aa; color: #f06800 !important; }
+    .btn-gasto-secondary:hover { background: #fff7ed; color: #c2410c !important; }
+    @@media (max-width: 767.98px) { .gasto-form-head { align-items: flex-start; flex-direction: column; } .btn-gasto-secondary, .btn-gasto-primary { width: 100%; } .gasto-actions { flex-direction: column; } }
+</style>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
