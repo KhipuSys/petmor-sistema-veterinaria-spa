@@ -10,11 +10,20 @@
 bak - copia/
 assets/
 foto productos/
-Docs/
-docs/pdf/
 wwwroot/imagenes/productos/
 Deploy-MonsterASP.ps1
 Deploy-Petmor.ps1
+
+# Local audit material not part of the academic deliverables
+Docs/AUDITORIA_2026-09-29.md
+Docs/CORRECCIONES_AUDITORIA_2026-09-29.md
+Docs/CodigosYLecturas.md
+Docs/FLUJO-PETMOR.md
+Docs/Operaciones-comerciales.md
+Docs/ReservasYCaducidad.md
+Docs/SUCURSALES.md
+Docs/QA/
+Docs/PDF/11_FLUJO_APROBACION_CAMBIO.pdf
 deploy_resume.py
 
 # Playwright dependencies used only for local QA

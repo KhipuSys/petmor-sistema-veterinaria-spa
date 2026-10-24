@@ -1,0 +1,9 @@
+flowchart LR
+    U[Usuario] --> V[Razor Views]
+    V --> C[Controllers]
+    C --> S[Services]
+    S --> D[ApplicationDbContext]
+    D --> DB[(Petmor_BD)]
+    C --> I[ASP.NET Identity]
+    I --> DB
+    S --> F[Factiliza API]

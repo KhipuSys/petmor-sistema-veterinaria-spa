@@ -1,0 +1,13 @@
+flowchart TD
+    A[Solicitud RFC] --> B[Revision funcional]
+    B --> C{Cumple objetivo?}
+    C -- No --> A
+    C -- Si --> D[Revision tecnica y riesgos]
+    D --> E{Riesgo aceptable?}
+    E -- No --> A
+    E -- Si --> F[Aprobacion]
+    F --> G[Implementacion]
+    G --> H[Pruebas y revision]
+    H --> I{Correcto?}
+    I -- No --> G
+    I -- Si --> J[Merge y verificacion]
