@@ -125,9 +125,11 @@ var extension = await ImagenSubida.Extension(model.LogoUpload);
 Los casos de uso se separaron en `AtencionService`, `ReservaService`,
 `OperacionVentaService`, `EmisionVentaService` e `ImagenSubida`.
 
-### Abierto/Cerrado
+### 9.3 Aplicacion OCP (Abierto/Cerrado)
 
-Antes, cada flujo podia contener su propia condicion de pago:
+La aplicacion OCP se realiza mediante interfaces y estrategias para calcular
+recargos por medio de pago. Antes, cada flujo podia contener su propia
+condicion:
 
 ```csharp
 var recargo = metodoPago == "Tarjeta"
@@ -135,15 +137,34 @@ var recargo = metodoPago == "Tarjeta"
     : 0m;
 ```
 
-Despues, la regla se mantiene en `PagoReglas`:
+Despues, el calculador depende de una interfaz y recibe las estrategias por
+inyeccion de dependencias:
 
 ```csharp
-public static decimal CalcularRecargo(string metodoPago, decimal baseCobro) =>
-    metodoPago == "Tarjeta"
-        ? decimal.Round(baseCobro * RecargoTarjetaPct, 2,
-            MidpointRounding.AwayFromZero)
-        : 0m;
+public interface IRecargoStrategy
+{
+    bool Aplica(string metodoPago);
+    decimal Calcular(decimal baseCobro);
+}
+
+public sealed class RecargoTarjetaStrategy : IRecargoStrategy
+{
+    public bool Aplica(string metodoPago) => metodoPago == "Tarjeta";
+    public decimal Calcular(decimal baseCobro) =>
+        decimal.Round(baseCobro * 0.05m, 2, MidpointRounding.AwayFromZero);
+}
+
+public sealed class CalculadorRecargo(IEnumerable<IRecargoStrategy> estrategias)
+{
+    public decimal Calcular(string metodoPago, decimal baseCobro) =>
+        estrategias.First(x => x.Aplica(metodoPago)).Calcular(baseCobro);
+}
 ```
+
+Para agregar `Transferencia`, se crea `RecargoTransferenciaStrategy` y se
+registra `builder.Services.AddScoped<IRecargoStrategy, RecargoTransferenciaStrategy>()`.
+No se modifica `OperacionVentaService`, por lo que el codigo estable queda
+cerrado a cambios y el comportamiento queda abierto a nuevas estrategias.
 
 ### Inversion de control
 
