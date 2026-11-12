@@ -1,12 +1,10 @@
 using System.Diagnostics;
+using System.Buffers.Binary;
 using System.Net;
 using System.Net.Sockets;
+using System.Security.Cryptography;
 using System.Text.RegularExpressions;
-using Microsoft.AspNetCore.DataProtection;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Petmor.Web.Data;
 
 static class AuthyTwoFactorTests
@@ -41,29 +39,44 @@ static class AuthyTwoFactorTests
         using var server = Process.Start(startInfo) ?? throw new InvalidOperationException("No se pudo iniciar Petmor para las pruebas.");
         var stdout = server.StandardOutput.ReadToEndAsync();
         var stderr = server.StandardError.ReadToEndAsync();
-        var identityCollection = new ServiceCollection();
-        identityCollection.AddLogging();
-        identityCollection.AddDataProtection();
-        identityCollection.AddDbContext<ApplicationDbContext>(db => db.UseSqlServer(connection));
-        identityCollection.AddIdentityCore<IdentityUser>()
-            .AddRoles<IdentityRole>()
-            .AddEntityFrameworkStores<ApplicationDbContext>()
-            .AddDefaultTokenProviders();
-        using var identityServices = identityCollection.BuildServiceProvider();
-
-        async Task<string> AuthenticatorCode()
+        static string GenerateTotp(string formattedKey)
         {
-            using var scope = identityServices.CreateScope();
-            var users = scope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();
-            var user = await users.FindByEmailAsync("admin@petmor.pe")
-                ?? throw new InvalidOperationException("No se encontró el usuario QA.");
-            return await users.GenerateTwoFactorTokenAsync(user, TokenOptions.DefaultAuthenticatorProvider);
+            const string alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+            var normalizedKey = formattedKey.Replace(" ", string.Empty, StringComparison.Ordinal).ToUpperInvariant();
+            var secret = new List<byte>();
+            uint buffer = 0;
+            var bitsInBuffer = 0;
+            foreach (var character in normalizedKey)
+            {
+                var value = alphabet.IndexOf(character);
+                if (value < 0) throw new InvalidOperationException("La clave manual no es Base32 válida.");
+                buffer = (buffer << 5) | (uint)value;
+                bitsInBuffer += 5;
+                if (bitsInBuffer >= 8)
+                {
+                    bitsInBuffer -= 8;
+                    secret.Add((byte)(buffer >> bitsInBuffer));
+                    buffer &= (1u << bitsInBuffer) - 1;
+                }
+            }
+
+            var counter = (ulong)(DateTimeOffset.UtcNow.ToUnixTimeSeconds() / 30);
+            var counterBytes = new byte[sizeof(ulong)];
+            BinaryPrimitives.WriteUInt64BigEndian(counterBytes, counter);
+            using var hmac = new HMACSHA1(secret.ToArray());
+            var hash = hmac.ComputeHash(counterBytes);
+            var offset = hash[^1] & 0x0f;
+            var binary = ((hash[offset] & 0x7f) << 24) |
+                         ((hash[offset + 1] & 0xff) << 16) |
+                         ((hash[offset + 2] & 0xff) << 8) |
+                         (hash[offset + 3] & 0xff);
+            return (binary % 1_000_000).ToString("D6");
         }
 
-        static HttpClient NewClient() => new(new HttpClientHandler
+        static HttpClient NewClient(CookieContainer cookies = null, bool allowAutoRedirect = true) => new(new HttpClientHandler
         {
-            CookieContainer = new CookieContainer(),
-            AllowAutoRedirect = true
+            CookieContainer = cookies ?? new CookieContainer(),
+            AllowAutoRedirect = allowAutoRedirect
         });
 
         async Task<(string Html, string Path)> Get(HttpClient client, string baseUrl, string path)
@@ -79,10 +92,16 @@ static class AuthyTwoFactorTests
             HttpClient client, string baseUrl, string path, Dictionary<string, string> values, string pagePath = null)
         {
             var (page, _) = await Get(client, baseUrl, pagePath ?? path.Split('?')[0]);
+            return await PostWithPage(client, baseUrl, path, values, page);
+        }
+
+        async Task<(string Html, string Path, HttpStatusCode Status)> PostWithPage(
+            HttpClient client, string baseUrl, string path, Dictionary<string, string> values, string page)
+        {
             var token = WebUtility.HtmlDecode(Regex.Match(page,
                 "name=\\\"__RequestVerificationToken\\\"[^>]*value=\\\"([^\\\"]+)\\\"").Groups[1].Value);
             if (string.IsNullOrWhiteSpace(token))
-                throw new InvalidOperationException($"No se encontró token antifalsificación en {pagePath ?? path}.");
+                throw new InvalidOperationException($"No se encontró token antifalsificación en {path}.");
             values["__RequestVerificationToken"] = token;
             var response = await client.PostAsync(baseUrl + path, new FormUrlEncodedContent(values));
             var html = await response.Content.ReadAsStringAsync();
@@ -122,26 +141,55 @@ static class AuthyTwoFactorTests
             var (setupPage, setupPath) = await Get(admin, baseUrl, "/Identity/Account/Manage/TwoFactorAuth");
             Assert(setupPath.EndsWith("/Identity/Account/Manage/TwoFactorAuth", StringComparison.OrdinalIgnoreCase),
                 "El usuario autenticado debe acceder a la configuración 2FA.");
-            Assert(setupPage.Contains("Configurar Authy") && setupPage.Contains("otpauth"),
+            Assert(setupPage.Contains("Configurar Authy") && setupPage.Contains("Código QR para configurar Authy en Petmor"),
                 "La configuración debe explicar Authy y ofrecer un QR TOTP.");
             Assert(Regex.IsMatch(setupPage, "id=\\\"sharedKey\\\"[^>]*value=\\\"[A-Z2-7 ]+\\\"", RegexOptions.IgnoreCase),
                 "La clave manual debe estar disponible durante el enrolamiento.");
+            var setupKey = WebUtility.HtmlDecode(Regex.Match(setupPage,
+                "id=\\\"sharedKey\\\"[^>]*value=\\\"([^\\\"]+)\\\"").Groups[1].Value);
+            Assert(!string.IsNullOrWhiteSpace(setupKey), "No se generó la clave manual para Authy.");
+            Assert(setupPage.Contains("name=\"Input.Code\"", StringComparison.Ordinal),
+                "El campo de confirmación debe enviar Input.Code al handler de activación.");
 
-            var csrfDenied = await admin.PostAsync(baseUrl + "/Identity/Account/Manage/TwoFactorAuth?handler=Enable",
+            var csrfCookies = new CookieContainer();
+            using var csrfClient = NewClient(csrfCookies);
+            await Post(csrfClient, baseUrl, "/Identity/Account/Login",
+                new() { ["Input.Email"] = "admin@petmor.pe", ["Input.Password"] = password });
+            await Get(csrfClient, baseUrl, "/Identity/Account/Manage/TwoFactorAuth");
+            using var noCsrfRedirects = NewClient(csrfCookies, allowAutoRedirect: false);
+            var csrfDenied = await noCsrfRedirects.PostAsync(baseUrl + "/Identity/Account/Manage/TwoFactorAuth?handler=Enable",
                 new FormUrlEncodedContent(new Dictionary<string, string> { ["Input.Code"] = "123456" }));
             Assert(csrfDenied.StatusCode == HttpStatusCode.BadRequest,
                 "El enrolamiento debe rechazar POST sin token antifalsificación.");
 
-            var enable = await Post(admin, baseUrl, "/Identity/Account/Manage/TwoFactorAuth?handler=Enable",
-                new() { ["Input.Code"] = await AuthenticatorCode() }, "/Identity/Account/Manage/TwoFactorAuth");
+            var freshSetup = await Get(admin, baseUrl, "/Identity/Account/Manage/TwoFactorAuth");
+            var enableCode = GenerateTotp(setupKey);
+            var enable = await PostWithPage(admin, baseUrl, "/Identity/Account/Manage/TwoFactorAuth?handler=Enable",
+                new() { ["Input.Code"] = enableCode }, freshSetup.Html);
             Assert(enable.Status == HttpStatusCode.OK && enable.Html.Contains("2FA está activo"),
                 "Un código TOTP válido debe activar 2FA.");
             Assert(enable.Html.Contains("Se muestran una sola vez") &&
-                   Regex.Matches(enable.Html, "class=\\\"col-6 col-md-3\\\"").Count == 10,
+                   Regex.Matches(enable.Html, "class=\\\"col-6 col-md-3 recovery-code\\\"").Count == 10,
                 "La activación debe mostrar diez códigos de recuperación de un solo uso.");
             var recoveryCode = WebUtility.HtmlDecode(Regex.Match(enable.Html,
-                "class=\\\"col-6 col-md-3\\\">([^<]+)</div>").Groups[1].Value).Trim();
+                "class=\\\"col-6 col-md-3 recovery-code\\\">([^<]+)</div>").Groups[1].Value).Trim();
             Assert(!string.IsNullOrWhiteSpace(recoveryCode), "No se emitió un código de recuperación para la prueba.");
+
+            await using (var db = new ApplicationDbContext(options))
+            {
+                var userId = await db.Users.Where(user => user.Email == "admin@petmor.pe").Select(user => user.Id).SingleAsync();
+                var persistedTokens = await db.UserTokens.Where(token => token.UserId == userId)
+                    .Select(token => new { token.LoginProvider, token.Name, token.Value }).ToListAsync();
+                var authToken = persistedTokens.SingleOrDefault(token =>
+                    token.Name.Contains("AuthenticatorKey", StringComparison.OrdinalIgnoreCase));
+                if (authToken == null)
+                    throw new InvalidOperationException("No se encontró el token Identity del autenticador: " +
+                        string.Join(", ", persistedTokens.Select(token => $"{token.LoginProvider}/{token.Name}")));
+                var persistedAuthenticatorKey = authToken.Value;
+                Assert(persistedAuthenticatorKey.StartsWith("dp:v1:", StringComparison.Ordinal) &&
+                       !persistedAuthenticatorKey.Contains(setupKey.Replace(" ", string.Empty, StringComparison.Ordinal), StringComparison.OrdinalIgnoreCase),
+                    "La clave Authy debe almacenarse cifrada en el token store de Identity.");
+            }
 
             var afterEnable = await Get(admin, baseUrl, "/Identity/Account/Manage/TwoFactorAuth");
             Assert(afterEnable.Html.Contains("2FA está activo") && !afterEnable.Html.Contains("id=\"sharedKey\""),
@@ -155,14 +203,21 @@ static class AuthyTwoFactorTests
                    loginChallenge.Html.Contains("Código de Authy"),
                 "Una contraseña válida con 2FA habilitado debe dirigir al desafío Authy.");
 
+            var currentAuthCode = GenerateTotp(setupKey);
+            var invalidAuthCode = (currentAuthCode[0] == '0' ? '1' : '0') + currentAuthCode[1..];
             var invalidCode = await Post(challenge, baseUrl, "/Identity/Account/LoginWith2fa",
-                new() { ["Input.TwoFactorCode"] = "000000" });
+                new() { ["Input.TwoFactorCode"] = invalidAuthCode });
+            var challengeErrorBlock = Regex.Match(invalidCode.Html,
+                "<div[^>]*role=\\\"alert\\\"[^>]*>(.*?)</div>", RegexOptions.Singleline).Groups[1].Value;
+            var challengeVisibleError = WebUtility.HtmlDecode(Regex.Replace(challengeErrorBlock, "<[^>]+>", " ")).Trim();
             Assert(invalidCode.Path.EndsWith("/Identity/Account/LoginWith2fa", StringComparison.OrdinalIgnoreCase) &&
-                   invalidCode.Html.Contains("Código inválido"),
+                   challengeVisibleError.Contains("vencido", StringComparison.OrdinalIgnoreCase),
                 "El desafío debe rechazar códigos Authy inválidos.");
 
-            var validCode = await Post(challenge, baseUrl, "/Identity/Account/LoginWith2fa",
-                new() { ["Input.TwoFactorCode"] = await AuthenticatorCode() });
+            var challengePage = await Get(challenge, baseUrl, "/Identity/Account/LoginWith2fa");
+            var validCodeValue = GenerateTotp(setupKey);
+            var validCode = await PostWithPage(challenge, baseUrl, "/Identity/Account/LoginWith2fa",
+                new() { ["Input.TwoFactorCode"] = validCodeValue }, challengePage.Html);
             Assert(validCode.Path == "/" && validCode.Html.Contains("Mascotas activas"),
                 "Un código Authy válido debe completar el inicio de sesión.");
 
@@ -180,11 +235,13 @@ static class AuthyTwoFactorTests
             var reused = await Post(reusedRecovery, baseUrl, "/Identity/Account/LoginWithRecoveryCode",
                 new() { ["Input.RecoveryCode"] = recoveryCode });
             Assert(reused.Path.EndsWith("/Identity/Account/LoginWithRecoveryCode", StringComparison.OrdinalIgnoreCase) &&
-                   reused.Html.Contains("inválido"),
+                   reused.Html.Contains("utilizado", StringComparison.OrdinalIgnoreCase),
                 "Un código de recuperación ya utilizado debe rechazarse.");
 
-            var disable = await Post(admin, baseUrl, "/Identity/Account/Manage/TwoFactorAuth?handler=Disable",
-                new() { ["DisableInput.Code"] = await AuthenticatorCode() }, "/Identity/Account/Manage/TwoFactorAuth");
+            var disablePage = await Get(admin, baseUrl, "/Identity/Account/Manage/TwoFactorAuth");
+            var disableCode = GenerateTotp(setupKey);
+            var disable = await PostWithPage(admin, baseUrl, "/Identity/Account/Manage/TwoFactorAuth?handler=Disable",
+                new() { ["DisableInput.Code"] = disableCode }, disablePage.Html);
             Assert(disable.Status == HttpStatusCode.OK && disable.Html.Contains("desactivada"),
                 "Desactivar 2FA debe exigir y aceptar el código Authy vigente.");
 
