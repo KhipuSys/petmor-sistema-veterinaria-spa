@@ -197,8 +197,9 @@ static class AuthyTwoFactorTests
             Assert(!afterEnable.Html.Contains(recoveryCode), "Los códigos de recuperación no deben volver a mostrarse.");
 
             using var challenge = NewClient();
-            var loginChallenge = await Post(challenge, baseUrl, "/Identity/Account/Login",
-                new() { ["Input.Email"] = "admin@petmor.pe", ["Input.Password"] = password });
+            var unsafeReturnUrl = "/Identity/Account/Login?returnUrl=https%3A%2F%2Fevil.example";
+            var loginChallenge = await Post(challenge, baseUrl, unsafeReturnUrl,
+                new() { ["Input.Email"] = "admin@petmor.pe", ["Input.Password"] = password }, unsafeReturnUrl);
             Assert(loginChallenge.Path.EndsWith("/Identity/Account/LoginWith2fa", StringComparison.OrdinalIgnoreCase) &&
                    loginChallenge.Html.Contains("Código de Authy"),
                 "Una contraseña válida con 2FA habilitado debe dirigir al desafío Authy.");
@@ -244,6 +245,31 @@ static class AuthyTwoFactorTests
                 new() { ["DisableInput.Code"] = disableCode }, disablePage.Html);
             Assert(disable.Status == HttpStatusCode.OK && disable.Html.Contains("desactivada"),
                 "Desactivar 2FA debe exigir y aceptar el código Authy vigente.");
+
+            string authenticatorTokenName;
+            string authenticatorLoginProvider;
+            await using (var db = new ApplicationDbContext(options))
+            {
+                var userId = await db.Users.Where(user => user.Email == "admin@petmor.pe").Select(user => user.Id).SingleAsync();
+                var authenticatorToken = (await db.UserTokens.Where(token => token.UserId == userId).ToListAsync())
+                    .Single(token => token.Name.Contains("AuthenticatorKey", StringComparison.OrdinalIgnoreCase));
+                authenticatorTokenName = authenticatorToken.Name;
+                authenticatorLoginProvider = authenticatorToken.LoginProvider;
+                authenticatorToken.Value = setupKey.Replace(" ", string.Empty, StringComparison.Ordinal);
+                await db.SaveChangesAsync();
+            }
+
+            var migratedSetup = await Get(admin, baseUrl, "/Identity/Account/Manage/TwoFactorAuth");
+            Assert(migratedSetup.Html.Contains("Configurar Authy"), "La clave Identity previa debe seguir permitiendo el enrolamiento.");
+            await using (var db = new ApplicationDbContext(options))
+            {
+                var userId = await db.Users.Where(user => user.Email == "admin@petmor.pe").Select(user => user.Id).SingleAsync();
+                var migratedKey = await db.UserTokens.Where(token => token.UserId == userId &&
+                        token.LoginProvider == authenticatorLoginProvider && token.Name == authenticatorTokenName)
+                    .Select(token => token.Value).SingleAsync();
+                Assert(migratedKey.StartsWith("dp:v1:", StringComparison.Ordinal),
+                    "Una clave Identity anterior debe migrarse a almacenamiento protegido al consultarse.");
+            }
 
             using var passwordOnly = NewClient();
             var loginAfterDisable = await Post(passwordOnly, baseUrl, "/Identity/Account/Login",
