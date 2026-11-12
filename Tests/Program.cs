@@ -21,6 +21,7 @@ if (args.Contains("--sedes")) { await SucursalesTests.Run(); return; }
 if (args.Contains("--reservas")) { await ReservasTests.Run(); return; }
 if (args.Contains("--veterinaria")) { await VeterinariaTests.Run(); return; }
 if (args.Contains("--web")) { await PetmorWebTests.Run(); return; }
+if (args.Contains("--authy-2fa")) { await AuthyTwoFactorTests.Run(); return; }
 if (args.Contains("--auditoria")) { await AuditoriaTests.Run(); return; }
 
 var database = "Petmor_Test_" + Guid.NewGuid().ToString("N");
