@@ -638,16 +638,20 @@
         body.contraste-oscuro #accessibility-panel div[style*="background:#f8fafc"] {
             background-color: #12100e !important;
         }
-        body.contraste-oscuro #accessibility-panel div[onclick*="ciclar"],
-        body.contraste-oscuro #accessibility-panel div[onclick*="toggle"],
-        body.contraste-oscuro #accessibility-panel div[onclick*="restablecer"] {
+        body.contraste-oscuro #accessibility-panel .accessibility-option,
+        body.contraste-oscuro #accessibility-panel .accessibility-reset {
             background-color: #1c1917 !important;
             border-color: #78350f !important;
             color: #fcd34d !important;
         }
-        body.contraste-oscuro #accessibility-panel div[onclick*="ciclar"] div,
-        body.contraste-oscuro #accessibility-panel div[onclick*="toggle"] div {
+        body.contraste-oscuro #accessibility-panel .accessibility-option :is(span, i),
+        body.contraste-oscuro #accessibility-panel .accessibility-reset :is(span, i) {
             color: #fcd34d !important;
+        }
+        #accessibility-toggle-btn:focus-visible,
+        #accessibility-panel button:focus-visible {
+            outline: 3px solid #1d4ed8;
+            outline-offset: 3px;
         }
     </style>
     <link rel="stylesheet" href="~/css/responsive.css" asp-append-version="true" />
@@ -763,70 +767,70 @@
 
                 <!-- BOTÓN DE ACCESIBILIDAD CON ANIMACIÓN -->
                 <div style="position: relative; margin-right: 20px;" class="me-3">
-                    <button id="accessibility-toggle-btn" class="btn btn-light border rounded-circle shadow-sm" style="width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; background-color: #fff7f0; color: #f06800;" title="Menú de Accesibilidad">
-                        <i class="fas fa-universal-access" style="font-size: 28px;"></i>
+                    <button id="accessibility-toggle-btn" type="button" class="btn btn-light border rounded-circle shadow-sm" style="width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; background-color: #fff7f0; color: #f06800;" title="Menú de Accesibilidad" aria-label="Abrir menú de accesibilidad" aria-controls="accessibility-panel" aria-expanded="false">
+                        <i class="fas fa-universal-access" style="font-size: 28px;" aria-hidden="true"></i>
                     </button>
 
                     <!-- MODAL / PANEL DE ACCESIBILIDAD DE 4 TARJETAS -->
-                    <div id="accessibility-panel" style="display: none; position: absolute; right: 0; top: 55px; width: 380px; background: white; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); overflow: hidden; border: 1px solid #e2e8f0; z-index: 9999; font-family: inherit;">
+                    <section id="accessibility-panel" role="dialog" aria-modal="false" aria-hidden="true" aria-labelledby="accessibility-panel-title" tabindex="-1" style="display: none; position: absolute; right: 0; top: 55px; width: 380px; background: white; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); overflow: hidden; border: 1px solid #e2e8f0; z-index: 9999; font-family: inherit;">
                         <div style="background-color: #f06800; color: white; padding: 14px 18px; font-weight: 600; display: flex; justify-content: space-between; align-items: center;">
-                            <span><i class="fas fa-universal-access me-2"></i> Menú de accesibilidad</span>
-                            <button id="accessibility-close-btn" style="background: none; border: none; color: white; font-size: 20px; cursor: pointer;">&times;</button>
+                            <h2 id="accessibility-panel-title" class="h6 mb-0 text-white"><i class="fas fa-universal-access me-2" aria-hidden="true"></i>Menú de accesibilidad</h2>
+                            <button id="accessibility-close-btn" type="button" aria-label="Cerrar menú de accesibilidad" style="background: none; border: none; color: white; font-size: 20px; cursor: pointer;">&times;</button>
                         </div>
                         <div style="padding: 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; background: #f8fafc;">
                             <!-- Tarjeta 1: Tamaño de texto -->
-                            <div onclick="ciclarTamanioTexto()" style="background: white; border: 1px solid #cbd5e1; border-radius: 10px; padding: 12px; text-align: center; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='#f06800'" onmouseout="this.style.borderColor='#cbd5e1'">
-                                <i class="fas fa-text-height fa-lg text-primary mb-1"></i>
-                                <div style="font-size: 13px; font-weight: 600; color: #1e293b; margin-bottom: 6px;">Tamaño de texto</div>
+                            <button type="button" class="accessibility-option" data-accessibility-action="text-size" aria-label="Aumentar tamaño del texto" aria-pressed="false" onclick="ciclarTamanioTexto()" style="background: white; border: 1px solid #cbd5e1; border-radius: 10px; padding: 12px; text-align: center; cursor: pointer; transition: all 0.2s; color: #1e293b; font: inherit;" onmouseover="this.style.borderColor='#f06800'" onmouseout="this.style.borderColor='#cbd5e1'">
+                                <i class="fas fa-text-height fa-lg text-primary mb-1" aria-hidden="true"></i>
+                                <span style="display:block; font-size: 13px; font-weight: 600; color: #1e293b; margin-bottom: 6px;">Tamaño de texto</span>
                                 <div style="display: flex; justify-content: center; gap: 3px;" id="barras-texto">
                                     <span class="bar-t" style="width: 12px; height: 4px; background: #334155; border-radius: 2px;"></span>
                                     <span class="bar-t" style="width: 12px; height: 4px; background: #cbd5e1; border-radius: 2px;"></span>
                                     <span class="bar-t" style="width: 12px; height: 4px; background: #cbd5e1; border-radius: 2px;"></span>
                                     <span class="bar-t" style="width: 12px; height: 4px; background: #cbd5e1; border-radius: 2px;"></span>
                                 </div>
-                            </div>
+                            </button>
 
                             <!-- Tarjeta 2: Contrastes -->
-                            <div role="button" tabindex="0" aria-label="Cambiar contraste" onclick="toggleAltoContraste()" onkeydown="if(event.key === 'Enter' || event.key === ' ') { event.preventDefault(); toggleAltoContraste(); }" style="background: white; border: 1px solid #cbd5e1; border-radius: 10px; padding: 12px; text-align: center; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='#f06800'" onmouseout="this.style.borderColor='#cbd5e1'">
-                                <i class="fas fa-adjust fa-lg text-primary mb-1"></i>
-                                <div id="contrast-label" aria-live="polite" style="font-size: 13px; font-weight: 600; color: #1e293b; margin-bottom: 6px;">Contraste: normal</div>
+                            <button type="button" class="accessibility-option" data-accessibility-action="contrast" aria-label="Cambiar contraste" aria-pressed="false" onclick="toggleAltoContraste()" style="background: white; border: 1px solid #cbd5e1; border-radius: 10px; padding: 12px; text-align: center; cursor: pointer; transition: all 0.2s; color: #1e293b; font: inherit;" onmouseover="this.style.borderColor='#f06800'" onmouseout="this.style.borderColor='#cbd5e1'">
+                                <i class="fas fa-adjust fa-lg text-primary mb-1" aria-hidden="true"></i>
+                                <span id="contrast-label" aria-live="polite" style="display:block; font-size: 13px; font-weight: 600; color: #1e293b; margin-bottom: 6px;">Contraste: normal</span>
                                 <div style="display: flex; justify-content: center; gap: 3px;">
                                     <span class="bar-c" style="width: 12px; height: 4px; background: #334155; border-radius: 2px;"></span>
                                     <span class="bar-c" style="width: 12px; height: 4px; background: #cbd5e1; border-radius: 2px;"></span>
                                     <span class="bar-c" style="width: 12px; height: 4px; background: #cbd5e1; border-radius: 2px;"></span>
                                 </div>
-                            </div>
+                            </button>
 
                             <!-- Tarjeta 3: Cursor grande -->
-                            <div onclick="toggleCursorGrande()" style="background: white; border: 1px solid #cbd5e1; border-radius: 10px; padding: 12px; text-align: center; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='#f06800'" onmouseout="this.style.borderColor='#cbd5e1'">
-                                <i class="fas fa-mouse-pointer fa-lg text-primary mb-1"></i>
-                                <div style="font-size: 13px; font-weight: 600; color: #1e293b; margin-bottom: 6px;">Cursor</div>
+                            <button type="button" class="accessibility-option" data-accessibility-action="cursor" aria-label="Alternar cursor grande" aria-pressed="false" onclick="toggleCursorGrande()" style="background: white; border: 1px solid #cbd5e1; border-radius: 10px; padding: 12px; text-align: center; cursor: pointer; transition: all 0.2s; color: #1e293b; font: inherit;" onmouseover="this.style.borderColor='#f06800'" onmouseout="this.style.borderColor='#cbd5e1'">
+                                <i class="fas fa-mouse-pointer fa-lg text-primary mb-1" aria-hidden="true"></i>
+                                <span style="display:block; font-size: 13px; font-weight: 600; color: #1e293b; margin-bottom: 6px;">Cursor</span>
                                 <div style="display: flex; justify-content: center; gap: 4px;">
                                     <span class="bar-u" style="width: 28px; height: 4px; background: #334155; border-radius: 2px;"></span>
                                     <span class="bar-u" style="width: 28px; height: 4px; background: #cbd5e1; border-radius: 2px;"></span>
                                 </div>
-                            </div>
+                            </button>
 
                             <!-- Tarjeta 4: Dislexia amigable -->
-                            <div onclick="toggleDislexia()" style="background: white; border: 1px solid #cbd5e1; border-radius: 10px; padding: 12px; text-align: center; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='#f06800'" onmouseout="this.style.borderColor='#cbd5e1'">
-                                <i class="fas fa-font fa-lg text-primary mb-1"></i>
-                                <div style="font-size: 13px; font-weight: 600; color: #1e293b; margin-bottom: 6px;">Dislexia amigable</div>
+                            <button type="button" class="accessibility-option" data-accessibility-action="dyslexia" aria-label="Alternar fuente amigable" aria-pressed="false" onclick="toggleDislexia()" style="background: white; border: 1px solid #cbd5e1; border-radius: 10px; padding: 12px; text-align: center; cursor: pointer; transition: all 0.2s; color: #1e293b; font: inherit;" onmouseover="this.style.borderColor='#f06800'" onmouseout="this.style.borderColor='#cbd5e1'">
+                                <i class="fas fa-font fa-lg text-primary mb-1" aria-hidden="true"></i>
+                                <span style="display:block; font-size: 13px; font-weight: 600; color: #1e293b; margin-bottom: 6px;">Dislexia amigable</span>
                                 <div style="display: flex; justify-content: center; gap: 4px;">
                                     <span class="bar-d" style="width: 28px; height: 4px; background: #334155; border-radius: 2px;"></span>
                                     <span class="bar-d" style="width: 28px; height: 4px; background: #cbd5e1; border-radius: 2px;"></span>
                                 </div>
-                            </div>
+                            </button>
 
                         </div>
 
                         <!-- BOTÓN INFERIOR DE RESTABLECER VALORES -->
                         <div style="padding: 0 16px 16px 16px; background: #f8fafc;">
-                            <div onclick="restablecerAccesibilidad()" style="background: #ffeeec; border: 1px solid #fca5a5; border-radius: 10px; padding: 10px; text-align: center; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='#dc2626'" onmouseout="this.style.borderColor='#fca5a5'">
-                                <i class="fas fa-undo text-danger me-2"></i>
+                            <button type="button" class="accessibility-reset" data-accessibility-action="reset" aria-label="Restablecer preferencias de accesibilidad" onclick="restablecerAccesibilidad()" style="width:100%; background: #ffeeec; border: 1px solid #fca5a5; border-radius: 10px; padding: 10px; text-align: center; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='#dc2626'" onmouseout="this.style.borderColor='#fca5a5'">
+                                <i class="fas fa-undo text-danger me-2" aria-hidden="true"></i>
                                 <span style="font-size: 13px; font-weight: 600; color: #991b1b;">Restablecer valores</span>
-                            </div>
+                            </button>
                         </div>
-                    </div>
+                    </section>
                 </div>
                 
                 <!-- PERFIL DE USUARIO -->
@@ -1002,21 +1006,43 @@
                 document.body.style.fontSize = tamanios[nivelTexto] + 'px';
                 actualizarBarrasTexto(nivelTexto);
             }
+            actualizarEstadoOpcionesAccesibilidad();
         });
 
-        document.getElementById('accessibility-toggle-btn').addEventListener('click', function(e) {
-            e.stopPropagation();
-            const panel = document.getElementById('accessibility-panel');
-            panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+        const accessibilityToggle = document.getElementById('accessibility-toggle-btn');
+        const accessibilityPanel = document.getElementById('accessibility-panel');
+        const accessibilityClose = document.getElementById('accessibility-close-btn');
+
+        function setAccessibilityPanelOpen(isOpen, returnFocus = false) {
+            accessibilityPanel.style.display = isOpen ? 'block' : 'none';
+            accessibilityPanel.setAttribute('aria-hidden', String(!isOpen));
+            accessibilityToggle.setAttribute('aria-expanded', String(isOpen));
+            accessibilityToggle.setAttribute('aria-label', isOpen
+                ? 'Cerrar menú de accesibilidad'
+                : 'Abrir menú de accesibilidad');
+
+            if (isOpen) accessibilityClose.focus();
+            else if (returnFocus) accessibilityToggle.focus();
+        }
+
+        accessibilityToggle.addEventListener('click', function(event) {
+            event.stopPropagation();
+            setAccessibilityPanelOpen(accessibilityPanel.getAttribute('aria-hidden') === 'true');
         });
-        document.getElementById('accessibility-close-btn').addEventListener('click', function() {
-            document.getElementById('accessibility-panel').style.display = 'none';
+        accessibilityClose.addEventListener('click', function() {
+            setAccessibilityPanelOpen(false, true);
         });
-        window.addEventListener('click', function(e) {
-            const panel = document.getElementById('accessibility-panel');
-            const btn = document.getElementById('accessibility-toggle-btn');
-            if (!panel.contains(e.target) && !btn.contains(e.target)) {
-                panel.style.display = 'none';
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape' && accessibilityPanel.getAttribute('aria-hidden') === 'false') {
+                event.preventDefault();
+                setAccessibilityPanelOpen(false, true);
+            }
+        });
+        document.addEventListener('click', function(event) {
+            if (accessibilityPanel.getAttribute('aria-hidden') === 'false'
+                && !accessibilityPanel.contains(event.target)
+                && !accessibilityToggle.contains(event.target)) {
+                setAccessibilityPanelOpen(false);
             }
         });
 
@@ -1027,6 +1053,7 @@
             actualizarBarrasTexto(nivelTexto);
             const tamanios = [16, 18, 20, 22];
             document.body.style.fontSize = tamanios[nivelTexto] + 'px';
+            actualizarEstadoOpcionesAccesibilidad();
         }
 
         function actualizarBarrasTexto(nivel) {
@@ -1055,6 +1082,20 @@
                 b.style.background = index === tipoContraste ? '#334155' : '#cbd5e1';
                 b.dataset.selected = String(index === tipoContraste);
             });
+            actualizarEstadoOpcionesAccesibilidad();
+        }
+
+        function actualizarEstadoOpcionesAccesibilidad() {
+            const estados = {
+                'text-size': nivelTexto > 0,
+                contrast: tipoContraste > 0,
+                cursor: document.body.classList.contains('cursor-grande'),
+                dyslexia: document.body.classList.contains('dislexia-amigable')
+            };
+            Object.entries(estados).forEach(([action, isPressed]) => {
+                const control = document.querySelector(`[data-accessibility-action="${action}"]`);
+                if (control) control.setAttribute('aria-pressed', String(isPressed));
+            });
         }
         
         function actualizarBarraDoble(clase, activo) {
@@ -1078,6 +1119,7 @@
                 cursorDot.style.display = 'none';
                 cursorHalo.style.display = 'none';
             }
+            actualizarEstadoOpcionesAccesibilidad();
         }
 
         function toggleDislexia() {
@@ -1085,6 +1127,7 @@
             const activo = document.body.classList.contains('dislexia-amigable');
             localStorage.setItem('dislexia', activo);
             actualizarBarraDoble('d', activo);
+            actualizarEstadoOpcionesAccesibilidad();
         }
 
         function restablecerAccesibilidad() {
@@ -1101,6 +1144,7 @@
             aplicarContrasteVisual(0);
             actualizarBarraDoble('u', false);
             actualizarBarraDoble('d', false);
+            actualizarEstadoOpcionesAccesibilidad();
         }
 
     </script>
