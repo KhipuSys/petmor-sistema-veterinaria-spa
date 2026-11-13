@@ -171,6 +171,9 @@ static class AuthyTwoFactorTests
             Assert(enable.Html.Contains("Se muestran una sola vez") &&
                    Regex.Matches(enable.Html, "class=\\\"col-6 col-md-3 recovery-code\\\"").Count == 10,
                 "La activación debe mostrar diez códigos de recuperación de un solo uso.");
+            Assert(!enable.Html.Contains("id=\"sharedKey\"", StringComparison.Ordinal) &&
+                   !enable.Html.Contains("Código QR para configurar Authy", StringComparison.Ordinal),
+                "La clave y el QR no deben exponerse después de activar 2FA.");
             var recoveryCode = WebUtility.HtmlDecode(Regex.Match(enable.Html,
                 "class=\\\"col-6 col-md-3 recovery-code\\\">([^<]+)</div>").Groups[1].Value).Trim();
             Assert(!string.IsNullOrWhiteSpace(recoveryCode), "No se emitió un código de recuperación para la prueba.");
@@ -189,6 +192,11 @@ static class AuthyTwoFactorTests
                 Assert(persistedAuthenticatorKey.StartsWith("dp:v1:", StringComparison.Ordinal) &&
                        !persistedAuthenticatorKey.Contains(setupKey.Replace(" ", string.Empty, StringComparison.Ordinal), StringComparison.OrdinalIgnoreCase),
                     "La clave Authy debe almacenarse cifrada en el token store de Identity.");
+                var storedRecoveryCodes = persistedTokens.SingleOrDefault(token =>
+                    token.Name.Contains("RecoveryCodes", StringComparison.OrdinalIgnoreCase));
+                Assert(storedRecoveryCodes != null && storedRecoveryCodes.Value.StartsWith("dp:v1:", StringComparison.Ordinal) &&
+                       !storedRecoveryCodes.Value.Contains(recoveryCode, StringComparison.Ordinal),
+                    "Los códigos de recuperación también deben protegerse en el token store de Identity.");
             }
 
             var afterEnable = await Get(admin, baseUrl, "/Identity/Account/Manage/TwoFactorAuth");
