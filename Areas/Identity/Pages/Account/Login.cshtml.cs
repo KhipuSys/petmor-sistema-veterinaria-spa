@@ -43,7 +43,7 @@ namespace Petmor.Web.Areas.Identity.Pages.Account
                 ModelState.AddModelError(string.Empty, ErrorMessage);
             }
 
-            returnUrl ??= Url.Content("~/");
+            returnUrl = NormalizeReturnUrl(returnUrl);
 
             // Limpiar cookie externa para asegurar un login limpio
             await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
@@ -53,7 +53,7 @@ namespace Petmor.Web.Areas.Identity.Pages.Account
 
         public async Task<IActionResult> OnPostAsync(string returnUrl = null)
         {
-            returnUrl ??= Url.Content("~/");
+            returnUrl = NormalizeReturnUrl(returnUrl);
 
             if (ModelState.IsValid)
             {
@@ -64,6 +64,15 @@ namespace Petmor.Web.Areas.Identity.Pages.Account
                 {
                     return LocalRedirect(returnUrl);
                 }
+                if (result.RequiresTwoFactor)
+                {
+                    return RedirectToPage("./LoginWith2fa", new { ReturnUrl = returnUrl });
+                }
+                if (result.IsLockedOut)
+                {
+                    ModelState.AddModelError(string.Empty, "La cuenta está bloqueada temporalmente por varios intentos fallidos.");
+                    return Page();
+                }
                 else
                 {
                     ModelState.AddModelError(string.Empty, "Intento de inicio de sesión no válido.");
@@ -73,6 +82,9 @@ namespace Petmor.Web.Areas.Identity.Pages.Account
 
             return Page();
         }
+
+        private string NormalizeReturnUrl(string returnUrl) =>
+            string.IsNullOrEmpty(returnUrl) || !Url.IsLocalUrl(returnUrl) ? Url.Content("~/") : returnUrl;
 
         private static string NormalizarUsuario(string usuario)
         {
