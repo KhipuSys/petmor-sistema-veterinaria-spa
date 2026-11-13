@@ -1,8 +1,22 @@
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Petmor.Web.Data;
 
 var builder = WebApplication.CreateBuilder(args);
+
+var dataProtectionKeysPath = builder.Configuration["DataProtection:KeysDirectory"];
+if (string.IsNullOrWhiteSpace(dataProtectionKeysPath))
+{
+    var userDataPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+    dataProtectionKeysPath = Path.Combine(
+        string.IsNullOrWhiteSpace(userDataPath) ? builder.Environment.ContentRootPath : userDataPath,
+        "Petmor", "DataProtectionKeys");
+}
+Directory.CreateDirectory(dataProtectionKeysPath);
+builder.Services.AddDataProtection()
+    .SetApplicationName("Petmor")
+    .PersistKeysToFileSystem(new DirectoryInfo(dataProtectionKeysPath));
 
 // 1. Base de Datos
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
@@ -22,6 +36,7 @@ builder.Services.AddDefaultIdentity<IdentityUser>(options =>
 })
 .AddRoles<IdentityRole>()
 .AddEntityFrameworkStores<ApplicationDbContext>();
+builder.Services.AddScoped<IUserStore<IdentityUser>, ProtectedAuthenticatorUserStore>();
 // Rechaza inmediatamente sesiones antiguas cuando cambia el correo/credenciales.
 builder.Services.Configure<SecurityStampValidatorOptions>(options => options.ValidationInterval = TimeSpan.Zero);
 
@@ -31,7 +46,8 @@ builder.Services.AddControllersWithViews(options => {
     options.Filters.Add(new Microsoft.AspNetCore.Mvc.AutoValidateAntiforgeryTokenAttribute());
     options.Filters.Add(new Petmor.Web.Infrastructure.FiltroFechas());
 });
-builder.Services.AddRazorPages(); // ¡IMPORTANTE PARA EL LOGIN!
+builder.Services.AddRazorPages(options =>
+    options.Conventions.ConfigureFilter(new Microsoft.AspNetCore.Mvc.AutoValidateAntiforgeryTokenAttribute())); // ¡IMPORTANTE PARA EL LOGIN!
 builder.Services.AddScoped<Petmor.Web.Services.SedeActual>();
 builder.Services.AddSingleton<Microsoft.AspNetCore.Antiforgery.IAntiforgeryAdditionalDataProvider, Petmor.Web.Infrastructure.SedeAntiforgeryData>();
 builder.Services.AddHttpClient<Petmor.Web.Services.FactilizaService>();
