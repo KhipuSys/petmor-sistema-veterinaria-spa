@@ -5,6 +5,7 @@ using Petmor.Web.Data;
 using Petmor.Web.Models;
 using System;
 using System.IO;
+using System.Security.Cryptography;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.DataProtection;
@@ -17,7 +18,8 @@ namespace Petmor.Web.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly IWebHostEnvironment _hostEnvironment;
-        private readonly IDataProtector _factilizaProtector;
+        private readonly IDataProtector _factilizaLegacyProtector;
+        private readonly IDataProtector _consultaDniRucProtector;
         private readonly IConfiguration _configuration;
 
         public ConfiguracionController(ApplicationDbContext context, IWebHostEnvironment hostEnvironment,
@@ -25,7 +27,8 @@ namespace Petmor.Web.Controllers
         {
             _context = context;
             _hostEnvironment = hostEnvironment;
-            _factilizaProtector = dataProtectionProvider.CreateProtector("Petmor.FactilizaToken.v1");
+            _factilizaLegacyProtector = dataProtectionProvider.CreateProtector("Petmor.FactilizaToken.v1");
+            _consultaDniRucProtector = dataProtectionProvider.CreateProtector("Petmor.FactilizaConsultaToken.v1");
             _configuration = configuration;
         }
 
@@ -56,8 +59,6 @@ namespace Petmor.Web.Controllers
                 model.IgvPorcentaje = configEntidad.IgvPorcentaje;
                 model.MonedaSimbolo = configEntidad.MonedaSimbolo;
                 model.CurrentLogoUrl = configEntidad.LogoUrl;
-                model.FactilizaTokenConfigurado = !string.IsNullOrWhiteSpace(configEntidad.FactilizaTokenCifrado)
-                    || !string.IsNullOrWhiteSpace(_configuration["FactilizaSettings:Token"]);
             }
             else
             {
@@ -66,8 +67,9 @@ namespace Petmor.Web.Controllers
                 model.Ruc = "00000000000";
                 model.IgvPorcentaje = 18;
                 model.MonedaSimbolo = "S/.";
-                model.FactilizaTokenConfigurado = !string.IsNullOrWhiteSpace(_configuration["FactilizaSettings:Token"]);
             }
+
+            CargarEstadoTokens(model, configEntidad);
 
             return View(model);
         }
@@ -78,12 +80,12 @@ namespace Petmor.Web.Controllers
         [RequestSizeLimit(6_000_000)]
         public async Task<IActionResult> Guardar(ConfiguracionViewModel model)
         {
+            var configEntidad = await _context.Configuraciones.FirstOrDefaultAsync();
             string extension = null;
             try { extension = await Petmor.Web.Services.ImagenSubida.Extension(model.LogoUpload); }
             catch (InvalidOperationException ex) { ModelState.AddModelError(nameof(model.LogoUpload), ex.Message); }
             if (ModelState.IsValid)
             {
-                var configEntidad = await _context.Configuraciones.FirstOrDefaultAsync();
                 var logoAnterior = configEntidad?.LogoUrl;
 
                 // Procesamiento del archivo de logo
@@ -118,7 +120,7 @@ namespace Petmor.Web.Controllers
                         IgvPorcentaje = model.IgvPorcentaje,
                         MonedaSimbolo = model.MonedaSimbolo,
                         LogoUrl = uniqueFileName,
-                        FactilizaTokenCifrado = CifrarToken(model.FactilizaToken)
+                        ConsultaDniRucTokenCifrado = CifrarTokenConsulta(model.ConsultaDniRucToken)
                     };
                     _context.Configuraciones.Add(configEntidad);
                 }
@@ -132,8 +134,8 @@ namespace Petmor.Web.Controllers
                     configEntidad.EmailContacto = model.EmailContacto;
                     configEntidad.IgvPorcentaje = model.IgvPorcentaje;
                     configEntidad.MonedaSimbolo = model.MonedaSimbolo;
-                    if (!string.IsNullOrWhiteSpace(model.FactilizaToken))
-                        configEntidad.FactilizaTokenCifrado = CifrarToken(model.FactilizaToken);
+                    if (!string.IsNullOrWhiteSpace(model.ConsultaDniRucToken))
+                        configEntidad.ConsultaDniRucTokenCifrado = CifrarTokenConsulta(model.ConsultaDniRucToken);
                     if (model.LogoUpload != null)
                     {
                         configEntidad.LogoUrl = uniqueFileName;
@@ -147,18 +149,46 @@ namespace Petmor.Web.Controllers
                     Petmor.Web.Services.ImagenSubida.BorrarAnterior(_hostEnvironment.WebRootPath, logoAnterior, "images/logos", HttpContext.RequestServices.GetRequiredService<ILogger<ConfiguracionController>>());
                 
                 TempData["MensajeExito"] = "¡Configuración guardada correctamente en la Base de Datos!";
-                if (!string.IsNullOrWhiteSpace(model.FactilizaToken))
-                    TempData["MensajeExito"] = "¡Configuración y token de Factiliza guardados correctamente!";
+                if (!string.IsNullOrWhiteSpace(model.ConsultaDniRucToken))
+                    TempData["MensajeExito"] = "¡Token de consulta DNI/RUC de Factiliza guardado correctamente!";
                 // Actualizar la URL del logo visualizado
                 model.CurrentLogoUrl = configEntidad.LogoUrl;
                 return RedirectToAction(nameof(Index));
             }
 
-            model.CurrentLogoUrl = (await _context.Configuraciones.AsNoTracking().FirstOrDefaultAsync())?.LogoUrl;
+            model.CurrentLogoUrl = configEntidad?.LogoUrl;
+            CargarEstadoTokens(model, configEntidad);
+            model.ConsultaDniRucToken = string.Empty;
+            QuitarSecretoDelModelState(nameof(model.ConsultaDniRucToken));
             return View("Index", model);
         }
 
-        private string CifrarToken(string token)
-            => string.IsNullOrWhiteSpace(token) ? null : _factilizaProtector.Protect(token.Trim());
+        private void CargarEstadoTokens(ConfiguracionViewModel model, Configuracion configEntidad)
+        {
+            model.ConsultaDniRucTokenConfigurado = SecretProtegidoValido(
+                configEntidad?.ConsultaDniRucTokenCifrado, _consultaDniRucProtector);
+            model.FactilizaTokenLegadoDisponible = SecretProtegidoValido(
+                configEntidad?.FactilizaTokenCifrado, _factilizaLegacyProtector) ||
+                !string.IsNullOrWhiteSpace(_configuration["FactilizaSettings:Token"]);
+        }
+
+        private string CifrarTokenConsulta(string token) =>
+            string.IsNullOrWhiteSpace(token) ? null : _consultaDniRucProtector.Protect(token.Trim());
+
+        private static bool SecretProtegidoValido(string valor, IDataProtector protector)
+        {
+            if (string.IsNullOrWhiteSpace(valor)) return false;
+            try { return !string.IsNullOrWhiteSpace(protector.Unprotect(valor)); }
+            catch (CryptographicException) { return false; }
+        }
+
+        private void QuitarSecretoDelModelState(string nombre)
+        {
+            if (!ModelState.TryGetValue(nombre, out var entry)) return;
+            var errores = entry.Errors.Select(error => error.ErrorMessage)
+                .Where(message => !string.IsNullOrWhiteSpace(message)).ToArray();
+            ModelState.Remove(nombre);
+            foreach (var error in errores) ModelState.AddModelError(nombre, error);
+        }
     }
 }

@@ -12,6 +12,7 @@ public static class ActualizacionVeterinaria
         await db.Database.ExecuteSqlRawAsync("""
             IF COL_LENGTH('Productos','EsServicio') IS NULL ALTER TABLE Productos ADD EsServicio bit NOT NULL DEFAULT 0;
             IF OBJECT_ID('Configuraciones','U') IS NOT NULL AND COL_LENGTH('Configuraciones','FactilizaTokenCifrado') IS NULL ALTER TABLE Configuraciones ADD FactilizaTokenCifrado nvarchar(max) NULL;
+            IF OBJECT_ID('Configuraciones','U') IS NOT NULL AND COL_LENGTH('Configuraciones','ConsultaDniRucTokenCifrado') IS NULL ALTER TABLE Configuraciones ADD ConsultaDniRucTokenCifrado nvarchar(max) NULL;
             IF COL_LENGTH('Productos','UsoInterno') IS NULL ALTER TABLE Productos ADD UsoInterno bit NOT NULL DEFAULT 0;
             IF COL_LENGTH('Productos','AreaServicio') IS NULL ALTER TABLE Productos ADD AreaServicio int NULL;
             IF COL_LENGTH('Productos','DuracionMinutos') IS NULL ALTER TABLE Productos ADD DuracionMinutos int NOT NULL DEFAULT 30;

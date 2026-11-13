@@ -111,6 +111,13 @@ async function main() {
             style: '.user-session-profile .line-height-normal { visibility: hidden !important; }',
           });
         }
+        if (route === '/Configuracion' && ['desktop', 'mobile'].includes(viewport.name)) {
+          await page.screenshot({
+            path: path.join(evidenceDir, `configuracion-token-query-${viewport.name}.png`),
+            fullPage: true,
+            style: '#userMenu .fw-bold { visibility: hidden !important; }',
+          });
+        }
       }
 
       if (viewport.width < 992) {

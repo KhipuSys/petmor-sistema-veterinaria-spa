@@ -27,5 +27,8 @@ namespace Petmor.Web.Models
 
         // Se almacena cifrado; nunca se persiste el token en texto plano.
         public string FactilizaTokenCifrado { get; set; }
+
+        // Token dedicado a consultas de documentos; el token anterior se conserva para facturación.
+        public string ConsultaDniRucTokenCifrado { get; set; }
     }
 }

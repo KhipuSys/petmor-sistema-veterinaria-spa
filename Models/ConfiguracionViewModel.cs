@@ -38,10 +38,12 @@ namespace Petmor.Web.Models
 
         public string CurrentLogoUrl { get; set; }
 
-        [Display(Name = "Token de Factiliza")]
+        [Display(Name = "Token de consulta DNI/RUC")]
+        [StringLength(4096)]
         [DataType(DataType.Password)]
-        public string FactilizaToken { get; set; }
+        public string ConsultaDniRucToken { get; set; }
 
-        public bool FactilizaTokenConfigurado { get; set; }
+        public bool ConsultaDniRucTokenConfigurado { get; set; }
+        public bool FactilizaTokenLegadoDisponible { get; set; }
     }
 }
