@@ -1,4 +1,5 @@
 using System.Net.Http.Headers;
+using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.Extensions.Configuration; 
 using Microsoft.AspNetCore.DataProtection;
@@ -13,6 +14,7 @@ namespace Petmor.Web.Services
         private readonly string _configurationToken;
         private readonly ApplicationDbContext _db;
         private readonly IDataProtector _tokenProtector;
+        private readonly IDataProtector _consultaTokenProtector;
 
         public FactilizaService(HttpClient httpClient, IConfiguration configuration,
             ApplicationDbContext db = null, IDataProtectionProvider dataProtectionProvider = null)
@@ -21,6 +23,7 @@ namespace Petmor.Web.Services
             _configurationToken = configuration["FactilizaSettings:Token"] ?? string.Empty;
             _db = db;
             _tokenProtector = dataProtectionProvider?.CreateProtector("Petmor.FactilizaToken.v1");
+            _consultaTokenProtector = dataProtectionProvider?.CreateProtector("Petmor.FactilizaConsultaToken.v1");
 
             _httpClient.BaseAddress = new Uri("https://api.factiliza.com/v1/");
             _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
@@ -33,7 +36,9 @@ namespace Petmor.Web.Services
         {
             try
             {
-                await AplicarTokenAsync();
+                var token = await ObtenerTokenFacturacionAsync();
+                if (string.IsNullOrWhiteSpace(token))
+                    return new ResultadoEmision(false, "No se configuró el token actual de Factiliza para facturación.");
                 var payload = new
                 {
                     tipo_comprobante = "03", // 03 = Boleta de Venta
@@ -50,9 +55,16 @@ namespace Petmor.Web.Services
                 };
 
                 using var espera = new CancellationTokenSource(TimeSpan.FromSeconds(20));
-                using var response = await _httpClient.PostAsJsonAsync("comprobantes", payload, espera.Token);
+                using var request = new HttpRequestMessage(HttpMethod.Post, "comprobantes")
+                {
+                    Content = JsonContent.Create(payload)
+                };
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+                using var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, espera.Token);
                 var body = await response.Content.ReadAsStringAsync(espera.Token);
-                return new ResultadoEmision(response.IsSuccessStatusCode, $"HTTP {(int)response.StatusCode}: {body}"[..Math.Min(4000, $"HTTP {(int)response.StatusCode}: {body}".Length)]);
+                body = RedactarCredencial(body, token);
+                var message = $"HTTP {(int)response.StatusCode}: {body}";
+                return new ResultadoEmision(response.IsSuccessStatusCode, message[..Math.Min(4000, message.Length)]);
             }
             catch
             {
@@ -68,19 +80,20 @@ namespace Petmor.Web.Services
             if ((documento.Length != 8 && documento.Length != 11) || documento.Any(c => c < '0' || c > '9'))
                 return ConsultaDocumentoResult.Fallo("Ingrese un DNI de 8 dígitos o RUC de 11 dígitos.");
 
-            var token = await ObtenerTokenAsync();
+            var token = await ObtenerTokenConsultaAsync();
             if (string.IsNullOrWhiteSpace(token))
                 return ConsultaDocumentoResult.Fallo("No se configuró el token de Factiliza.");
 
             try
             {
-                await AplicarTokenAsync(token);
                 var tipo = documento.Length == 8 ? "dni" : "ruc";
-                var response = await _httpClient.GetAsync($"{tipo}/info/{documento}");
+                using var request = new HttpRequestMessage(HttpMethod.Get, $"{tipo}/info/{documento}");
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+                using var response = await _httpClient.SendAsync(request);
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    var detalle = await LeerMensajeErrorAsync(response);
+                    var detalle = RedactarCredencial(await LeerMensajeErrorAsync(response), token);
                     var mensaje = response.StatusCode switch
                     {
                         System.Net.HttpStatusCode.Unauthorized or System.Net.HttpStatusCode.Forbidden
@@ -145,15 +158,7 @@ namespace Petmor.Web.Services
             return string.Empty;
         }
 
-        private async Task AplicarTokenAsync(string token = null)
-        {
-            token ??= await ObtenerTokenAsync();
-            _httpClient.DefaultRequestHeaders.Authorization = string.IsNullOrWhiteSpace(token)
-                ? null
-                : new AuthenticationHeaderValue("Bearer", token);
-        }
-
-        private async Task<string> ObtenerTokenAsync()
+        private async Task<string> ObtenerTokenFacturacionAsync()
         {
             if (_db != null && _tokenProtector != null)
             {
@@ -167,6 +172,48 @@ namespace Petmor.Web.Services
                 }
             }
             return _configurationToken;
+        }
+
+        private async Task<string> ObtenerTokenConsultaAsync()
+        {
+            if (_db != null)
+            {
+                var tokens = await _db.Configuraciones.AsNoTracking()
+                    .Select(configuracion => new
+                    {
+                        configuracion.ConsultaDniRucTokenCifrado,
+                        configuracion.FactilizaTokenCifrado
+                    })
+                    .FirstOrDefaultAsync();
+
+                if (!string.IsNullOrWhiteSpace(tokens?.ConsultaDniRucTokenCifrado))
+                {
+                    if (_consultaTokenProtector == null) return string.Empty;
+                    try { return _consultaTokenProtector.Unprotect(tokens.ConsultaDniRucTokenCifrado); }
+                    catch (System.Security.Cryptography.CryptographicException) { return string.Empty; }
+                }
+
+                if (!string.IsNullOrWhiteSpace(tokens?.FactilizaTokenCifrado))
+                {
+                    if (_tokenProtector == null) return string.Empty;
+                    try { return _tokenProtector.Unprotect(tokens.FactilizaTokenCifrado); }
+                    catch (System.Security.Cryptography.CryptographicException) { return string.Empty; }
+                }
+            }
+
+            return _configurationToken;
+        }
+
+        private static string RedactarCredencial(string mensaje, string token)
+        {
+            if (string.IsNullOrEmpty(mensaje) || string.IsNullOrEmpty(token))
+                return mensaje;
+
+            var redacted = mensaje.Replace(token, "[credencial omitida]", StringComparison.Ordinal);
+            var encodedToken = Uri.EscapeDataString(token);
+            return encodedToken == token
+                ? redacted
+                : redacted.Replace(encodedToken, "[credencial omitida]", StringComparison.OrdinalIgnoreCase);
         }
 
         private static async Task<string> LeerMensajeErrorAsync(HttpResponseMessage response)
