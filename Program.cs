@@ -1,22 +1,8 @@
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Petmor.Web.Data;
 
 var builder = WebApplication.CreateBuilder(args);
-
-var dataProtectionKeysPath = builder.Configuration["DataProtection:KeysDirectory"];
-if (string.IsNullOrWhiteSpace(dataProtectionKeysPath))
-{
-    var userDataPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-    dataProtectionKeysPath = Path.Combine(
-        string.IsNullOrWhiteSpace(userDataPath) ? builder.Environment.ContentRootPath : userDataPath,
-        "Petmor", "DataProtectionKeys");
-}
-Directory.CreateDirectory(dataProtectionKeysPath);
-builder.Services.AddDataProtection()
-    .SetApplicationName("Petmor")
-    .PersistKeysToFileSystem(new DirectoryInfo(dataProtectionKeysPath));
 
 // 1. Base de Datos
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
@@ -24,6 +10,8 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
 
 // 2. Identidad (Usuarios y Roles)
+// Se conserva el key ring/discriminador de Data Protection de ASP.NET para mantener legibles
+// las credenciales Factiliza cifradas por versiones anteriores.
 builder.Services.AddDefaultIdentity<IdentityUser>(options => 
 {
     options.SignIn.RequireConfirmedAccount = false;
