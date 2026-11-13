@@ -63,6 +63,11 @@ static class PetmorWebTests
             if (!listo) throw new Exception("El servidor no arrancó.");
             var login = await Post("/Identity/Account/Login", new() { ["Input.Email"] = "admin@petmor.pe", ["Input.Password"] = "Admin123*" });
             if (!login.Contains("Mascotas activas")) throw new Exception("Login no llegó al panel autenticado.");
+            var configuracionHtml = await Get("/Configuracion");
+            if (!configuracionHtml.Contains("Token exclusivo de consulta") || !configuracionHtml.Contains("name=\"ConsultaDniRucToken\""))
+                throw new Exception("Configuración no muestra el token dedicado de consulta DNI/RUC.");
+            if (configuracionHtml.Contains("name=\"FactilizaToken\""))
+                throw new Exception("Configuración todavía expone el token compartido de facturación en el panel de consulta.");
             if (login.Contains("ai-chat-widget") || login.Contains("enviarMensajeIA")) throw new Exception("El asistente retirado sigue en el layout.");
             var asistenteRetirado = await cliente.PostAsync("/IA/Consultar", new StringContent("{}", System.Text.Encoding.UTF8, "application/json"));
             if (asistenteRetirado.StatusCode != HttpStatusCode.NotFound) throw new Exception("La ruta retirada del asistente sigue activa.");
@@ -250,7 +255,7 @@ static class PetmorWebTests
             var panelClinico = await Get("/Home/Index");
             if (!panelClinico.Contains("Mascotas activas") || panelClinico.Contains("graficoVentas"))
                 throw new Exception("El dashboard clínico no respeta los permisos financieros.");
-            foreach(var restringida in new[]{"/Usuarios", $"/Productos/Edit/{productoReserva}", "/Productos/Create"})
+            foreach(var restringida in new[]{"/Usuarios", "/Configuracion", $"/Productos/Edit/{productoReserva}", "/Productos/Create"})
             {
                 var rechazo = await cliente.GetAsync(restringida);
                 if (!rechazo.RequestMessage.RequestUri.AbsolutePath.Contains("AccessDenied") && rechazo.StatusCode != HttpStatusCode.Forbidden)

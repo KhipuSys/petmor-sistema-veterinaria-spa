@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -110,6 +111,14 @@ static class FactilizaSettingsTests
                 var legacyLookup = await service.ConsultarDocumentoAsync("12345678");
                 Assert(legacyLookup.Exito && handler.AuthorizationTokens.Last() == "legacy-billing-token",
                     "Instalaciones existentes deben conservar la consulta por el token legado hasta configurar uno propio.");
+
+                handler.EchoCredentialInError = true;
+                var queryError = await service.ConsultarDocumentoAsync("12345678");
+                Assert(!queryError.Exito && !queryError.Mensaje.Contains("query-token-first", StringComparison.Ordinal),
+                    "Un error del proveedor no debe devolver el token de consulta.");
+                var invoiceError = await service.EmitirBoletaDetalladaAsync("12345678", "Cliente de prueba", 100, 18);
+                Assert(!invoiceError.Enviada && !invoiceError.Respuesta.Contains("legacy-billing-token", StringComparison.Ordinal),
+                    "La respuesta de facturación no debe persistir ni mostrar el token legado.");
             }
 
             Console.WriteLine("PASS FACTILIZA SETTINGS: token de consulta separado/protegido, campo vacío conserva, facturación se mantiene y fallback legado funciona.");
@@ -137,11 +146,16 @@ static class FactilizaSettingsTests
         IDataProtectionProvider dataProtection,
         IConfiguration configuration)
     {
-        var services = new ServiceCollection().AddLogging().BuildServiceProvider();
+        var services = new ServiceCollection().AddLogging().AddControllersWithViews().Services.BuildServiceProvider();
         var httpContext = new DefaultHttpContext { RequestServices = services };
         return new ConfiguracionController(db, new TestWebHostEnvironment(), dataProtection, configuration)
         {
-            ControllerContext = new ControllerContext { HttpContext = httpContext },
+            ControllerContext = new ControllerContext
+            {
+                HttpContext = httpContext,
+                RouteData = new Microsoft.AspNetCore.Routing.RouteData(),
+                ActionDescriptor = new ControllerActionDescriptor()
+            },
             TempData = new TempDataDictionary(httpContext, new TestTempDataProvider())
         };
     }
@@ -170,10 +184,17 @@ static class FactilizaSettingsTests
     private sealed class RecordingHandler : HttpMessageHandler
     {
         public List<string> AuthorizationTokens { get; } = new();
+        public bool EchoCredentialInError { get; set; }
 
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
-            AuthorizationTokens.Add(request.Headers.Authorization?.Parameter ?? string.Empty);
+            var token = request.Headers.Authorization?.Parameter ?? string.Empty;
+            AuthorizationTokens.Add(token);
+            if (EchoCredentialInError)
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.Unauthorized)
+                {
+                    Content = new StringContent($"{{\"message\":\"Provider echoed {token}\"}}", System.Text.Encoding.UTF8, "application/json")
+                });
             var content = request.Method == HttpMethod.Get
                 ? "{\"data\":{\"nombre_completo\":\"CLIENTE DE PRUEBA\"}}"
                 : "{}";
