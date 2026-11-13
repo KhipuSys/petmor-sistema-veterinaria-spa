@@ -10,6 +10,8 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
 
 // 2. Identidad (Usuarios y Roles)
+// Se conserva el key ring/discriminador de Data Protection de ASP.NET para mantener legibles
+// las credenciales Factiliza cifradas por versiones anteriores.
 builder.Services.AddDefaultIdentity<IdentityUser>(options => 
 {
     options.SignIn.RequireConfirmedAccount = false;
@@ -22,6 +24,7 @@ builder.Services.AddDefaultIdentity<IdentityUser>(options =>
 })
 .AddRoles<IdentityRole>()
 .AddEntityFrameworkStores<ApplicationDbContext>();
+builder.Services.AddScoped<IUserStore<IdentityUser>, ProtectedAuthenticatorUserStore>();
 // Rechaza inmediatamente sesiones antiguas cuando cambia el correo/credenciales.
 builder.Services.Configure<SecurityStampValidatorOptions>(options => options.ValidationInterval = TimeSpan.Zero);
 
@@ -31,7 +34,8 @@ builder.Services.AddControllersWithViews(options => {
     options.Filters.Add(new Microsoft.AspNetCore.Mvc.AutoValidateAntiforgeryTokenAttribute());
     options.Filters.Add(new Petmor.Web.Infrastructure.FiltroFechas());
 });
-builder.Services.AddRazorPages(); // ¡IMPORTANTE PARA EL LOGIN!
+builder.Services.AddRazorPages(options =>
+    options.Conventions.ConfigureFilter(new Microsoft.AspNetCore.Mvc.AutoValidateAntiforgeryTokenAttribute())); // ¡IMPORTANTE PARA EL LOGIN!
 builder.Services.AddScoped<Petmor.Web.Services.SedeActual>();
 builder.Services.AddSingleton<Microsoft.AspNetCore.Antiforgery.IAntiforgeryAdditionalDataProvider, Petmor.Web.Infrastructure.SedeAntiforgeryData>();
 builder.Services.AddHttpClient<Petmor.Web.Services.FactilizaService>();

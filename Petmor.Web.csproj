@@ -27,10 +27,12 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.20" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.20" PrivateAssets="all" />
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="9.0.12" PrivateAssets="all" />
+    <PackageReference Include="QRCoder" Version="1.6.0" />
     <!-- Versiones corregidas de dependencias transitivas de las herramientas de diseño. -->
     <PackageReference Include="Microsoft.Build.Tasks.Core" Version="17.14.28" PrivateAssets="all" />
     <PackageReference Include="NuGet.Protocol" Version="6.12.5" PrivateAssets="all" />
-    <PackageReference Include="System.Security.Cryptography.Xml" Version="9.0.20" PrivateAssets="all" />
+    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="9.0.21" PrivateAssets="all" />
+    <PackageReference Include="System.Security.Cryptography.Xml" Version="9.0.21" PrivateAssets="all" />
   </ItemGroup>
 
 </Project>

@@ -32,6 +32,7 @@ const routes = [
   '/Caja',
   '/Configuracion',
   '/Petmor/Agenda',
+  '/Identity/Account/Manage/TwoFactorAuth',
 ];
 
 async function main() {
@@ -62,12 +63,27 @@ async function main() {
           const main = document.querySelector('.main-content');
           const mainRect = main?.getBoundingClientRect();
           const menuButton = document.querySelector('[aria-label="Abrir menú principal"]');
-          return {
+          const authyButton = document.querySelector('a[aria-label="2FA/Authy"]');
+          const logoutButton = document.querySelector('button[aria-label="Cerrar sesión"]');
+          const overflowElements = [...document.body.querySelectorAll('*')]
+            .map(element => ({ element, rect: element.getBoundingClientRect() }))
+            .filter(({ element, rect }) => rect.width > 0 && rect.right > window.innerWidth + 1 && getComputedStyle(element).position !== 'fixed')
+            .slice(0, 8)
+            .map(({ element, rect }) => ({ tag: element.tagName, id: element.id, className: String(element.className), right: Math.round(rect.right), width: Math.round(rect.width) }));
+          const layout = {
             viewportWidth: window.innerWidth,
             documentWidth: document.documentElement.scrollWidth,
             bodyWidth: document.body.scrollWidth,
             mainRight: mainRect?.right ?? null,
             menuButtonVisible: menuButton ? getComputedStyle(menuButton).display !== 'none' : false,
+            authyButtonVisible: authyButton ? getComputedStyle(authyButton).display !== 'none' : false,
+            logoutButtonVisible: logoutButton ? getComputedStyle(logoutButton).display !== 'none' : false,
+            overflowElements,
+          };
+          return {
+            usesAppLayout: Boolean(main),
+            ...layout,
+            overflowElements,
           };
         });
 
@@ -77,18 +93,22 @@ async function main() {
         if (metrics.mainRight !== null && metrics.mainRight > viewport.width + 1) {
           throw new Error(`${route} desborda el área principal en ${viewport.name}: ${JSON.stringify(metrics)}.`);
         }
-        if (metrics.menuButtonVisible !== (viewport.width < 992)) {
+        if (metrics.usesAppLayout && metrics.menuButtonVisible !== (viewport.width < 992)) {
           throw new Error(`El botón del menú no corresponde al breakpoint en ${viewport.name}.`);
+        }
+        if (metrics.usesAppLayout && (!metrics.authyButtonVisible || !metrics.logoutButtonVisible)) {
+          throw new Error(`Los controles 2FA/Authy y cerrar sesión deben seguir visibles en ${viewport.name}.`);
         }
 
         checkedPages += 1;
-        console.log(JSON.stringify({ status: 'PASS', viewport: viewport.name, route, ...metrics }));
+        const { overflowElements, ...layoutMetrics } = metrics;
+        console.log(JSON.stringify({ status: 'PASS', viewport: viewport.name, route, ...layoutMetrics }));
 
         if (route === '/') {
           await page.screenshot({
             path: path.join(evidenceDir, `dashboard-${viewport.name}.png`),
             fullPage: true,
-            style: '#userMenu .fw-bold { visibility: hidden !important; }',
+            style: '.user-session-profile .line-height-normal { visibility: hidden !important; }',
           });
         }
         if (route === '/Configuracion' && ['desktop', 'mobile'].includes(viewport.name)) {

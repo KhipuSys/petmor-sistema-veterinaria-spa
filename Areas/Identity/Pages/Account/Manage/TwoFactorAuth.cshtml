@@ -1,0 +1,157 @@
+@page
+@model Petmor.Web.Areas.Identity.Pages.Account.Manage.TwoFactorAuthModel
+
+@{
+    Layout = null;
+    ViewData["Title"] = "Verificación en dos pasos";
+}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Verificación 2FA/Authy - Petmor</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <style>
+        :root { --petmor-orange: #f06800; }
+        body { min-height: 100vh; margin: 0; background: #f8fafc; color: #1f2937; font-family: 'Outfit', sans-serif; }
+        .manage-shell { width: min(100% - 32px, 1060px); margin: 0 auto; padding: 32px 0 48px; }
+        .manage-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 24px; }
+        .auth-card { height: 100%; border: 1px solid #e2e8f0; border-radius: 16px; background: #fff; box-shadow: 0 8px 24px rgba(15,23,42,.06); }
+        .auth-card-body { padding: 24px; }
+        .auth-icon { display: inline-grid; place-items: center; width: 52px; height: 52px; border-radius: 14px; background: #fff3ea; color: var(--petmor-orange); font-size: 1.4rem; }
+        .brand-button { min-height: 44px; border-color: var(--petmor-orange); background: var(--petmor-orange); color: #fff; font-weight: 700; }
+        .brand-button:hover { border-color: #c65300; background: #c65300; color: #fff; }
+        .form-control { min-height: 44px; border-radius: 10px; }
+        .manual-key { letter-spacing: .06em; }
+        .recovery-code { overflow-wrap: anywhere; }
+        a:focus-visible, button:focus-visible, input:focus-visible { outline: 3px solid #9a3412; outline-offset: 3px; }
+        @@media (max-width: 575.98px) {
+            .manage-shell { width: min(100% - 24px, 1060px); padding-top: 20px; }
+            .manage-header { align-items: flex-start; flex-direction: column; }
+            .auth-card-body { padding: 18px; }
+            .qr-image { width: 156px; height: 156px; }
+        }
+    </style>
+</head>
+<body>
+    <main class="manage-shell">
+        <header class="manage-header">
+            <div>
+                <div class="d-flex align-items-center gap-3 mb-2">
+                    <span class="auth-icon" aria-hidden="true"><i class="fas fa-shield-alt"></i></span>
+                    <h1 class="h3 fw-bold mb-0">Verificación en dos pasos</h1>
+                </div>
+                <p class="text-muted mb-0">Vincula tu cuenta con Authy para proteger el inicio de sesión.</p>
+            </div>
+            <a asp-area="" asp-controller="Home" asp-action="Index" class="btn btn-outline-secondary">Volver a Petmor</a>
+        </header>
+
+        @if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
+        {
+            <div class="alert alert-success" role="status">@Model.StatusMessage</div>
+        }
+        @if (!ViewData.ModelState.IsValid)
+        {
+            <div asp-validation-summary="All" class="alert alert-danger" role="alert"></div>
+        }
+
+        @if (Model.RecoveryCodes?.Length > 0)
+        {
+            <section class="alert alert-warning" aria-labelledby="recovery-title">
+                <h2 id="recovery-title" class="h5 fw-bold">Guarda tus códigos de recuperación</h2>
+                <p>Se muestran una sola vez. Guarda estos códigos en un lugar seguro; cada uno sirve para un único inicio de sesión si pierdes acceso a Authy.</p>
+                <div class="row g-2 font-monospace small">
+                    @foreach (var code in Model.RecoveryCodes)
+                    {
+                        <div class="col-6 col-md-3 recovery-code">@code</div>
+                    }
+                </div>
+            </section>
+        }
+
+        @if (Model.Is2faEnabled)
+        {
+            <section class="auth-card border-success" aria-labelledby="enabled-title">
+                <div class="auth-card-body d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+                    <div>
+                        <h2 id="enabled-title" class="h5 text-success fw-bold mb-1"><i class="fas fa-circle-check me-2" aria-hidden="true"></i>2FA está activo</h2>
+                        <p class="text-muted mb-0">En el próximo inicio de sesión, Petmor pedirá el código actual de Authy.</p>
+                    </div>
+                    <form method="post" asp-page-handler="Disable" id="disable-authenticator-form" class="d-flex flex-column flex-sm-row gap-2">
+                        <div>
+                            <label asp-for="DisableInput.Code" class="visually-hidden">Código actual de Authy</label>
+                            <input asp-for="DisableInput.Code" class="form-control" autocomplete="one-time-code" inputmode="numeric" maxlength="7" placeholder="Código Authy" />
+                            <span asp-validation-for="DisableInput.Code" class="text-danger small"></span>
+                        </div>
+                        <button type="submit" class="btn btn-outline-danger text-nowrap" onclick="return confirm('¿Desactivar 2FA? Se dejará de solicitar el código Authy al iniciar sesión.')">Desactivar 2FA</button>
+                    </form>
+                </div>
+            </section>
+        }
+        else
+        {
+            <div class="row g-4">
+                <div class="col-lg-7">
+                    <section class="auth-card" aria-labelledby="setup-title">
+                        <div class="auth-card-body">
+                            <h2 id="setup-title" class="h5 fw-bold mb-3">Configurar Authy</h2>
+                            <ol class="mb-4">
+                                <li>Abre Authy en tu celular y agrega una cuenta nueva.</li>
+                                <li>Escanea el QR o ingresa la clave manual.</li>
+                                <li>Escribe el código actual de seis dígitos para confirmar.</li>
+                            </ol>
+                            <div class="row g-3 align-items-center">
+                                <div class="col-md-auto text-center">
+                                    <div class="p-3 bg-white border rounded d-inline-block">
+                                        <img class="qr-image" src="@Model.QrCodeDataUri" alt="Código QR para configurar Authy en Petmor" width="180" height="180" />
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <label for="sharedKey" class="form-label fw-semibold">Clave manual</label>
+                                    <div class="input-group">
+                                        <input id="sharedKey" value="@Model.SharedKey" class="form-control font-monospace manual-key" readonly autocomplete="off" />
+                                        <button type="button" class="btn btn-outline-primary" id="copy-authenticator-key">Copiar</button>
+                                    </div>
+                                    <div class="form-text">En Authy selecciona la opción para ingresar la clave manualmente. No compartas el QR ni esta clave.</div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+                <div class="col-lg-5">
+                    <section class="auth-card" aria-labelledby="confirm-title">
+                        <div class="auth-card-body">
+                            <h2 id="confirm-title" class="h5 fw-bold mb-3">Confirmar y activar</h2>
+                            <form method="post" asp-page-handler="Enable">
+                                <div class="mb-3">
+                                    <label asp-for="Input.Code" class="form-label fw-semibold">Código de Authy</label>
+                                    <input asp-for="Input.Code" class="form-control form-control-lg text-center" autocomplete="one-time-code" inputmode="numeric" maxlength="7" autofocus />
+                                    <span asp-validation-for="Input.Code" class="text-danger small"></span>
+                                </div>
+                                <button type="submit" class="btn brand-button w-100">Activar verificación</button>
+                            </form>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        }
+    </main>
+
+    <script>
+        document.getElementById('copy-authenticator-key')?.addEventListener('click', async () => {
+            const key = document.getElementById('sharedKey')?.value;
+            if (!key) return;
+            try {
+                await navigator.clipboard.writeText(key);
+            } catch {
+                const input = document.getElementById('sharedKey');
+                input.select();
+                document.execCommand('copy');
+            }
+        });
+    </script>
+</body>
+</html>
