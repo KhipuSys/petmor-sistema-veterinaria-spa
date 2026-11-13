@@ -2,7 +2,8 @@
   "private": true,
   "scripts": {
     "test": "node audit.cjs",
-    "test:responsive": "node responsive.cjs"
+    "test:responsive": "node responsive.cjs",
+    "test:accessibility": "node accessibility-rfc004.cjs"
   },
   "devDependencies": { "playwright": "^1.55.0", "axe-core": "^4.10.3" }
 }
